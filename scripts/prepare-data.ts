@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import * as XLSX from 'xlsx'
 import { rollup } from '../src/data/aggregate.ts'
+import { KPI_CONFIG } from '../src/config/kpis.ts'
 import { cropWeekOn, excelSerialToIso, addDays, isoWeekOf } from '../src/data/dates.ts'
 import type {
   Aggregation,
@@ -218,10 +219,27 @@ function buildWeekly(daily: DailyRow[], dictionary: KpiDictionaryEntry[]): Weekl
   return weekly // already in cultivation, KPI, week order because `daily` is sorted
 }
 
+/** The scoring config (src/config/kpis.ts) must describe the same KPIs as the workbook's dictionary. */
+function checkConfigMatchesDictionary(dictionary: KpiDictionaryEntry[]) {
+  const config = new Map(KPI_CONFIG.map((k) => [k.name, k]))
+  for (const entry of dictionary) {
+    const c = config.get(entry.name)
+    if (!c) throw new Error(`KPI "${entry.name}" is in the workbook but not in src/config/kpis.ts`)
+    if (c.category !== entry.category || c.unit !== entry.unit || c.aggregation !== entry.aggregation) {
+      throw new Error(`KPI "${entry.name}": src/config/kpis.ts disagrees with the workbook dictionary (category, unit or aggregation)`)
+    }
+  }
+  const known = new Set(dictionary.map((k) => k.name))
+  for (const c of KPI_CONFIG) {
+    if (!known.has(c.name)) throw new Error(`KPI "${c.name}" is in src/config/kpis.ts but not in the workbook`)
+  }
+}
+
 /** Parse the workbook into the data file the app loads. Throws if the workbook is not as expected. */
 export function buildData(xlsxPath: string = XLSX_PATH): DataFile {
   const workbook = XLSX.read(readFileSync(xlsxPath), { type: 'buffer' })
   const dictionary = readKpiDictionary(workbook)
+  checkConfigMatchesDictionary(dictionary)
   const cultivations = readCultivations(workbook)
   const daily = readDailyRows(workbook, cultivations, dictionary)
   const weeks = buildWeeks(daily)

@@ -1,7 +1,8 @@
 // The KPI rulebook. Everything that decides a green / amber / red score lives in this file.
 //
-// To change a threshold, edit the numbers on the KPI's line. To score a KPI differently, swap the
-// helper (higherIsBetter, lowerIsBetter, closeToTarget, closeToTargetAbsolute).
+// To change a threshold, edit the numbers on the KPI's line (or the helper's defaults just below, which
+// most lines use). To score a KPI differently, swap the helper (higherIsBetter, lowerIsBetter,
+// lowerIsBetterAbsolute, closeToTarget, closeToTargetAbsolute).
 //
 // How a variance is read (variance = actual compared with target, see src/scoring/score.ts):
 //   higher is better : green if variance >= -green,  amber if variance >= -amber,  else red
@@ -9,6 +10,9 @@
 //   close to target  : green if |variance| <= green, amber if |variance| <= amber, else red
 // Percent variance is (actual - target) / |target| in %, absolute variance is actual - target in the KPI's unit.
 // A KPI with no target for the period is shown but never scored.
+//
+// A category (Production, Plant, ...) is then rated from the share of its scored KPIs that are red or green:
+// see CATEGORY_ROLLUP at the bottom of this file.
 
 import type { Aggregation, Category } from '../data/types'
 
@@ -35,20 +39,24 @@ export interface KpiConfig {
 
 type Tolerance = Pick<KpiConfig, 'direction' | 'variance' | 'green' | 'amber'>
 
+// The defaults below are the ones most KPIs use. Production's yield KPIs are held tighter than the rest,
+// because plant, climate and irrigation KPIs typically swing about 10 % from week to week.
 const higherIsBetter = (green = 3, amber = 8): Tolerance => ({ direction: 'higher', variance: 'percent', green, amber })
-const lowerIsBetter = (green = 5, amber = 15): Tolerance => ({ direction: 'lower', variance: 'percent', green, amber })
-const closeToTarget = (green = 5, amber = 10): Tolerance => ({ direction: 'target', variance: 'percent', green, amber })
+const lowerIsBetter = (green = 10, amber = 25): Tolerance => ({ direction: 'lower', variance: 'percent', green, amber })
+const lowerIsBetterAbsolute = (green: number, amber: number): Tolerance => ({ direction: 'lower', variance: 'absolute', green, amber })
+const closeToTarget = (green = 10, amber = 20): Tolerance => ({ direction: 'target', variance: 'percent', green, amber })
 const closeToTargetAbsolute = (green: number, amber: number): Tolerance => ({ direction: 'target', variance: 'absolute', green, amber })
 
-/** Temperatures: green within 1 degree C, amber within 2 degrees C. */
-const temperature = closeToTargetAbsolute(1, 2)
+/** Temperatures: green within 1.5 degrees C, amber within 3 degrees C. */
+const temperature = closeToTargetAbsolute(1.5, 3)
 
 export const KPI_CONFIG: KpiConfig[] = [
   // Production
   { name: 'Harvest', category: 'Production', unit: 'kg/m²', aggregation: 'sum', ...higherIsBetter(), showOnScorecard: true, decimals: 2 },
   { name: 'Cumulative harvest', category: 'Production', unit: 'kg/m²', aggregation: 'last', ...higherIsBetter(), showOnScorecard: true, decimals: 2 },
-  { name: 'Fruit weight', category: 'Production', unit: 'g', aggregation: 'average', ...closeToTarget(), showOnScorecard: true, decimals: 1 },
-  { name: 'Waste', category: 'Production', unit: '%', aggregation: 'last', ...lowerIsBetter(), showOnScorecard: true, decimals: 1 },
+  { name: 'Fruit weight', category: 'Production', unit: 'g', aggregation: 'average', ...closeToTarget(5, 10), showOnScorecard: true, decimals: 1 },
+  // Waste is a small percentage (about 1 to 5 %), so its tolerance is in percentage points: 0.6 % against a 0.5 % budget is fine.
+  { name: 'Waste', category: 'Production', unit: '%', aggregation: 'last', ...lowerIsBetterAbsolute(0.5, 1.5), showOnScorecard: true, decimals: 1 },
 
   // Plant
   { name: 'Head thickness', category: 'Plant', unit: 'mm', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
@@ -118,3 +126,12 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 export function kpisInCategory(category: Category): KpiConfig[] {
   return KPI_CONFIG.filter((k) => k.category === category)
 }
+
+/**
+ * How the KPIs of a category add up to the category's status badge, among the KPIs that have a score that week:
+ *   red    when at least `redShare` of them are red
+ *   green  when at least `greenShare` of them are green (and fewer than `redShare` are red)
+ *   amber  otherwise
+ * The badge still names the worst KPI. Change the two fractions to make the badges stricter or kinder.
+ */
+export const CATEGORY_ROLLUP = { redShare: 1 / 3, greenShare: 2 / 3 }

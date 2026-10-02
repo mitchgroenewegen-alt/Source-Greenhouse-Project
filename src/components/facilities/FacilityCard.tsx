@@ -36,7 +36,7 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
   const show = (kg: number | null, area: number) => (kg === null ? '–' : fixed(unit === 'tonnes' ? toTonnes(kg, area) : kg, decimals))
 
   return (
-    <section aria-labelledby={`fac-${facility}`} className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+    <section aria-labelledby={`fac-${facility}`} className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-3 shadow-sm sm:p-4">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 id={`fac-${facility}`} className="text-lg font-semibold">
@@ -82,50 +82,68 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
         </li>
       </ul>
 
-      <table className="num w-full text-xs sm:text-sm">
-        <caption className="sr-only">
-          {facility}: harvest against budget in {unitLabel}
-        </caption>
-        <thead>
-          <tr className="border-b border-line text-xs text-ink-2">
-            <th scope="col" className="py-1.5 pr-2 text-left font-semibold">Cultivation</th>
-            <th scope="col" className="hidden px-1 py-1.5 text-right font-semibold sm:table-cell">m²</th>
-            <th scope="col" className="px-1 py-1.5 text-right font-semibold">Budget {unitLabel}</th>
-            <th scope="col" className="px-1 py-1.5 text-right font-semibold">Actual {unitLabel}</th>
-            <th scope="col" className="py-1.5 pl-1 text-right font-semibold">vs budget</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.cultivation.id} className="border-b border-line-soft align-top">
-              <th scope="row" className="py-2 pr-2 text-left text-xs font-semibold sm:text-sm">
-                {r.cultivation.id}
-                <span className="block text-xs font-normal text-ink-3 sm:hidden">{fixed(r.cultivation.areaM2, 0)} m²</span>
+      {/* Safety net: if a very large number ever makes the table wider than the card, it scrolls here, not the page. */}
+      <div className="overflow-x-auto">
+        <table className="num w-full text-xs sm:text-sm">
+          <caption className="sr-only">
+            {facility}: harvest against budget in {unitLabel}
+          </caption>
+          <thead>
+            <tr className="border-b border-line text-xs text-ink-2">
+              <th scope="col" className="py-1.5 pr-1 text-left font-semibold sm:pr-2">Cultivation</th>
+              <th scope="col" className="hidden px-1 py-1.5 text-right font-semibold sm:table-cell">m²</th>
+              <th scope="col" className="px-0.5 py-1.5 text-right font-semibold sm:px-1">
+                Budget<span className="block font-normal text-ink-3">{unitLabel}</span>
               </th>
-              <td className="hidden px-1 py-2 text-right text-ink-2 sm:table-cell">{fixed(r.cultivation.areaM2, 0)}</td>
-              <td className="px-1 py-2 text-right">{show(r.budget, r.cultivation.areaM2)}</td>
-              <td className="px-1 py-2 text-right font-semibold">{show(r.actual, r.cultivation.areaM2)}</td>
+              <th scope="col" className="px-0.5 py-1.5 text-right font-semibold sm:px-1">
+                Actual<span className="block font-normal text-ink-3">{unitLabel}</span>
+              </th>
+              <th scope="col" className="py-1.5 pl-1 text-right font-semibold">vs budget</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.cultivation.id} className="border-b border-line-soft align-top">
+                <th scope="row" className="py-2 pr-1 text-left text-xs font-semibold sm:pr-2 sm:text-sm">
+                  {r.cultivation.id}
+                  <span className="block text-xs font-normal text-ink-3 sm:hidden">{fixed(r.cultivation.areaM2, 0)} m²</span>
+                  {/* On a phone the badge sits under the name, which frees a column's width for the numbers. */}
+                  <span className="mt-1 block font-normal sm:hidden">
+                    <StatusBadge status={r.status} compact />
+                  </span>
+                </th>
+                <td className="hidden px-1 py-2 text-right text-ink-2 sm:table-cell">{fixed(r.cultivation.areaM2, 0)}</td>
+                <td className="px-0.5 py-2 text-right sm:px-1">{show(r.budget, r.cultivation.areaM2)}</td>
+                <td className="px-0.5 py-2 text-right font-semibold sm:px-1">{show(r.actual, r.cultivation.areaM2)}</td>
+                <td className="py-2 pl-1 text-right">
+                  <div className="font-semibold">{r.variance === null ? '–' : signedPercent(r.variance)}</div>
+                  <div className="mt-0.5 hidden sm:block">
+                    <StatusBadge status={r.status} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-page/70 align-top font-semibold">
+              <th scope="row" className="py-2 pr-1 text-left text-xs sm:pr-2 sm:text-sm">
+                Facility total{unit === 'kgm2' ? ' (area-weighted)' : ''}
+                <span className="block text-xs font-normal text-ink-3 sm:hidden">{fixed(total.areaM2, 0)} m²</span>
+                <span className="mt-1 block font-normal sm:hidden">
+                  <StatusBadge status={total.status} compact />
+                </span>
+              </th>
+              <td className="hidden px-1 py-2 text-right text-ink-2 sm:table-cell">{fixed(total.areaM2, 0)}</td>
+              <td className="px-0.5 py-2 text-right sm:px-1">{show(total.budget, total.areaM2)}</td>
+              <td className="px-0.5 py-2 text-right sm:px-1">{show(total.actual, total.areaM2)}</td>
               <td className="py-2 pl-1 text-right">
-                <div className="font-semibold">{r.variance === null ? '–' : signedPercent(r.variance)}</div>
-                <StatusBadge status={r.status} className="mt-0.5" />
+                <div>{total.variance === null ? '–' : signedPercent(total.variance)}</div>
+                <div className="mt-0.5 hidden font-normal sm:block">
+                  <StatusBadge status={total.status} />
+                </div>
               </td>
             </tr>
-          ))}
-          <tr className="bg-page/70 align-top font-semibold">
-            <th scope="row" className="py-2 pr-2 text-left text-xs sm:text-sm">
-              Facility total{unit === 'kgm2' ? ' (area-weighted)' : ''}
-              <span className="block text-xs font-normal text-ink-3 sm:hidden">{fixed(total.areaM2, 0)} m²</span>
-            </th>
-            <td className="hidden px-1 py-2 text-right text-ink-2 sm:table-cell">{fixed(total.areaM2, 0)}</td>
-            <td className="px-1 py-2 text-right">{show(total.budget, total.areaM2)}</td>
-            <td className="px-1 py-2 text-right">{show(total.actual, total.areaM2)}</td>
-            <td className="py-2 pl-1 text-right">
-              <div>{total.variance === null ? '–' : signedPercent(total.variance)}</div>
-              <StatusBadge status={total.status} className="mt-0.5" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }

@@ -65,3 +65,13 @@ export const ChevronRightIcon = (p: IconProps) => (
     <path d="M9 5l7 7-7 7" />
   </svg>
 )
+export const FilterIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M4 6h16M7 12h10M10 18h4" />
+  </svg>
+)
+export const ChevronIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+)

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { DecisionForm } from '../components/checks/DecisionForm'
 import { DecisionLog } from '../components/checks/DecisionLog'
 import { FlagGroupCard } from '../components/checks/FlagGroupCard'
+import { ChevronIcon, FilterIcon } from '../components/ui/icons'
 import { Segmented } from '../components/ui/Segmented'
 import { formatDate, formatRange } from '../data/dates'
 import { RULE_ORDER, RULE_TITLE, type FlagGroup, type RuleId } from '../flags'
@@ -13,6 +14,11 @@ import { needsReview } from '../state/groupStatus'
 type Tab = 'review' | 'missing' | 'log'
 type StatusFilter = 'open' | 'decided' | 'all'
 const ALL = 'all'
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'open', label: 'Waiting for a decision' },
+  { value: 'decided', label: 'Decided' },
+  { value: 'all', label: 'Both' },
+]
 
 export default function DataChecksScreen() {
   const { groups, statusOf, decisions, decisionById, saveDecisions, removeDecisions, replaceDecisions, persistent, decidedBy, setDecidedBy, cultivations, rawMode } = useCropData()
@@ -21,6 +27,7 @@ export default function DataChecksScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('open')
   const [rule, setRule] = useState<RuleId | typeof ALL>(ALL)
   const [form, setForm] = useState<{ groupId: string; kind: DecisionKind } | null>(null)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [notice, setNotice] = useState<{ text: string; cellIds: string[] } | null>(null)
   const cultivation = params.get('cultivation') ?? ALL
 
@@ -49,6 +56,15 @@ export default function DataChecksScreen() {
 
   const ruleCounts = (r: RuleId) => reviewGroups.filter((g) => g.rule === r && matches(g)).length
   const reviewRules = RULE_ORDER.filter((r) => r !== 'missing-value')
+
+  // What the collapsed phone row says, so the active filters are visible without opening the panel.
+  const filterSummary = [
+    STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label,
+    cultivation !== ALL ? cultivation : null,
+    tab === 'review' && rule !== ALL ? RULE_TITLE[rule] : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   const decide = (group: FlagGroup, kind: DecisionKind) => setForm({ groupId: group.id, kind })
   const reopen = (group: FlagGroup) => removeDecisions(group.flags.map((f) => f.id))
@@ -121,48 +137,54 @@ export default function DataChecksScreen() {
       </div>
 
       {tab !== 'log' && (
-        <div className="flex flex-col gap-2 rounded-xl border border-line bg-card p-3">
-          <label className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink-2">
-            Cultivation
-            <select
-              value={cultivation}
-              onChange={(e) => {
-                const next = new URLSearchParams(params)
-                if (e.target.value === ALL) next.delete('cultivation')
-                else next.set('cultivation', e.target.value)
-                setParams(next, { replace: true })
-              }}
-              className="min-h-10 rounded-lg border border-line bg-card px-2 text-sm font-semibold text-ink"
-            >
-              <option value={ALL}>All cultivations</option>
-              {cultivations.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.id}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Segmented
-            label="Show"
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: 'open', label: 'Waiting for a decision' },
-              { value: 'decided', label: 'Decided' },
-              { value: 'all', label: 'Both' },
-            ]}
-          />
-          {tab === 'review' && (
-            <Segmented
-              label="Kind"
-              value={rule}
-              onChange={setRule}
-              options={[
-                { value: ALL, label: 'All', count: reviewGroups.filter(matches).length },
-                ...reviewRules.map((r) => ({ value: r, label: RULE_TITLE[r], count: ruleCounts(r) })).filter((o) => o.count > 0 || rule === o.value),
-              ]}
-            />
-          )}
+        <div className="rounded-xl border border-line bg-card">
+          {/* Phones: one compact row that opens the filters. From md up the filters are always shown. */}
+          <button
+            type="button"
+            aria-expanded={filtersOpen}
+            aria-controls="check-filters"
+            onClick={() => setFiltersOpen((open) => !open)}
+            className="flex min-h-11 w-full items-center gap-2 px-3 text-left md:hidden"
+          >
+            <FilterIcon width={18} height={18} className="shrink-0 text-ink-2" />
+            <span className="text-sm font-semibold">Filters</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-ink-3">{filterSummary}</span>
+            <ChevronIcon width={18} height={18} className={`shrink-0 text-ink-2 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+          </button>
+          <div id="check-filters" className={`${filtersOpen ? 'flex' : 'hidden'} flex-col gap-2 border-t border-line-soft p-3 md:flex md:border-t-0`}>
+            <label className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink-2">
+              Cultivation
+              <select
+                value={cultivation}
+                onChange={(e) => {
+                  const next = new URLSearchParams(params)
+                  if (e.target.value === ALL) next.delete('cultivation')
+                  else next.set('cultivation', e.target.value)
+                  setParams(next, { replace: true })
+                }}
+                className="min-h-11 rounded-lg border border-line bg-card px-2 text-base font-semibold text-ink md:min-h-10 md:text-sm"
+              >
+                <option value={ALL}>All cultivations</option>
+                {cultivations.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Segmented label="Show" value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} />
+            {tab === 'review' && (
+              <Segmented
+                label="Kind"
+                value={rule}
+                onChange={setRule}
+                options={[
+                  { value: ALL, label: 'All', count: reviewGroups.filter(matches).length },
+                  ...reviewRules.map((r) => ({ value: r, label: RULE_TITLE[r], count: ruleCounts(r) })).filter((o) => o.count > 0 || rule === o.value),
+                ]}
+              />
+            )}
+          </div>
         </div>
       )}
 
@@ -253,20 +275,26 @@ function MissingValues({
   return (
     <section className="flex flex-col gap-3" aria-label="Missing values">
       <p className="text-sm text-ink-2">
-        These cells were empty in the workbook. An empty cell means “not recorded”, so it is left out of the scores and never counted as zero. Nothing is held back, so there is nothing you have to decide; acknowledge them to tidy the list.
+        <span className="md:hidden">
+          Empty cells in the workbook. They are left out of the scores, never counted as zero. There is nothing to decide; acknowledge them to tidy the list.
+        </span>
+        <span className="hidden md:inline">
+          These cells were empty in the workbook. An empty cell means “not recorded”, so it is left out of the scores and never counted as zero. Nothing is held back, so there is nothing you have to decide; acknowledge them to tidy the list.
+        </span>
       </p>
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-line bg-card p-3">
-        <label className="flex flex-col gap-1 text-sm font-medium">
+      <div className="flex items-end gap-2 rounded-xl border border-line bg-card p-3 md:gap-3">
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium md:max-w-xs">
           Your name
-          <input value={decidedBy} onChange={(e) => setDecidedBy(e.target.value)} className="min-h-10 rounded-lg border border-line bg-card px-2 font-normal" />
+          <input value={decidedBy} onChange={(e) => setDecidedBy(e.target.value)} className="min-h-11 w-full min-w-0 rounded-lg border border-line bg-card px-2 text-base font-normal md:min-h-10 md:text-sm" />
         </label>
         <button
           type="button"
           disabled={open.length === 0 || !decidedBy.trim()}
           onClick={() => onAcknowledgeAll(open)}
-          className="min-h-10 rounded-lg bg-brand px-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="min-h-11 shrink-0 rounded-lg bg-brand px-3 text-sm font-semibold text-white disabled:opacity-50 md:min-h-10"
         >
-          Acknowledge all {open.length} shown
+          Acknowledge all {open.length}
+          <span className="hidden sm:inline"> shown</span>
         </button>
       </div>
       {groups.length === 0 ? (

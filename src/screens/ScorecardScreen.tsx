@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { CultivationCard } from '../components/scorecard/CultivationCard'
+import { FilterSelect } from '../components/ui/FilterSelect'
 import { Segmented } from '../components/ui/Segmented'
 import { formatRange, shortWeek } from '../data/dates'
 import { compareByAttention } from '../scoring/summary'
@@ -31,7 +32,22 @@ export default function ScorecardScreen() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-line bg-card p-3 md:flex-row md:flex-wrap md:gap-x-8">
+      {/* Phones: two drop-downs side by side. From md up: the chips. */}
+      <div className="grid grid-cols-2 gap-2 md:hidden">
+        <FilterSelect
+          label="Facility"
+          value={facility}
+          onChange={setFacility}
+          options={facilities.map((f) => ({ value: f, label: f === ALL ? 'All facilities' : f }))}
+        />
+        <FilterSelect
+          label="Variety"
+          value={variety}
+          onChange={setVariety}
+          options={varieties.map((v) => ({ value: v, label: v === ALL ? 'All varieties' : v }))}
+        />
+      </div>
+      <div className="hidden flex-row flex-wrap gap-x-8 gap-y-2 rounded-xl border border-line bg-card p-3 md:flex">
         <Segmented label="Facility" value={facility} onChange={setFacility} options={facilities.map((f) => ({ value: f, label: f }))} />
         <Segmented label="Variety" value={variety} onChange={setVariety} options={varieties.map((v) => ({ value: v, label: v }))} />
       </div>
@@ -40,9 +56,12 @@ export default function ScorecardScreen() {
         <p className="rounded-xl border border-line bg-card p-6 text-center text-ink-2">No cultivation matches these filters.</p>
       ) : (
         <>
-          <p className="text-sm text-ink-3">
-            {cards.length} of {cultivations.length} cultivations. Sorted by most red categories, then most amber, then the
-            shortfall on cumulative harvest.
+          <p className="-mt-1 text-sm text-ink-3">
+            {cards.length} of {cultivations.length} cultivations.
+            <span className="hidden md:inline">
+              {' '}
+              Sorted by most red categories, then most amber, then the shortfall on cumulative harvest.
+            </span>
           </p>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {cards.map(({ cultivation, score }) => {

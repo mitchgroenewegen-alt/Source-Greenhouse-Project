@@ -4,16 +4,14 @@ import type { CategoryResult } from '../../scoring/summary'
 import { StatusBadge } from '../ui/StatusBadge'
 
 function detail(c: CategoryResult): string {
-  if (c.worst) {
-    const { config, score } = c.worst
-    const others = c.scoredCount - 1
-    const base = c.status === 'green' ? `Weakest: ${config.name}` : `Worst: ${config.name} (${formatVariance(config, score.variance)})`
-    return others > 0 ? `${base} · ${c.scoredCount} KPIs scored` : base
-  }
-  return c.underReview > 0 ? 'Waiting for data checks' : 'No KPI with a budget this week'
+  if (!c.worst) return c.underReview > 0 ? 'Waiting for data checks' : 'No KPI with a budget this week'
+  const { config, score } = c.worst
+  const worst = c.worst.score.status === 'green' ? `Weakest: ${config.name}` : `Worst: ${config.name} (${formatVariance(config, score.variance)})`
+  const { red, amber, green } = c.counts
+  return `${worst} · ${red} red, ${amber} amber, ${green} green`
 }
 
-/** One row per category; the status is that of its worst KPI, and the row says which KPI that is. */
+/** One row per category; the status comes from the share of red and green KPIs, and the row names the worst KPI. */
 export function CategoryStatusList({ categories }: { categories: CategoryResult[] }) {
   return (
     <ul className="divide-y divide-line-soft border-t border-line-soft">

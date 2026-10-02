@@ -12,9 +12,12 @@ export interface ChartRow {
   label: string
   actual: number | null
   target: number | null
-  /** Green zone around the target. */
+  /** Green zone. Around the budget for close-to-target KPIs; between the green limit and the budget for one-sided KPIs. */
   green: Band | null
-  /** Amber zone (includes the green one; drawn underneath it). */
+  /**
+   * Amber zone. Close-to-target KPIs: the whole +/- amber range (drawn underneath the green zone).
+   * One-sided KPIs: only the strip between the amber limit and the green limit, nothing beyond.
+   */
   amber: Band | null
   /** Set (to the top of the plot) when this week holds a flagged value, to draw the flag marker. */
   flagY: number | null
@@ -33,21 +36,26 @@ export interface ChartModel {
   hasTarget: boolean
 }
 
-/** The green and amber zones around one target value, for this KPI's direction and variance mode. Infinite sides mean "no limit". */
+/**
+ * The green and amber zones for one target value, for this KPI's direction and variance mode.
+ *   close to target : green is target +/- green; amber is target +/- amber, so it contains the green zone (draw it first).
+ *   higher is better: amber is [target - amber, target - green]; green is [target - green, target]. Nothing above the target,
+ *                     because beating the budget is not something to shade.
+ *   lower is better : green is [target, target + green]; amber is [target + green, target + amber]. Nothing below the target.
+ * Every band has finite edges. The two bands of a one-sided KPI meet but do not overlap.
+ */
 export function toleranceBands(config: KpiConfig, target: number): { green: Band; amber: Band } {
   const size = (tolerance: number) => (config.variance === 'percent' ? (Math.abs(target) * tolerance) / 100 : tolerance)
-  const zone = (tolerance: number): Band => {
-    const t = size(tolerance)
-    switch (config.direction) {
-      case 'higher':
-        return [target - t, Infinity]
-      case 'lower':
-        return [-Infinity, target + t]
-      case 'target':
-        return [target - t, target + t]
-    }
+  const g = size(config.green)
+  const a = size(config.amber)
+  switch (config.direction) {
+    case 'higher':
+      return { green: [target - g, target], amber: [target - a, target - g] }
+    case 'lower':
+      return { green: [target, target + g], amber: [target + g, target + a] }
+    case 'target':
+      return { green: [target - g, target + g], amber: [target - a, target + a] }
   }
-  return { green: zone(config.green), amber: zone(config.amber) }
 }
 
 /** Round-number axis: ticks at a 1, 2, 2.5 or 5 times a power of ten that cover [lo, hi]. */
@@ -73,7 +81,7 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
   for (const { p, bands } of raw) {
     if (p?.actual != null) finite.push(p.actual)
     if (p?.target != null) finite.push(p.target)
-    if (bands) for (const v of [...bands.green, ...bands.amber]) if (Number.isFinite(v)) finite.push(v)
+    if (bands) for (const v of [...bands.green, ...bands.amber]) finite.push(v)
   }
   const lo = finite.length ? Math.min(...finite) : 0
   const hi = finite.length ? Math.max(...finite) : 1
@@ -81,7 +89,6 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
   const ticks = niceScale(lo >= 0 ? Math.max(0, lo - pad) : lo - pad, hi + pad)
   const domainLo = ticks[0]!
   const domainHi = ticks[ticks.length - 1]!
-  const clip = (band: Band): Band => [Number.isFinite(band[0]) ? band[0] : domainLo, Number.isFinite(band[1]) ? band[1] : domainHi]
 
   const rows = raw.map(({ w, p, bands }): ChartRow => {
     const flagged = (p?.openFlags ?? 0) + (p?.decidedFlags ?? 0) > 0
@@ -90,8 +97,8 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
       label: shortWeek(w.id),
       actual: p?.actual ?? null,
       target: p?.target ?? null,
-      green: bands ? clip(bands.green) : null,
-      amber: bands ? clip(bands.amber) : null,
+      green: bands ? bands.green : null,
+      amber: bands ? bands.amber : null,
       flagY: flagged ? domainHi : null,
       actualMark: p?.actualMark ?? null,
       targetMark: p?.targetMark ?? null,

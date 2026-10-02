@@ -16,12 +16,17 @@ export function formatValueWithUnit(config: KpiConfig, value: number | null): st
 export function formatVariance(config: KpiConfig, variance: number | null): string {
   if (variance === null) return NO_VALUE
   if (config.variance === 'percent') return signedPercent(variance, Math.abs(variance) >= 100 ? 0 : 1)
-  return `${signedNumber(variance, config.decimals)} ${config.unit}`
+  return `${signedNumber(variance, config.decimals)} ${absoluteUnit(config, true)}`
+}
+
+/** The unit for an absolute difference. A difference between two percentages is in percentage points. */
+function absoluteUnit(config: KpiConfig, short = false): string {
+  return config.unit === '%' ? (short ? 'pts' : 'percentage points') : config.unit
 }
 
 /** What green and amber mean for this KPI, in words. */
 export function toleranceText(config: KpiConfig): { green: string; amber: string } {
-  const unit = config.variance === 'percent' ? '%' : ` ${config.unit}`
+  const unit = config.variance === 'percent' ? '%' : ` ${absoluteUnit(config)}`
   const g = `${config.green}${unit}`
   const a = `${config.amber}${unit}`
   switch (config.direction) {

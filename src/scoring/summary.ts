@@ -1,6 +1,6 @@
 // Scores one cultivation for one week: every KPI, then a status per category.
 
-import { CATEGORY_ORDER, KPI_CONFIG, type KpiConfig } from '../config/kpis'
+import { CATEGORY_ORDER, CATEGORY_ROLLUP, KPI_CONFIG, type KpiConfig } from '../config/kpis'
 import type { Category } from '../data/types'
 import { weeklyKey, type WeeklyLookup, type WeeklyPoint } from './effective'
 import { scoreWith, STATUS_RANK, type Score, type Status } from './score'
@@ -15,8 +15,9 @@ export interface KpiResult {
 
 export interface CategoryResult {
   category: Category
+  /** From the share of scored KPIs that are red or green (CATEGORY_ROLLUP). null when no KPI of the category is scored. */
   status: Status | null
-  /** The KPI that gave the category its status (the worst one). */
+  /** The worst KPI of the category, named on the badge line whatever the category's own status is. */
   worst: KpiResult | null
   scoredCount: number
   counts: Record<Status, number>
@@ -37,6 +38,21 @@ export function badness(config: KpiConfig, variance: number | null): number {
   const bad =
     config.direction === 'higher' ? Math.max(0, -variance) : config.direction === 'lower' ? Math.max(0, variance) : Math.abs(variance)
   return bad / config.amber
+}
+
+/** Slack for floating point noise when a share sits exactly on a threshold such as 1/3. */
+const SHARE_EPSILON = 1e-9
+
+/**
+ * A category's status from how many of its scored KPIs are green, amber and red:
+ * red if at least `redShare` are red, else green if at least `greenShare` are green, else amber.
+ */
+export function rollupStatus(counts: Record<Status, number>, rollup: { redShare: number; greenShare: number } = CATEGORY_ROLLUP): Status | null {
+  const scored = counts.green + counts.amber + counts.red
+  if (scored === 0) return null
+  if (counts.red / scored >= rollup.redShare - SHARE_EPSILON) return 'red'
+  if (counts.green / scored >= rollup.greenShare - SHARE_EPSILON) return 'green'
+  return 'amber'
 }
 
 export function scoreKpiResult(config: KpiConfig, point: WeeklyPoint | undefined): KpiResult {
@@ -67,7 +83,7 @@ export function scoreCultivationWeek(lookup: WeeklyLookup, cultivation: string, 
     const counts: Record<Status, number> = { green: 0, amber: 0, red: 0 }
     for (const k of scored) counts[k.score.status!]++
     const underReview = kpis.filter((k) => k.config.category === category && k.note === 'under-review').length
-    return { category, status: worst?.score.status ?? null, worst, scoredCount: scored.length, counts, underReview }
+    return { category, status: rollupStatus(counts), worst, scoredCount: scored.length, counts, underReview }
   })
   return { cultivation, week, kpis, categories }
 }

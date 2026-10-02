@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CATEGORY_LABEL, CATEGORY_ORDER, kpisInCategory } from '../config/kpis'
+import { CATEGORY_LABEL, CATEGORY_ORDER, CATEGORY_ROLLUP, kpisInCategory } from '../config/kpis'
 import { formatDate } from '../data/dates'
 import { FLAG_THRESHOLDS as T } from '../flags'
 import { directionText, toleranceText } from '../lib/kpiFormat'
@@ -12,6 +12,17 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <div className="flex flex-col gap-2 text-sm leading-relaxed text-ink">{children}</div>
     </section>
   )
+}
+
+/** A share as a phrase: 1/3 reads "one third", 2/3 "two thirds", anything else as a percentage. */
+function shareWords(share: number): string {
+  const near = (x: number) => Math.abs(share - x) < 1e-6
+  if (near(1 / 2)) return 'half'
+  if (near(1 / 3)) return 'one third'
+  if (near(2 / 3)) return 'two thirds'
+  if (near(1 / 4)) return 'a quarter'
+  if (near(3 / 4)) return 'three quarters'
+  return `${Math.round(share * 100)}%`
 }
 
 const AGGREGATION_WORD = { sum: 'Sum', average: 'Average', last: 'Last value' } as const
@@ -46,13 +57,13 @@ export default function AboutScreen() {
             Each KPI is added up over the week with the rule from the workbook’s KPI dictionary: <strong>sum</strong> (e.g. harvest), <strong>average</strong> (e.g. temperature) or <strong>last value</strong> (cumulative harvest, and waste, which is the last value of the week). The budget is added up with the same rule, using only days that have both an actual and a budget.
           </li>
           <li>
-            The variance is the actual compared with the budget, in percent of the budget or, for temperatures and index KPIs, in the KPI’s own unit.
+            The variance is the actual compared with the budget, in percent of the budget or, for temperatures, index KPIs and waste, in the KPI’s own unit (waste in percentage points, so 1.5 % against a 1.0 % budget is +0.5 points).
           </li>
           <li>
             The variance is compared with the green and amber tolerances for that KPI. Beyond amber it is red. A KPI with no budget for the week is shown but not scored.
           </li>
           <li>
-            A category (Production, Plant, Climate, Irrigation, Resources) takes the status of its worst KPI, and the badge names that KPI.
+            A category (Production, Plant, Climate, Irrigation, Resources) is rated from the share of its scored KPIs that are red or green: <strong>Off track</strong> when at least {shareWords(CATEGORY_ROLLUP.redShare)} of them are red, <strong>On track</strong> when at least {shareWords(CATEGORY_ROLLUP.greenShare)} are green (and fewer than {shareWords(CATEGORY_ROLLUP.redShare)} are red), otherwise <strong>Watch</strong>. A KPI without a score that week is not counted. The badge line still names the worst KPI, and how many are red, amber and green.
           </li>
           <li>
             Cultivations are sorted worst first: most red categories, then most amber ones, then the shortfall on cumulative harvest.
@@ -118,7 +129,7 @@ export default function AboutScreen() {
           <li>Budget is the Target column of the workbook.</li>
           <li>The grain is the ISO week (Monday to Sunday). Week {last.id.split('-')[1]} is the latest full week.</li>
           <li>The dictionary’s aggregation rule applies to targets as well as actuals.</li>
-          <li>The thresholds are starting values, not agreed standards. They are meant to be tuned in <code>src/config/kpis.ts</code>. With them, many Plant, Climate and Irrigation categories show red because a category takes its worst KPI.</li>
+          <li>The thresholds are starting values, not agreed standards. They are meant to be tuned in <code>src/config/kpis.ts</code>. The share that makes a category red or green is <code>CATEGORY_ROLLUP</code> in the same file. Even so, expect a fair number of red categories in some weeks, especially Irrigation in the latest weeks.</li>
           <li>An empty cell means “not recorded”. It is never treated as zero.</li>
           <li>Ontario’s two cultivations (Cherry and TOV) share a greenhouse but are scored separately, each with its own growing area.</li>
           <li>Units are metric. Tonnes are kg/m² × growing area ÷ 1000; facility totals in kg/m² are weighted by growing area.</li>

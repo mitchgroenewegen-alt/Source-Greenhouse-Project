@@ -40,20 +40,44 @@ describe('higher is better (Harvest, Cumulative harvest)', () => {
   })
 })
 
-describe('lower is better (Waste, Heating energy, LED lighting)', () => {
-  it('is green up to +5%, amber up to +15%, red above', () => {
-    for (const kpi of ['Waste', 'Heating energy (approx.)', 'LED lighting']) {
-      expect(scoreKpi(kpi, 105, 100).status).toBe('green')
-      expect(scoreKpi(kpi, 105.1, 100).status).toBe('amber')
-      expect(scoreKpi(kpi, 115, 100).status).toBe('amber')
-      expect(scoreKpi(kpi, 115.1, 100).status).toBe('red')
+describe('lower is better (Heating energy, LED lighting)', () => {
+  it('is green up to +10%, amber up to +25%, red above', () => {
+    for (const kpi of ['Heating energy (approx.)', 'LED lighting']) {
+      expect(scoreKpi(kpi, 110, 100).status).toBe('green')
+      expect(scoreKpi(kpi, 110.1, 100).status).toBe('amber')
+      expect(scoreKpi(kpi, 125, 100).status).toBe('amber')
+      expect(scoreKpi(kpi, 125.1, 100).status).toBe('red')
       expect(scoreKpi(kpi, 50, 100).status).toBe('green') // using less is fine
     }
   })
 })
 
+describe('Waste (lower is better, in percentage points)', () => {
+  it('is green within +0.5 points of the budget, amber within +1.5 points, red above', () => {
+    expect(scoreKpi('Waste', 1.0, 1.0).status).toBe('green')
+    expect(scoreKpi('Waste', 1.5, 1.0).status).toBe('green') // exactly +0.5 points
+    expect(scoreKpi('Waste', 1.6, 1.0).status).toBe('amber')
+    expect(scoreKpi('Waste', 2.5, 1.0).status).toBe('amber') // exactly +1.5 points
+    expect(scoreKpi('Waste', 2.6, 1.0).status).toBe('red')
+    expect(scoreKpi('Waste', 0.2, 1.0).status).toBe('green') // less waste than budgeted is fine
+  })
+
+  it('does not blow up a small budget: 0.6 % against 0.5 % is on track', () => {
+    // As a percentage of the budget this would be +20 % (amber); in points it is +0.1.
+    const score = scoreKpi('Waste', 0.6, 0.5)
+    expect(score.status).toBe('green')
+    expect(score.variance).toBeCloseTo(0.1)
+  })
+
+  it('copes with a budget of 0', () => {
+    expect(scoreKpi('Waste', 0, 0).status).toBe('green')
+    expect(scoreKpi('Waste', 0.4, 0).status).toBe('green')
+    expect(scoreKpi('Waste', 3, 0).status).toBe('red')
+  })
+})
+
 describe('close to target (everything else with a target)', () => {
-  it('is green within 5% and amber within 10%, on either side', () => {
+  it('holds Fruit weight to green within 5% and amber within 10%, on either side', () => {
     expect(scoreKpi('Fruit weight', 105, 100).status).toBe('green')
     expect(scoreKpi('Fruit weight', 95, 100).status).toBe('green')
     expect(scoreKpi('Fruit weight', 90, 100).status).toBe('amber')
@@ -62,14 +86,27 @@ describe('close to target (everything else with a target)', () => {
     expect(scoreKpi('Fruit weight', 111, 100).status).toBe('red')
   })
 
-  it('scores temperatures in absolute degrees: green within 1, amber within 2', () => {
+  it('scores everything outside Production in percent: green within 10%, amber within 20%', () => {
+    for (const kpi of ['Head thickness', 'Relative humidity', 'Humidity deficit', 'Drain pH', 'Irrigation water', 'Solar radiation']) {
+      expect(scoreKpi(kpi, 110, 100).status, kpi).toBe('green')
+      expect(scoreKpi(kpi, 90, 100).status, kpi).toBe('green')
+      expect(scoreKpi(kpi, 110.1, 100).status, kpi).toBe('amber')
+      expect(scoreKpi(kpi, 80, 100).status, kpi).toBe('amber')
+      expect(scoreKpi(kpi, 120.1, 100).status, kpi).toBe('red')
+      expect(scoreKpi(kpi, 79.9, 100).status, kpi).toBe('red')
+    }
+  })
+
+  it('scores temperatures in absolute degrees: green within 1.5, amber within 3', () => {
     for (const kpi of ['Temperature (24h)', 'Temperature (day)', 'Temperature (night)', 'Day/night temperature difference']) {
-      expect(scoreKpi(kpi, 21, 20).status).toBe('green')
-      expect(scoreKpi(kpi, 19, 20).status).toBe('green') // exactly 1 below
-      expect(scoreKpi(kpi, 18.5, 20).status).toBe('amber')
-      expect(scoreKpi(kpi, 22, 20).status).toBe('amber') // exactly 2 above
-      expect(scoreKpi(kpi, 22.1, 20).status).toBe('red')
-      expect(scoreKpi(kpi, 17.9, 20).status).toBe('red')
+      expect(scoreKpi(kpi, 21, 20).status, kpi).toBe('green')
+      expect(scoreKpi(kpi, 18.5, 20).status, kpi).toBe('green') // exactly 1.5 below
+      expect(scoreKpi(kpi, 21.5, 20).status, kpi).toBe('green') // exactly 1.5 above
+      expect(scoreKpi(kpi, 21.6, 20).status, kpi).toBe('amber')
+      expect(scoreKpi(kpi, 17, 20).status, kpi).toBe('amber') // exactly 3 below
+      expect(scoreKpi(kpi, 23, 20).status, kpi).toBe('amber') // exactly 3 above
+      expect(scoreKpi(kpi, 23.1, 20).status, kpi).toBe('red')
+      expect(scoreKpi(kpi, 16.9, 20).status, kpi).toBe('red')
     }
     expect(scoreKpi('Temperature (24h)', 21.5, 20).variance).toBeCloseTo(1.5)
   })
@@ -114,16 +151,21 @@ describe('the KPI config', () => {
     }
   })
 
-  it('uses the starting thresholds from the brief', () => {
+  it('uses the calibrated thresholds', () => {
     const t = (n: string) => {
       const c = kpiConfig(n)
       return [c.direction, c.variance, c.green, c.amber]
     }
     expect(t('Harvest')).toEqual(['higher', 'percent', 3, 8])
     expect(t('Cumulative harvest')).toEqual(['higher', 'percent', 3, 8])
-    for (const n of ['Waste', 'Heating energy (approx.)', 'LED lighting']) expect(t(n)).toEqual(['lower', 'percent', 5, 15])
-    expect(t('Temperature (24h)')).toEqual(['target', 'absolute', 1, 2])
-    expect(t('Drain pH')).toEqual(['target', 'percent', 5, 10])
+    for (const n of ['Heating energy (approx.)', 'LED lighting']) expect(t(n)).toEqual(['lower', 'percent', 10, 25])
+    expect(t('Waste')).toEqual(['lower', 'absolute', 0.5, 1.5])
+    expect(t('Fruit weight')).toEqual(['target', 'percent', 5, 10])
+    for (const n of ['Temperature (24h)', 'Temperature (day)', 'Temperature (night)', 'Day/night temperature difference']) {
+      expect(t(n)).toEqual(['target', 'absolute', 1.5, 3])
+    }
+    expect(t('Drain pH')).toEqual(['target', 'percent', 10, 20])
+    expect(t('Relative humidity')).toEqual(['target', 'percent', 10, 20])
   })
 
   it('shows exactly cumulative harvest, harvest, fruit weight and waste on the scorecard', () => {

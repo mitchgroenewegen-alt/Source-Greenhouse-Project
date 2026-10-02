@@ -19,6 +19,9 @@ export interface CategoryResult {
   /** The KPI that gave the category its status (the worst one). */
   worst: KpiResult | null
   scoredCount: number
+  counts: Record<Status, number>
+  /** KPIs of the category whose week is waiting for a data-check decision. */
+  underReview: number
 }
 
 export interface CultivationScore {
@@ -61,7 +64,10 @@ export function scoreCultivationWeek(lookup: WeeklyLookup, cultivation: string, 
         worst = k
       }
     }
-    return { category, status: worst?.score.status ?? null, worst, scoredCount: scored.length }
+    const counts: Record<Status, number> = { green: 0, amber: 0, red: 0 }
+    for (const k of scored) counts[k.score.status!]++
+    const underReview = kpis.filter((k) => k.config.category === category && k.note === 'under-review').length
+    return { category, status: worst?.score.status ?? null, worst, scoredCount: scored.length, counts, underReview }
   })
   return { cultivation, week, kpis, categories }
 }

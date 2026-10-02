@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { decisionsToCsv, mergeDecisions, parseCsvRows, parseDecisionsCsv } from './csv'
+import { allHaveSuggestions, buildDecisions } from './decide'
 import { LocalStorageDecisionStore, MemoryDecisionStore } from './decisionStore'
 import type { Decision } from './types'
 
@@ -196,5 +197,39 @@ describe('merging an import with stored decisions', () => {
     const older = mergeDecisions(stored, [decision({ kind: 'confirm', correctedValue: null, decidedAt: '2025-08-01T10:00:00Z' })])
     expect(older).toMatchObject({ added: 0, updated: 0, keptExisting: 1 })
     expect(older.merged[0]!.kind).toBe('correct')
+  })
+})
+
+describe('building decisions from flags', () => {
+  const flag = (suggestion: number | null, date = '2025-07-01') => ({
+    id: `PA-P2-TOV|Temperature (24h)|${date}|target`,
+    cultivation: 'PA-P2-TOV',
+    kpi: 'Temperature (24h)',
+    date,
+    field: 'target' as const,
+    value: 69,
+    rule: 'unit-fahrenheit' as const,
+    severity: 'error' as const,
+    explanation: 'x',
+    suggestion,
+  })
+  const now = new Date('2025-09-03T09:30:00Z')
+
+  it('writes one decision per cell with who, when and note', () => {
+    const out = buildDecisions([flag(20.6), flag(20.6, '2025-07-02')], { kind: 'correct', value: 'suggestion', decidedBy: ' Dana ', note: ' checked ', now })
+    expect(out).toHaveLength(2)
+    expect(out[0]).toMatchObject({ kind: 'correct', correctedValue: 20.6, decidedBy: 'Dana', note: 'checked', decidedAt: '2025-09-03T09:30:00.000Z', originalValue: 69 })
+  })
+
+  it('uses one typed value for every cell, and none for confirm or exclude', () => {
+    expect(buildDecisions([flag(null)], { kind: 'correct', value: 21, decidedBy: 'a', note: '', now })[0]!.correctedValue).toBe(21)
+    expect(buildDecisions([flag(20.6)], { kind: 'confirm', decidedBy: 'a', note: '', now })[0]!.correctedValue).toBeNull()
+    expect(buildDecisions([flag(20.6)], { kind: 'exclude', decidedBy: 'a', note: '', now })[0]!.correctedValue).toBeNull()
+  })
+
+  it('refuses to correct without a value', () => {
+    expect(() => buildDecisions([flag(null)], { kind: 'correct', value: 'suggestion', decidedBy: 'a', note: '', now })).toThrow()
+    expect(allHaveSuggestions([flag(20.6), flag(null)])).toBe(false)
+    expect(allHaveSuggestions([flag(20.6)])).toBe(true)
   })
 })

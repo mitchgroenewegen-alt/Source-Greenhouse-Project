@@ -28,3 +28,10 @@ export function withUnit(value: number, unit: string, significant = 4): string {
   const text = plain(value, significant)
   return unit === '%' ? `${text} %` : `${text} ${unit}`
 }
+
+/** "3 Sep 2025, 10:00" in the viewer's own time zone. */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}

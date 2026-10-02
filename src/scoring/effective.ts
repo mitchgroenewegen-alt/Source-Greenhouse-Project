@@ -36,6 +36,16 @@ export interface WeeklyPoint {
   openFlags: number
   /** Suspect values in this week that someone has decided about. */
   decidedFlags: number
+  /** For marking the chart: does the actual / target column hold a flagged value this week, and is it still open? */
+  actualMark: FlagMark
+  targetMark: FlagMark
+}
+
+export type FlagMark = 'open' | 'decided' | null
+
+function markOf(states: CellState[]): FlagMark {
+  if (states.includes('open')) return 'open'
+  return states.some((s) => s === 'confirmed' || s === 'corrected' || s === 'excluded') ? 'decided' : null
 }
 
 const STATE_OF_DECISION = { confirm: 'confirmed', correct: 'corrected', exclude: 'excluded' } as const
@@ -109,6 +119,8 @@ export function buildWeekly(rows: EffectiveRow[]): WeeklyLookup {
       paired: result.paired,
       openFlags: states.filter((s) => s === 'open').length,
       decidedFlags: states.filter((s) => s === 'confirmed' || s === 'corrected' || s === 'excluded').length,
+      actualMark: markOf(list.map((row) => row.actualState)),
+      targetMark: markOf(list.map((row) => row.targetState)),
     })
   }
   return lookup

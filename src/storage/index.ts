@@ -2,4 +2,5 @@ export { createDecisionStore, LocalStorageDecisionStore, MemoryDecisionStore, DE
 export { decisionsToCsv, parseDecisionsCsv, mergeDecisions, CSV_COLUMNS } from './csv'
 export { readPreference, writePreference } from './preferences'
 export { DECISION_LABEL } from './types'
+export { buildDecisions, allHaveSuggestions } from './decide'
 export type { Decision, DecisionKind, DecisionStore } from './types'

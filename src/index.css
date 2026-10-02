@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Surfaces and text */
+  --color-page: #f5f6f2;
+  --color-card: #ffffff;
+  --color-line: #dfe3dc;
+  --color-line-soft: #eceee9;
+  --color-ink: #1c2a22;
+  --color-ink-2: #4a5850;
+  --color-ink-3: #66736b;
+
+  /* Brand */
+  --color-brand: #1f5d3a;
+  --color-brand-soft: #e4efe8;
+
+  /* Status: tinted background, dark text on it, a solid colour for marks. Always used with a text label. */
+  --color-ok-bg: #e5f3ea;
+  --color-ok-ink: #12522d;
+  --color-ok-line: #a5d3b6;
+  --color-ok: #1f8a4c;
+  --color-warn-bg: #fdf0d3;
+  --color-warn-ink: #704200;
+  --color-warn-line: #e8c47a;
+  --color-warn: #c27c0e;
+  --color-bad-bg: #fce8e5;
+  --color-bad-ink: #84201a;
+  --color-bad-line: #eba8a1;
+  --color-bad: #c8372d;
+  --color-none-bg: #eceef0;
+  --color-none-ink: #46515a;
+  --color-none-line: #cfd5da;
+
+  /* Chart marks */
+  --color-actual: #2a78d6;
+  --color-target: #4a5850;
+  --color-flag: #6a46c6;
+  --color-flag-ink: #4b2fa0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+  /* The page itself must never scroll sideways. Wide tables scroll inside their own box. */
+  overflow-x: hidden;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 3px solid #2a78d6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

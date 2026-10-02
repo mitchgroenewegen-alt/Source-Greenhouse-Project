@@ -39,7 +39,7 @@ export function KpiCard({
             {config.unit} · {directionText(config)}
           </p>
         </div>
-        <StatusBadge status={score.status} label={score.status ? undefined : result.note === 'under-review' ? 'Under review' : result.note === 'no-target' ? `No ${plan}` : 'Not scored'} />
+        <StatusBadge status={score.status} label={score.status ? undefined : result.note === 'under-review' ? 'Under review' : result.note === 'no-target' ? `No ${plan}` : result.note === 'no-actual' ? 'Not recorded' : 'Not scored'} />
       </header>
 
       <p className="num text-sm text-ink-2">

@@ -35,7 +35,7 @@ function HarvestCell({ summary, withTonnes = false }: { summary: PeriodSummary; 
         <span className="text-base font-semibold">
           <span className="sr-only">Actual </span>
           {show(summary.actual, 2)}
-        </span>
+        </span>{' '}
         <span className="block text-xs text-ink-3 md:ml-1.5 md:inline">
           vs<span className="sr-only"> budget</span> {show(summary.budget, 2)}
           <span className="hidden md:inline"> kg/m²</span>

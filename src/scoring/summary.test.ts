@@ -5,7 +5,7 @@ import { detectFlags } from '../flags'
 import { loadTestData } from '../test/loadData'
 import { applyDecisions, buildWeekly } from './effective'
 import { STATUS_RANK, type Status } from './score'
-import { attentionKey, badness, compareByAttention, rollupStatus, scoreCultivationWeek, type CultivationScore } from './summary'
+import { attentionKey, badness, compareByAttention, rollupStatus, scoreCultivationWeek, scoreKpiResult, type CultivationScore } from './summary'
 
 const data = loadTestData()
 const flags = detectFlags(data.daily, data.cultivations)
@@ -201,5 +201,20 @@ describe('every week', () => {
         expect(scoreCultivationWeek(lookup, c.id, w.id).kpis).toHaveLength(36)
       }
     }
+  })
+})
+
+describe('scoreKpiResult notes', () => {
+  const base = { week: '2025-W34', cultivation: 'AZ-P1-Snack', kpi: 'Head thickness', days: 1, openFlags: 0, decidedFlags: 0, actualMark: null, targetMark: null }
+
+  it('says the actual is missing when the plan value is there but nothing was recorded', () => {
+    const result = scoreKpiResult(kpiConfig('Head thickness'), { ...base, actual: null, target: 9, paired: false })
+    expect(result.score.status).toBeNull()
+    expect(result.note).toBe('no-actual')
+  })
+
+  it('says the plan value is missing when only an actual was recorded', () => {
+    const result = scoreKpiResult(kpiConfig('Head thickness'), { ...base, actual: 9.4, target: null, paired: false })
+    expect(result.note).toBe('no-target')
   })
 })

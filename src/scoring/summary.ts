@@ -88,15 +88,31 @@ export function scoreCultivationWeek(lookup: WeeklyLookup, cultivation: string, 
   return { cultivation, week, kpis, categories }
 }
 
-/** A sort key for "worst first": red categories, then amber ones, then the shortfall on cumulative harvest. */
-export function attentionKey(score: CultivationScore): [number, number, number] {
-  const count = (s: Status) => score.categories.filter((c) => c.status === s).length
+/** Production against budget is the outcome the sort leads with: red 3, amber 2, green 1, not scored 0. */
+const PRODUCTION_RANK: Record<Status, number> = { green: 1, amber: 2, red: 3 }
+
+/**
+ * A sort key for "worst first", compared left to right (bigger = needs attention sooner):
+ *   1. the status of the Production category (red, amber, green, then not scored), because production against budget
+ *      is the outcome and the other four categories are drivers;
+ *   2. the number of red categories among the other four;
+ *   3. the number of amber categories among the other four;
+ *   4. the shortfall on cumulative harvest (a bigger shortfall first).
+ */
+export function attentionKey(score: CultivationScore): [number, number, number, number] {
+  const production = score.categories.find((c) => c.category === 'Production')
+  const others = score.categories.filter((c) => c.category !== 'Production')
+  const count = (s: Status) => others.filter((c) => c.status === s).length
   const cumulative = score.kpis.find((k) => k.config.name === 'Cumulative harvest')?.score.variance ?? 0
-  return [count('red'), count('amber'), -Math.min(cumulative, 1e6)]
+  return [production?.status ? PRODUCTION_RANK[production.status] : 0, count('red'), count('amber'), -Math.min(cumulative, 1e6)]
 }
 
 export function compareByAttention(a: CultivationScore, b: CultivationScore): number {
   const ka = attentionKey(a)
   const kb = attentionKey(b)
-  return kb[0] - ka[0] || kb[1] - ka[1] || kb[2] - ka[2] || a.cultivation.localeCompare(b.cultivation)
+  for (let i = 0; i < ka.length; i++) {
+    const diff = kb[i]! - ka[i]!
+    if (diff !== 0) return diff
+  }
+  return a.cultivation.localeCompare(b.cultivation)
 }

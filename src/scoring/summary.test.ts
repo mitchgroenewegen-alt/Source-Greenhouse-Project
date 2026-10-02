@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { CATEGORY_ROLLUP, kpiConfig } from '../config/kpis'
+import { CATEGORY_ORDER, CATEGORY_ROLLUP, kpiConfig } from '../config/kpis'
+import type { Category } from '../data/types'
 import { detectFlags } from '../flags'
 import { loadTestData } from '../test/loadData'
 import { applyDecisions, buildWeekly } from './effective'
-import { STATUS_RANK } from './score'
-import { attentionKey, badness, compareByAttention, rollupStatus, scoreCultivationWeek } from './summary'
+import { STATUS_RANK, type Status } from './score'
+import { attentionKey, badness, compareByAttention, rollupStatus, scoreCultivationWeek, type CultivationScore } from './summary'
 
 const data = loadTestData()
 const flags = detectFlags(data.daily, data.cultivations)
@@ -114,13 +115,82 @@ describe('category status on real weeks', () => {
 })
 
 describe('worst first', () => {
-  it('sorts by red categories, then amber, then cumulative harvest shortfall', () => {
+  type Statuses = Partial<Record<Category, Status | null>>
+  /** A made-up week: one status per category, and a cumulative harvest variance. */
+  const made = (id: string, statuses: Statuses, cumulative = 0): CultivationScore => ({
+    cultivation: id,
+    week: W34,
+    kpis: [{ config: kpiConfig('Cumulative harvest'), point: undefined, score: { status: null, variance: cumulative }, note: null }],
+    categories: CATEGORY_ORDER.map((category) => ({
+      category,
+      status: statuses[category] ?? 'green',
+      worst: null,
+      scoredCount: 1,
+      counts: { green: 0, amber: 0, red: 0 },
+      underReview: 0,
+    })),
+  })
+  const order = (...scores: CultivationScore[]) => [...scores].sort(compareByAttention).map((s) => s.cultivation)
+
+  it('leads with Production: red, then amber, then green, then not scored', () => {
+    const red = made('red', { Production: 'red' })
+    const amber = made('amber', { Production: 'amber' })
+    const green = made('green', { Production: 'green' })
+    const none = made('none', { Production: null })
+    expect(order(none, green, amber, red)).toEqual(['red', 'amber', 'green', 'none'])
+  })
+
+  it('puts a red Production ahead of a green Production whatever the other categories say', () => {
+    const productionRed = made('production-red', { Production: 'red' })
+    const driversRed = made('drivers-red', { Production: 'green', Plant: 'red', Climate: 'red', Irrigation: 'red', 'Resource usage': 'red' })
+    expect(order(driversRed, productionRed)).toEqual(['production-red', 'drivers-red'])
+    // and an amber Production beats a green one with four red drivers
+    expect(order(driversRed, made('production-amber', { Production: 'amber' }))).toEqual(['production-amber', 'drivers-red'])
+  })
+
+  it('breaks a Production tie on red categories among the other four, then amber, then the harvest shortfall', () => {
+    const base = { Production: 'amber' } as const
+    const twoRed = made('two-red', { ...base, Plant: 'red', Climate: 'red' })
+    const oneRedTwoAmber = made('one-red-two-amber', { ...base, Plant: 'red', Climate: 'amber', Irrigation: 'amber' })
+    const oneRedOneAmber = made('one-red-one-amber', { ...base, Plant: 'red', Climate: 'amber' })
+    expect(order(oneRedOneAmber, oneRedTwoAmber, twoRed)).toEqual(['two-red', 'one-red-two-amber', 'one-red-one-amber'])
+
+    const shortBy10 = made('short-10', base, -10)
+    const shortBy3 = made('short-3', base, -3)
+    const ahead = made('ahead', base, +5)
+    expect(order(ahead, shortBy3, shortBy10)).toEqual(['short-10', 'short-3', 'ahead'])
+  })
+
+  it('does not count Production twice: its status is not part of the red and amber counts', () => {
+    const [production] = attentionKey(made('a', { Production: 'red' }))
+    const [, reds, ambers] = attentionKey(made('a', { Production: 'red' }))
+    expect(production).toBe(3)
+    expect([reds, ambers]).toEqual([0, 0])
+  })
+
+  it('falls back to the cultivation name so the order is stable', () => {
+    expect(order(made('B', {}), made('A', {}))).toEqual(['A', 'B'])
+  })
+
+  it('on the real W34 data: Production status never improves down the list, and ties follow the other four categories', () => {
     const scores = data.cultivations.map((c) => scoreCultivationWeek(lookup, c.id, W34)).sort(compareByAttention)
     const keys = scores.map(attentionKey)
     for (let i = 1; i < keys.length; i++) {
       const [a, b] = [keys[i - 1]!, keys[i]!]
-      expect(a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] >= b[2])))).toBe(true)
+      expect(a[0]).toBeGreaterThanOrEqual(b[0])
+      if (a[0] === b[0]) {
+        expect(a[1]).toBeGreaterThanOrEqual(b[1])
+        if (a[1] === b[1]) expect(a[2]).toBeGreaterThanOrEqual(b[2])
+      }
     }
+  })
+
+  it('no longer puts AZ-P2-Snack first at W34: its Production is on track even though four other categories are red', () => {
+    const scores = data.cultivations.map((c) => scoreCultivationWeek(lookup, c.id, W34)).sort(compareByAttention)
+    const azp2 = scores.find((s) => s.cultivation === 'AZ-P2-Snack')!
+    expect(azp2.categories.find((c) => c.category === 'Production')!.status).toBe('green')
+    expect(scores[0]!.cultivation).not.toBe('AZ-P2-Snack')
+    expect(scores[0]!.categories.find((c) => c.category === 'Production')!.status).toBe('red')
   })
 })
 

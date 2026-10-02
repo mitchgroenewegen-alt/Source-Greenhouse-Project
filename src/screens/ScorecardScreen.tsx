@@ -60,7 +60,7 @@ export default function ScorecardScreen() {
             {cards.length} of {cultivations.length} cultivations.
             <span className="hidden md:inline">
               {' '}
-              Sorted by most red categories, then most amber, then the shortfall on cumulative harvest.
+              Sorted by Production first (red, then amber, then on track), then by the number of red and amber categories among the other four, then by the shortfall on cumulative harvest.
             </span>
           </p>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

@@ -1,5 +1,5 @@
 export { detectFlags, median } from './detect'
-export { groupFlags, RULE_TITLE, RULE_ORDER } from './group'
+export { fieldWord, groupFlags, RULE_TITLE, RULE_ORDER, ruleTitleFor } from './group'
 export { FLAG_THRESHOLDS, flagSettings } from './settings'
 export { cellId } from './types'
 export type { Field, Flag, FlagGroup, RuleId, Severity } from './types'

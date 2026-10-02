@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { KpiConfig } from '../../config/kpis'
+import { planWord, type KpiConfig } from '../../config/kpis'
 import { shortWeek } from '../../data/dates'
 import type { WeekInfo } from '../../data/types'
 import { formatValue, formatVariance } from '../../lib/kpiFormat'
@@ -72,7 +72,7 @@ function ChartTooltip({
       <div className="num mt-1 grid grid-cols-[auto_auto] gap-x-3">
         <span className="text-ink-2">Actual</span>
         <span className="text-right font-semibold">{formatValue(config, row.actual)}</span>
-        <span className="text-ink-2">Budget</span>
+        <span className="text-ink-2">{planWord(config, { capitalised: true })}</span>
         <span className="text-right font-semibold">{formatValue(config, row.target)}</span>
         {score.variance !== null && (
           <>
@@ -140,7 +140,8 @@ export function KpiChart({
 }
 
 /** What the lines and shading mean. Plain HTML so it reads the same everywhere. */
-export function ChartLegend({ hasTarget, hasFlags }: { hasTarget: boolean; hasFlags: boolean }) {
+/** `planLabel` is the KPI's plan word, capitalised: "Budget" or "Target". */
+export function ChartLegend({ hasTarget, hasFlags, planLabel }: { hasTarget: boolean; hasFlags: boolean; planLabel: string }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Chart key">
       <li className="flex items-center gap-1.5">
@@ -155,7 +156,7 @@ export function ChartLegend({ hasTarget, hasFlags }: { hasTarget: boolean; hasFl
             <svg width="22" height="8" aria-hidden="true">
               <line x1="0" y1="4" x2="22" y2="4" stroke={TARGET} strokeWidth="2.5" strokeDasharray="5 3" />
             </svg>
-            Budget
+            {planLabel}
           </li>
           <li className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-4 rounded-sm bg-ok/20" aria-hidden="true" />

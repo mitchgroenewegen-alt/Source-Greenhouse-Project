@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { kpiConfig } from '../../config/kpis'
+import { kpiConfig, planWord } from '../../config/kpis'
 import { formatDate, formatRange } from '../../data/dates'
-import { RULE_TITLE, type FlagGroup } from '../../flags'
+import { fieldWord, ruleTitleFor, type FlagGroup } from '../../flags'
 import { plain } from '../../lib/format'
 import { formatDateTime } from '../../lib/format'
 import { DECISION_LABEL, type Decision, type DecisionKind } from '../../storage'
@@ -48,12 +48,14 @@ export function FlagGroupCard({
   const [showAll, setShowAll] = useState(false)
   const config = kpiConfig(group.kpi)
   const missing = group.rule === 'missing-value'
+  // The workbook column is always "Target"; a budget KPI says so, a target KPI just names the column.
+  const columnLabel = group.field === 'actual' ? 'Actual column' : planWord(config) === 'budget' ? 'Budget (target column)' : 'Target column'
   const samples = showAll ? group.flags : group.flags.slice(0, 3)
   const range =
     group.startDate === group.endDate ? formatDate(group.startDate) : formatRange(group.startDate, group.endDate)
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm" aria-label={`${group.cultivation}, ${group.kpi}, ${group.field}`}>
+    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm" aria-label={`${group.cultivation}, ${group.kpi}, ${fieldWord(group.field, group.kpi)}`}>
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-base font-semibold leading-tight">
@@ -63,7 +65,7 @@ export function FlagGroupCard({
             · {group.kpi}
           </h3>
           <p className="text-sm text-ink-2">
-            {group.field === 'target' ? 'Budget (target column)' : 'Actual column'} · {range}
+            {columnLabel} · {range}
             {group.flags.length > 1 ? ` · ${group.flags.length} values` : ''}
           </p>
         </div>
@@ -72,7 +74,7 @@ export function FlagGroupCard({
             <FlagIcon width={12} height={12} />
             {SEVERITY_WORD[group.severity]}
           </span>
-          <span className="whitespace-nowrap rounded-full bg-flag/10 px-2 py-0.5 text-xs font-semibold text-flag-ink">{RULE_TITLE[group.rule]}</span>
+          <span className="whitespace-nowrap rounded-full bg-flag/10 px-2 py-0.5 text-xs font-semibold text-flag-ink">{ruleTitleFor(group.rule, group.kpi)}</span>
         </div>
       </header>
 

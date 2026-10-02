@@ -1,10 +1,10 @@
-import { CATEGORY_LABEL } from '../../config/kpis'
+import { CATEGORY_LABEL, kpisInCategory, planWordForAll } from '../../config/kpis'
 import { formatVariance } from '../../lib/kpiFormat'
 import type { CategoryResult } from '../../scoring/summary'
 import { StatusBadge } from '../ui/StatusBadge'
 
 function detail(c: CategoryResult): string {
-  if (!c.worst) return c.underReview > 0 ? 'Waiting for data checks' : 'No KPI with a budget this week'
+  if (!c.worst) return c.underReview > 0 ? 'Waiting for data checks' : `No KPI with a ${planWordForAll(kpisInCategory(c.category))} this week`
   const { config, score } = c.worst
   const worst = c.worst.score.status === 'green' ? `Weakest: ${config.name}` : `Worst: ${config.name} (${formatVariance(config, score.variance)})`
   const { red, amber, green } = c.counts

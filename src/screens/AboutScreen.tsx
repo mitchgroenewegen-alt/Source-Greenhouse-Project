@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CATEGORY_LABEL, CATEGORY_ORDER, CATEGORY_ROLLUP, kpisInCategory } from '../config/kpis'
+import { CATEGORY_LABEL, CATEGORY_ORDER, CATEGORY_ROLLUP, kpisInCategory, type PlanLabel } from '../config/kpis'
 import { formatDate } from '../data/dates'
 import { FLAG_THRESHOLDS as T } from '../flags'
 import { directionText, toleranceText } from '../lib/kpiFormat'
@@ -27,6 +27,16 @@ function shareWords(share: number): string {
 
 const AGGREGATION_WORD = { sum: 'Sum', average: 'Average', last: 'Last value' } as const
 
+/** The KPIs whose plan value is called `label`: a whole category by its name, or single KPIs by name when a category is split (Resources). */
+function kpisSaying(label: PlanLabel): string {
+  const names = CATEGORY_ORDER.flatMap((category) => {
+    const all = kpisInCategory(category)
+    const mine = all.filter((k) => k.planLabel === label)
+    return mine.length === 0 ? [] : mine.length === all.length ? [CATEGORY_LABEL[category]] : mine.map((k) => k.name)
+  })
+  return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(names)
+}
+
 export default function AboutScreen() {
   const { data } = useCropData()
   const { meta } = data
@@ -38,7 +48,7 @@ export default function AboutScreen() {
       <div>
         <h1 className="text-2xl font-semibold">About this tool</h1>
         <p className="text-ink-2">
-          Crop Performance shows how each of the {meta.cultivationCount} tomato cultivations is doing against budget, and which inputs a person should check before trusting a number.
+          Crop Performance shows how each of the {meta.cultivationCount} tomato cultivations is doing against its budget or target, and which inputs a person should check before trusting a number.
         </p>
       </div>
 
@@ -52,15 +62,18 @@ export default function AboutScreen() {
       </Section>
 
       <Section title="How a KPI is scored">
+        <p>
+          Every KPI is compared with a plan value. It is called a <strong>budget</strong> for {kpisSaying('budget')}, and a <strong>target</strong> for {kpisSaying('target')}. Both come from the Target column of the workbook.
+        </p>
         <ol className="list-decimal pl-5">
           <li>
-            Each KPI is added up over the week with the rule from the workbook’s KPI dictionary: <strong>sum</strong> (e.g. harvest), <strong>average</strong> (e.g. temperature) or <strong>last value</strong> (cumulative harvest, and waste, which is the last value of the week). The budget is added up with the same rule, using only days that have both an actual and a budget.
+            Each KPI is added up over the week with the rule from the workbook’s KPI dictionary: <strong>sum</strong> (e.g. harvest), <strong>average</strong> (e.g. temperature) or <strong>last value</strong> (cumulative harvest, and waste, which is the last value of the week). The plan value is added up with the same rule, using only days that have both an actual and a plan value.
           </li>
           <li>
-            The variance is the actual compared with the budget, in percent of the budget or, for temperatures, index KPIs and waste, in the KPI’s own unit (waste in percentage points, so 1.5 % against a 1.0 % budget is +0.5 points).
+            The variance is the actual compared with the plan value, in percent of it or, for temperatures, index KPIs and waste, in the KPI’s own unit (waste in percentage points, so 1.5 % against a 1.0 % budget is +0.5 points).
           </li>
           <li>
-            The variance is compared with the green and amber tolerances for that KPI. Beyond amber it is red. A KPI with no budget for the week is shown but not scored.
+            The variance is compared with the green and amber tolerances for that KPI. Beyond amber it is red. A KPI with no plan value for the week is shown but not scored.
           </li>
           <li>
             A category (Production, Plant, Climate, Irrigation, Resources) is rated from the share of its scored KPIs that are red or green: <strong>Off track</strong> when at least {shareWords(CATEGORY_ROLLUP.redShare)} of them are red, <strong>On track</strong> when at least {shareWords(CATEGORY_ROLLUP.greenShare)} are green (and fewer than {shareWords(CATEGORY_ROLLUP.redShare)} are red), otherwise <strong>Watch</strong>. A KPI without a score that week is not counted. The badge line still names the worst KPI, and how many are red, amber and green.
@@ -116,7 +129,7 @@ export default function AboutScreen() {
           <li><strong>Unit slips:</strong> a Fahrenheit reading entered as Celsius, a fraction (0.4) entered where a percent (40) belongs, or a value ten times too big or too small. Where the fix is clear, a corrected value is suggested.</li>
           <li><strong>Impossible values:</strong> humidity or any percentage above 100, negative amounts, drain pH outside {T.phRange[0]} to {T.phRange[1]}.</li>
           <li><strong>Jumps:</strong> a value more than {T.jumpHigh} times, or less than {T.jumpLow} times, the cultivation’s own median for that KPI.</li>
-          <li><strong>Target and actual far apart:</strong> over a week, the budget is more than {T.apartFactor} times away from the actual.</li>
+          <li><strong>Plan and actual far apart:</strong> over a week, the budget or target is more than {T.apartFactor} times away from the actual.</li>
           <li><strong>Missing values:</strong> an empty cell. It is left out and never counted as zero.</li>
         </ul>
         <p>
@@ -126,14 +139,14 @@ export default function AboutScreen() {
 
       <Section title="Assumptions">
         <ul className="list-disc pl-5">
-          <li>Budget is the Target column of the workbook.</li>
+          <li>The plan value, called a budget or a target as described under “How a KPI is scored”, is the Target column of the workbook.</li>
           <li>The grain is the ISO week (Monday to Sunday). Week {last.id.split('-')[1]} is the latest full week.</li>
-          <li>The dictionary’s aggregation rule applies to targets as well as actuals.</li>
+          <li>The dictionary’s aggregation rule applies to the plan values as well as the actuals.</li>
           <li>The thresholds are starting values, not agreed standards. They are meant to be tuned in <code>src/config/kpis.ts</code>. The share that makes a category red or green is <code>CATEGORY_ROLLUP</code> in the same file. Even so, expect a fair number of red categories in some weeks, especially Irrigation in the latest weeks.</li>
           <li>An empty cell means “not recorded”. It is never treated as zero.</li>
           <li>Ontario’s two cultivations (Cherry and TOV) share a greenhouse but are scored separately, each with its own growing area.</li>
           <li>Units are metric. Tonnes are kg/m² × growing area ÷ 1000; facility totals in kg/m² are weighted by growing area.</li>
-          <li>The workbook states that targets have not been checked. Some targets look like typing slips; the data checks flag them instead of silently fixing them.</li>
+          <li>The workbook states that its targets have not been checked. Some budgets and targets look like typing slips; the data checks flag them instead of silently fixing them.</li>
         </ul>
       </Section>
 

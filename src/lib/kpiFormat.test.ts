@@ -14,7 +14,7 @@ describe('absolute variances', () => {
 
   it('keeps the KPI unit for everything else, and % for the percent-variance KPIs', () => {
     expect(formatVariance(kpiConfig('Temperature (24h)'), 1.5)).toContain('°C')
-    expect(toleranceText(kpiConfig('Temperature (24h)')).green).toBe('within ±1.5 °C of budget')
+    expect(toleranceText(kpiConfig('Temperature (24h)')).green).toBe('within ±1.5 °C of target')
     expect(formatVariance(kpiConfig('Harvest'), -20)).toBe('-20.0%')
   })
 })

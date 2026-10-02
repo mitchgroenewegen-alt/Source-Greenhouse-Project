@@ -82,7 +82,7 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
         </li>
       </ul>
 
-      <table className="num w-full text-sm">
+      <table className="num w-full text-xs sm:text-sm">
         <caption className="sr-only">
           {facility}: harvest against budget in {unitLabel}
         </caption>

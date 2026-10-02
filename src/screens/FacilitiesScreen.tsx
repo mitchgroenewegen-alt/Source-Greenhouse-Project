@@ -57,7 +57,7 @@ export default function FacilitiesScreen() {
         Tonnes are kg/m² × growing area ÷ 1000. The facility total in kg/m² is weighted by growing area, so a large greenhouse counts for more than a small one.
       </p>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {byFacility.map(({ facility, rows }) => (
           <FacilityCard key={facility} facility={facility} rows={rows} period={period} unit={unit} />
         ))}

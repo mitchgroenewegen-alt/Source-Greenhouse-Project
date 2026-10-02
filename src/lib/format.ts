@@ -10,9 +10,12 @@ export function fixed(value: number, decimals: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
 }
 
-/** "+3.2%" / "-6.9%" */
-export function signedPercent(value: number, decimals = 1): string {
-  if (!Number.isFinite(value)) return value > 0 ? 'above a zero target' : 'below a zero target'
+/**
+ * "+3.2%" / "-6.9%". When the plan value is 0 the variance is infinite and there is no percentage to show, so the text
+ * names that zero plan value with `plan`: "budget" (the default, for the production-only screens) or "target".
+ */
+export function signedPercent(value: number, decimals = 1, plan: string = 'budget'): string {
+  if (!Number.isFinite(value)) return `${value > 0 ? 'above' : 'below'} a zero ${plan}`
   const sign = value > 0 ? '+' : value < 0 ? '-' : ''
   return `${sign}${Math.abs(value).toFixed(decimals)}%`
 }

@@ -1,4 +1,4 @@
-import type { KpiConfig } from '../../config/kpis'
+import { planWordForAll, type KpiConfig } from '../../config/kpis'
 import { shortWeek } from '../../data/dates'
 import type { WeekInfo } from '../../data/types'
 import { formatValue } from '../../lib/kpiFormat'
@@ -10,7 +10,7 @@ const CELL: Record<Status, string> = { green: 'bg-ok-bg/60', amber: 'bg-warn-bg/
 const GLYPH = { green: CheckIcon, amber: AlertIcon, red: CrossIcon }
 const GLYPH_COLOR: Record<Status, string> = { green: 'text-ok', amber: 'text-warn', red: 'text-bad' }
 
-/** Every KPI of the category by week: actual on top, budget below, a status mark in the corner. Scrolls inside its own box. */
+/** Every KPI of the category by week: actual on top, budget or target below, a status mark in the corner. Scrolls inside its own box. */
 export function WeeklyTable({
   kpis,
   weeks,
@@ -27,7 +27,7 @@ export function WeeklyTable({
       <h3 id="weekly-table-title" className="px-4 pt-3 text-base font-semibold">
         Week by week
       </h3>
-      <p className="px-4 pb-2 text-xs text-ink-3">Actual on top, budget below. The first column stays in view when you scroll sideways.</p>
+      <p className="px-4 pb-2 text-xs text-ink-3">Actual on top, {planWordForAll(kpis)} below. The first column stays in view when you scroll sideways.</p>
       <div className="overflow-x-auto border-t border-line-soft" tabIndex={0} role="region" aria-label="Weekly table, scrolls sideways">
         <table className="num w-max min-w-full border-collapse text-sm">
           <thead>

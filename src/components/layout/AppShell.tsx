@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { rawMode } = useCropData()
   return (
     <div className="min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
-      <header className="z-30 border-b border-line bg-card md:sticky md:top-0 md:bg-card/95 md:backdrop-blur">
+      <header id="app-header" className="z-30 border-b border-line bg-card md:sticky md:top-0 md:bg-card/95 md:backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
           <Link to="/" className="flex items-center gap-2 text-lg font-semibold text-brand">
             <img src={`${import.meta.env.BASE_URL}icons/icon.svg`} alt="" width={28} height={28} className="rounded-md" />

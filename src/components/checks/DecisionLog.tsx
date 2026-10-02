@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { formatDate, formatRange } from '../../data/dates'
 import { formatDateTime, plain } from '../../lib/format'
+import { fieldWord } from '../../flags'
 import { DECISION_LABEL, decisionsToCsv, mergeDecisions, parseDecisionsCsv, type Decision } from '../../storage'
 
 interface Entry {
@@ -123,7 +124,7 @@ export function DecisionLog({
               <li key={key} className="flex flex-wrap items-start justify-between gap-2 p-3">
                 <div className="min-w-0 text-sm">
                   <p className="font-semibold">
-                    {first.cultivation} · {first.kpi} · {first.field === 'target' ? 'budget' : 'actual'}
+                    {first.cultivation} · {first.kpi} · {fieldWord(first.field, first.kpi)}
                   </p>
                   <p>
                     {DECISION_LABEL[first.kind]}

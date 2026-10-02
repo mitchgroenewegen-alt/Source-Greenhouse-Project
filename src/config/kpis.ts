@@ -11,6 +11,11 @@
 // Percent variance is (actual - target) / |target| in %, absolute variance is actual - target in the KPI's unit.
 // A KPI with no target for the period is shown but never scored.
 //
+// What the plan value is called on screen is each KPI's `planLabel`: 'budget' for Production and for Heating energy
+// and LED lighting, 'target' for the growing KPIs (Plant, Climate, Irrigation, Irrigation water). The workbook calls
+// the column "Target" for all of them; this only changes the word people read. Change a KPI's `planLabel` here and
+// every screen follows.
+//
 // A category (Production, Plant, ...) is then rated from the share of its scored KPIs that are red or green:
 // see CATEGORY_ROLLUP at the bottom of this file.
 
@@ -18,6 +23,8 @@ import type { Aggregation, Category } from '../data/types'
 
 export type Direction = 'higher' | 'lower' | 'target'
 export type VarianceMode = 'percent' | 'absolute'
+/** The word for the plan value on screen. */
+export type PlanLabel = 'budget' | 'target'
 
 export interface KpiConfig {
   name: string
@@ -25,6 +32,8 @@ export interface KpiConfig {
   unit: string
   /** How days add up to a week. Must match the KPI dictionary in the workbook (checked when the data is prepared). */
   aggregation: Aggregation
+  /** What the plan value is called in the UI: a budget (Production, Heating energy, LED lighting) or a target (the growing KPIs). */
+  planLabel: PlanLabel
   direction: Direction
   variance: VarianceMode
   /** Green tolerance: percent points (variance 'percent') or unit (variance 'absolute'). */
@@ -52,52 +61,52 @@ const temperature = closeToTargetAbsolute(1.5, 3)
 
 export const KPI_CONFIG: KpiConfig[] = [
   // Production
-  { name: 'Harvest', category: 'Production', unit: 'kg/m²', aggregation: 'sum', ...higherIsBetter(), showOnScorecard: true, decimals: 2 },
-  { name: 'Cumulative harvest', category: 'Production', unit: 'kg/m²', aggregation: 'last', ...higherIsBetter(), showOnScorecard: true, decimals: 2 },
-  { name: 'Fruit weight', category: 'Production', unit: 'g', aggregation: 'average', ...closeToTarget(5, 10), showOnScorecard: true, decimals: 1 },
+  { name: 'Harvest', category: 'Production', unit: 'kg/m²', aggregation: 'sum', planLabel: 'budget', ...higherIsBetter(), showOnScorecard: true, decimals: 2 },
+  { name: 'Cumulative harvest', category: 'Production', unit: 'kg/m²', aggregation: 'last', planLabel: 'budget', ...higherIsBetter(), showOnScorecard: true, decimals: 2 },
+  { name: 'Fruit weight', category: 'Production', unit: 'g', aggregation: 'average', planLabel: 'budget', ...closeToTarget(5, 10), showOnScorecard: true, decimals: 1 },
   // Waste is a small percentage (about 1 to 5 %), so its tolerance is in percentage points: 0.6 % against a 0.5 % budget is fine.
-  { name: 'Waste', category: 'Production', unit: '%', aggregation: 'last', ...lowerIsBetterAbsolute(0.5, 1.5), showOnScorecard: true, decimals: 1 },
+  { name: 'Waste', category: 'Production', unit: '%', aggregation: 'last', planLabel: 'budget', ...lowerIsBetterAbsolute(0.5, 1.5), showOnScorecard: true, decimals: 1 },
 
   // Plant
-  { name: 'Head thickness', category: 'Plant', unit: 'mm', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Length growth', category: 'Plant', unit: 'cm/week', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Flowering height', category: 'Plant', unit: 'cm', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Leaf length', category: 'Plant', unit: 'cm', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Leaves per stem', category: 'Plant', unit: 'leaves', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Flowering speed', category: 'Plant', unit: 'trusses/week', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
-  { name: 'Set speed', category: 'Plant', unit: 'trusses/week', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
-  { name: 'Fruit set', category: 'Plant', unit: 'fruits/m²/week', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Plant load', category: 'Plant', unit: 'fruits/m²', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 0 },
-  { name: 'Fruits per truss (after pruning)', category: 'Plant', unit: 'fruits/truss', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Head thickness', category: 'Plant', unit: 'mm', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Length growth', category: 'Plant', unit: 'cm/week', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Flowering height', category: 'Plant', unit: 'cm', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Leaf length', category: 'Plant', unit: 'cm', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Leaves per stem', category: 'Plant', unit: 'leaves', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Flowering speed', category: 'Plant', unit: 'trusses/week', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
+  { name: 'Set speed', category: 'Plant', unit: 'trusses/week', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
+  { name: 'Fruit set', category: 'Plant', unit: 'fruits/m²/week', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Plant load', category: 'Plant', unit: 'fruits/m²', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 0 },
+  { name: 'Fruits per truss (after pruning)', category: 'Plant', unit: 'fruits/truss', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
   // Index KPIs: the plan is 0 (balanced), so the tolerance is in index points, not percent.
-  { name: 'Plant balance factor', category: 'Plant', unit: 'index', aggregation: 'average', ...closeToTargetAbsolute(0.25, 0.5), showOnScorecard: false, decimals: 2 },
-  { name: 'Generative trend indicator', category: 'Plant', unit: 'index', aggregation: 'average', ...closeToTargetAbsolute(0.15, 0.3), showOnScorecard: false, decimals: 2 },
-  { name: 'Fruit development time', category: 'Plant', unit: 'days', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Plant balance factor', category: 'Plant', unit: 'index', aggregation: 'average', planLabel: 'target', ...closeToTargetAbsolute(0.25, 0.5), showOnScorecard: false, decimals: 2 },
+  { name: 'Generative trend indicator', category: 'Plant', unit: 'index', aggregation: 'average', planLabel: 'target', ...closeToTargetAbsolute(0.15, 0.3), showOnScorecard: false, decimals: 2 },
+  { name: 'Fruit development time', category: 'Plant', unit: 'days', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
 
   // Climate
-  { name: 'Temperature (24h)', category: 'Climate', unit: '°C', aggregation: 'average', ...temperature, showOnScorecard: false, decimals: 1 },
-  { name: 'Temperature (day)', category: 'Climate', unit: '°C', aggregation: 'average', ...temperature, showOnScorecard: false, decimals: 1 },
-  { name: 'Temperature (night)', category: 'Climate', unit: '°C', aggregation: 'average', ...temperature, showOnScorecard: false, decimals: 1 },
-  { name: 'Day/night temperature difference', category: 'Climate', unit: '°C', aggregation: 'average', ...temperature, showOnScorecard: false, decimals: 1 },
-  { name: 'Relative humidity', category: 'Climate', unit: '%', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Humidity deficit', category: 'Climate', unit: 'g/kg', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
-  { name: 'CO2 (day)', category: 'Climate', unit: 'ppm', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 0 },
-  { name: 'Solar radiation', category: 'Climate', unit: 'J/cm²', aggregation: 'sum', ...closeToTarget(), showOnScorecard: false, decimals: 0 },
-  { name: 'PAR light sum', category: 'Climate', unit: 'mol/m²', aggregation: 'sum', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'RTR (radiation-temperature ratio)', category: 'Climate', unit: '°C per J/cm²', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 4 },
+  { name: 'Temperature (24h)', category: 'Climate', unit: '°C', aggregation: 'average', planLabel: 'target', ...temperature, showOnScorecard: false, decimals: 1 },
+  { name: 'Temperature (day)', category: 'Climate', unit: '°C', aggregation: 'average', planLabel: 'target', ...temperature, showOnScorecard: false, decimals: 1 },
+  { name: 'Temperature (night)', category: 'Climate', unit: '°C', aggregation: 'average', planLabel: 'target', ...temperature, showOnScorecard: false, decimals: 1 },
+  { name: 'Day/night temperature difference', category: 'Climate', unit: '°C', aggregation: 'average', planLabel: 'target', ...temperature, showOnScorecard: false, decimals: 1 },
+  { name: 'Relative humidity', category: 'Climate', unit: '%', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Humidity deficit', category: 'Climate', unit: 'g/kg', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
+  { name: 'CO2 (day)', category: 'Climate', unit: 'ppm', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 0 },
+  { name: 'Solar radiation', category: 'Climate', unit: 'J/cm²', aggregation: 'sum', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 0 },
+  { name: 'PAR light sum', category: 'Climate', unit: 'mol/m²', aggregation: 'sum', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'RTR (radiation-temperature ratio)', category: 'Climate', unit: '°C per J/cm²', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 4 },
 
   // Irrigation
-  { name: 'Irrigation per unit of light', category: 'Irrigation', unit: 'dl per MJ/m²', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
-  { name: 'Drain', category: 'Irrigation', unit: '%', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Drain EC', category: 'Irrigation', unit: 'mS/cm', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
-  { name: 'Drain pH', category: 'Irrigation', unit: 'pH', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
-  { name: 'Dry-down at first irrigation', category: 'Irrigation', unit: '%', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'First irrigation after sunrise', category: 'Irrigation', unit: 'hours', aggregation: 'average', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Irrigation per unit of light', category: 'Irrigation', unit: 'dl per MJ/m²', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
+  { name: 'Drain', category: 'Irrigation', unit: '%', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Drain EC', category: 'Irrigation', unit: 'mS/cm', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
+  { name: 'Drain pH', category: 'Irrigation', unit: 'pH', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 2 },
+  { name: 'Dry-down at first irrigation', category: 'Irrigation', unit: '%', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'First irrigation after sunrise', category: 'Irrigation', unit: 'hours', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
 
   // Resource usage
-  { name: 'Irrigation water', category: 'Resource usage', unit: 'L/m²', aggregation: 'sum', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
-  { name: 'Heating energy (approx.)', category: 'Resource usage', unit: 'kWh/m²', aggregation: 'sum', ...lowerIsBetter(), showOnScorecard: false, decimals: 2 },
-  { name: 'LED lighting', category: 'Resource usage', unit: 'hours', aggregation: 'sum', ...lowerIsBetter(), showOnScorecard: false, decimals: 1 },
+  { name: 'Irrigation water', category: 'Resource usage', unit: 'L/m²', aggregation: 'sum', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },
+  { name: 'Heating energy (approx.)', category: 'Resource usage', unit: 'kWh/m²', aggregation: 'sum', planLabel: 'budget', ...lowerIsBetter(), showOnScorecard: false, decimals: 2 },
+  { name: 'LED lighting', category: 'Resource usage', unit: 'hours', aggregation: 'sum', planLabel: 'budget', ...lowerIsBetter(), showOnScorecard: false, decimals: 1 },
 ]
 
 const BY_NAME = new Map(KPI_CONFIG.map((k) => [k.name, k]))
@@ -110,6 +119,21 @@ export function kpiConfig(name: string): KpiConfig {
 
 export function hasKpiConfig(name: string): boolean {
   return BY_NAME.has(name)
+}
+
+/** "budget" or "target" for this KPI's plan value, as it is written on screen. `capitalised` for the start of a sentence or a label. */
+export function planWord(config: Pick<KpiConfig, 'planLabel'>, { capitalised = false }: { capitalised?: boolean } = {}): string {
+  return capitalised ? config.planLabel.charAt(0).toUpperCase() + config.planLabel.slice(1) : config.planLabel
+}
+
+/**
+ * The plan word for a group of KPIs: "budget", "target", or "budget or target" when they mix both (Resources does).
+ * Used where the text names the plan value of a whole table or category rather than of one KPI.
+ */
+export function planWordForAll(configs: Pick<KpiConfig, 'planLabel'>[], { capitalised = false }: { capitalised?: boolean } = {}): string {
+  const labels = (['budget', 'target'] as const).filter((label) => configs.some((c) => c.planLabel === label))
+  const text = labels.length === 0 ? 'target' : labels.join(' or ')
+  return capitalised ? text.charAt(0).toUpperCase() + text.slice(1) : text
 }
 
 /** Categories in the order they are shown, with the short label used on badges and tabs. */

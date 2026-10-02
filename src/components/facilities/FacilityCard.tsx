@@ -3,6 +3,7 @@ import { fixed } from '../../lib/format'
 import { signedPercent } from '../../lib/format'
 import { StatusBadge } from '../ui/StatusBadge'
 import { facilityTotal, toTonnes, type HarvestRow, type Period } from './facilityTotals'
+import { facilityCardId } from './facilitySummary'
 
 export type Unit = 'kgm2' | 'tonnes'
 
@@ -36,7 +37,13 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
   const show = (kg: number | null, area: number) => (kg === null ? '–' : fixed(unit === 'tonnes' ? toTonnes(kg, area) : kg, decimals))
 
   return (
-    <section aria-labelledby={`fac-${facility}`} className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-3 shadow-sm sm:p-4">
+    // The id and tabIndex let the summary table at the top of the screen scroll here (it works out the offset itself) and move focus to the card.
+    <section
+      id={facilityCardId(facility)}
+      tabIndex={-1}
+      aria-labelledby={`fac-${facility}`}
+      className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-3 shadow-sm sm:p-4"
+    >
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 id={`fac-${facility}`} className="text-lg font-semibold">

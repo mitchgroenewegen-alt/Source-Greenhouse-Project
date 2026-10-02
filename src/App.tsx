@@ -1,0 +1,33 @@
+import { lazy, Suspense } from 'react'
+import { Route, Routes } from 'react-router-dom'
+import { AppShell } from './components/layout/AppShell'
+import ScorecardScreen from './screens/ScorecardScreen'
+import { CropDataProvider } from './state/CropDataContext'
+import { ViewProvider } from './state/ViewContext'
+
+// The screens with charts load on demand, so the first screen (the Scorecard) opens quickly on a phone.
+const CultivationScreen = lazy(() => import('./screens/CultivationScreen'))
+const FacilitiesScreen = lazy(() => import('./screens/FacilitiesScreen'))
+const DataChecksScreen = lazy(() => import('./screens/DataChecksScreen'))
+const AboutScreen = lazy(() => import('./screens/AboutScreen'))
+
+export default function App() {
+  return (
+    <CropDataProvider>
+      <ViewProvider>
+        <AppShell>
+          <Suspense fallback={<p role="status" className="p-6 text-center text-ink-2">Loading…</p>}>
+            <Routes>
+              <Route path="/" element={<ScorecardScreen />} />
+              <Route path="/cultivation/:id" element={<CultivationScreen />} />
+              <Route path="/facilities" element={<FacilitiesScreen />} />
+              <Route path="/checks" element={<DataChecksScreen />} />
+              <Route path="/about" element={<AboutScreen />} />
+              <Route path="*" element={<ScorecardScreen />} />
+            </Routes>
+          </Suspense>
+        </AppShell>
+      </ViewProvider>
+    </CropDataProvider>
+  )
+}

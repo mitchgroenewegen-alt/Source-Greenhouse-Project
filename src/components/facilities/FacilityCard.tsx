@@ -37,12 +37,12 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
   const show = (kg: number | null, area: number) => (kg === null ? '–' : fixed(unit === 'tonnes' ? toTonnes(kg, area) : kg, decimals))
 
   return (
-    // The id and tabIndex let the summary table at the top of the screen scroll here and move focus to the card.
+    // The id and tabIndex let the summary table at the top of the screen scroll here (it works out the offset itself) and move focus to the card.
     <section
       id={facilityCardId(facility)}
       tabIndex={-1}
       aria-labelledby={`fac-${facility}`}
-      className="flex min-w-0 scroll-mt-4 flex-col gap-3 rounded-2xl border border-line bg-card p-3 shadow-sm md:scroll-mt-20 sm:p-4"
+      className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-3 shadow-sm sm:p-4"
     >
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>

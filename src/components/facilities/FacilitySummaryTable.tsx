@@ -5,12 +5,22 @@ import type { FacilitySummaryRow, PeriodSummary } from './facilitySummary'
 
 const show = (value: number | null, decimals: number) => (value === null ? '–' : fixed(value, decimals))
 
-/** Scroll to a facility's card and move keyboard focus there, so a screen reader starts reading at the breakdown. */
+/** Breathing room kept between the bottom of the sticky app header and the top of the card, in px. */
+const GAP_BELOW_HEADER = 16
+
+/**
+ * Scroll to a facility's card and move keyboard focus there, so a screen reader starts reading at the breakdown.
+ * From md up the app header is sticky and its height depends on the width (the navigation wraps on a tablet), so the
+ * offset is measured, not a fixed scroll margin that would leave the card's title under the header.
+ */
 function jumpToCard(id: string) {
   const card = document.getElementById(id)
   if (!card) return
+  const header = document.getElementById('app-header')
+  const stickyHeaderBottom = header && getComputedStyle(header).position === 'sticky' ? header.getBoundingClientRect().bottom : 0
+  const top = card.getBoundingClientRect().top + window.scrollY - stickyHeaderBottom - GAP_BELOW_HEADER
   const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  card.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? 'auto' : 'smooth' })
   card.focus({ preventScroll: true })
 }
 

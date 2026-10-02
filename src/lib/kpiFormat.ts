@@ -15,7 +15,7 @@ export function formatValueWithUnit(config: KpiConfig, value: number | null): st
 /** "+5.7%" for percent KPIs, "+1.2 °C" for absolute ones. */
 export function formatVariance(config: KpiConfig, variance: number | null): string {
   if (variance === null) return NO_VALUE
-  if (config.variance === 'percent') return signedPercent(variance, Math.abs(variance) >= 100 ? 0 : 1)
+  if (config.variance === 'percent') return signedPercent(variance, Math.abs(variance) >= 100 ? 0 : 1, planWord(config))
   return `${signedNumber(variance, config.decimals)} ${absoluteUnit(config, true)}`
 }
 

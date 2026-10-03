@@ -22,7 +22,7 @@ export function Segmented<T extends string>({
             aria-pressed={active}
             onClick={() => onChange(o.value)}
             className={`min-h-9 rounded-full border px-3 text-sm font-medium transition-colors ${
-              active ? 'border-brand bg-brand text-white' : 'border-line bg-card text-ink-2 hover:bg-brand-soft'
+              active ? 'border-brand bg-brand text-white' : 'border-line bg-tile text-ink-2 hover:bg-brand-soft'
             }`}
           >
             {o.label}

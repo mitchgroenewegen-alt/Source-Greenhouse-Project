@@ -34,7 +34,7 @@ function SuggestedCorrection({ group }: { group: FlagGroup }) {
   const same = lo === hi
   const perDate = group.flags.length > 1 && !same
   return (
-    <div className="rounded-lg border border-line-soft bg-page/70 p-2.5 text-sm">
+    <div className="rounded-lg border border-line-soft bg-field p-2.5 text-sm">
       <div className="text-xs font-semibold text-ink-2">Suggested correction{perDate ? ', one for each date' : ''}</div>
       <div className="num text-base font-semibold">
         {same ? withUnit(lo, unit) : `${plain(lo)} to ${withUnit(hi, unit)}`}
@@ -105,7 +105,7 @@ export function DecisionForm({
     : `${group.rule === 'missing-value' ? 'Missing value' : 'Corrected value'}${many ? ' for all dates' : ''} (${unit})`
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-3 rounded-xl border border-line bg-page/70 p-3" aria-label={label}>
+    <form onSubmit={submit} noValidate className="flex flex-col gap-3 rounded-xl border border-line-soft bg-tile p-3" aria-label={label}>
       <div>
         <h4 ref={heading} tabIndex={-1} className="font-semibold outline-none">
           {label}
@@ -124,7 +124,7 @@ export function DecisionForm({
               onChange={(e) => setTyped(e.target.value)}
               required={!hasSuggestions}
               aria-describedby={hasSuggestions ? `${group.id}-value-hint` : undefined}
-              className="num min-h-10 w-40 rounded-lg border border-line bg-card px-2 font-normal"
+              className="num min-h-10 w-40 rounded-lg border border-line-strong bg-field px-2 font-normal"
             />
             {hasSuggestions && (
               <span id={`${group.id}-value-hint`} className="text-xs font-normal text-ink-2">
@@ -137,11 +137,11 @@ export function DecisionForm({
 
       <label className="flex flex-col gap-1 text-sm font-medium">
         Your name
-        <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className="min-h-10 rounded-lg border border-line bg-card px-2 font-normal" />
+        <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className="min-h-10 rounded-lg border border-line-strong bg-field px-2 font-normal" />
       </label>
       <label className="flex flex-col gap-1 text-sm font-medium">
         Note (optional)
-        <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="rounded-lg border border-line bg-card px-2 py-1.5 font-normal" placeholder="For example: checked with the grower, plan sheet was in °F" />
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="rounded-lg border border-line-strong bg-field px-2 py-1.5 font-normal" placeholder="For example: checked with the grower, plan sheet was in °F" />
       </label>
 
       {error && (
@@ -153,7 +153,7 @@ export function DecisionForm({
         <button type="submit" className="min-h-10 rounded-lg bg-brand px-4 text-sm font-semibold text-white">
           {label}
         </button>
-        <button type="button" onClick={onCancel} className="min-h-10 rounded-lg border border-line bg-card px-4 text-sm font-semibold text-ink-2">
+        <button type="button" onClick={onCancel} className="min-h-10 rounded-lg border border-line-strong bg-field px-4 text-sm font-semibold text-ink">
           Cancel
         </button>
       </div>

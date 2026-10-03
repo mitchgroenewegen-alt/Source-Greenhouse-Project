@@ -74,6 +74,10 @@ The About screen's scoring tables are generated from this file, so they always m
 
 The data checks have their own knobs in `src/flags/settings.ts`: the ratios for a "jump" (2.5x and 0.4x), the "far apart" factor (2.5x), how many weeks a young crop is left alone, and per-KPI exceptions (for example Harvest is only flagged when too high, and weather-driven KPIs skip the jump check).
 
+## Change the look
+
+The colours are tokens at the top of **`src/index.css`**: `page` (a calm, greyed green instead of white), `card` (every data cluster sits on one), `tile` (a cluster inside a card, one step paler, so tiles read as rows and columns), `field` (the palest step, for inputs), the line colours, the ink (text) steps and the status colours. Change a value there and every screen follows; `src/theme.test.ts` reads the file and fails if a pair of colours that are used together stops meeting WCAG AA (4.5:1 for text, 3:1 for marks and control edges). The PWA's `theme_color` and `background_color` (in `vite.config.ts`) and the `theme-color` meta tag (in `index.html`) match the card and page greens.
+
 ## Deploy to Vercel
 
 1. Push the repository and import it in Vercel.

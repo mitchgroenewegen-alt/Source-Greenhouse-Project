@@ -34,10 +34,10 @@ export function MissingValueList({
   return (
     <section className="flex flex-col gap-3" aria-label="Missing values">
       <p className="text-sm text-ink-2">A missing value is already left out of the scores, never counted as zero.</p>
-      <div className="flex items-end gap-2 rounded-xl border border-line bg-card p-3 md:gap-3">
+      <div className="flex items-end gap-2 rounded-2xl border border-line bg-card p-3 md:gap-3">
         <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium md:max-w-xs">
           Your name
-          <input value={decidedBy} onChange={(e) => setDecidedBy(e.target.value)} className="min-h-11 w-full min-w-0 rounded-lg border border-line bg-card px-2 text-base font-normal md:min-h-10 md:text-sm" />
+          <input value={decidedBy} onChange={(e) => setDecidedBy(e.target.value)} className="min-h-11 w-full min-w-0 rounded-lg border border-line-strong bg-field px-2 text-base font-normal md:min-h-10 md:text-sm" />
         </label>
         <button
           type="button"
@@ -50,15 +50,15 @@ export function MissingValueList({
         </button>
       </div>
       {groups.length === 0 ? (
-        <p className="rounded-xl border border-line bg-card p-6 text-center text-ink-2">No missing values match these filters.</p>
+        <p className="rounded-2xl border border-line bg-card p-6 text-center text-ink-2">No missing values match these filters.</p>
       ) : (
-        <ul className="divide-y divide-line-soft rounded-2xl border border-line bg-card shadow-sm">
+        <ul className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-3 shadow-sm">
           {groups.map((g) => {
             const decided = statusOf(g) === 'decided'
             const form = formFor(g)
             const decisions = decisionsOf(g)
             return (
-              <li key={g.id} className="flex flex-col gap-2 px-3 py-2">
+              <li key={g.id} className="flex flex-col gap-2 rounded-xl border border-line-soft bg-tile px-3 py-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0 text-sm">
                     <p className="font-semibold">
@@ -71,16 +71,16 @@ export function MissingValueList({
                     {decided && decisions.length > 0 && <p className="font-semibold text-ok-ink">{decisionOutcome(decisions)}</p>}
                   </div>
                   {decided ? (
-                    <button type="button" onClick={() => onReopen(g)} className="min-h-9 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink-2">
+                    <button type="button" onClick={() => onReopen(g)} className="min-h-9 rounded-lg border border-line-strong bg-field px-3 text-sm font-semibold text-ink">
                       Reopen
                     </button>
                   ) : (
                     !form && (
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => onChoose(g, 'confirm')} className="min-h-9 rounded-lg border border-ok-line bg-ok-bg px-3 text-sm font-semibold text-ok-ink">
+                        <button type="button" onClick={() => onChoose(g, 'confirm')} className="min-h-9 rounded-lg border border-ok-line bg-ok-bg px-2.5 text-sm font-semibold text-ok-ink">
                           {ACTION_LABEL.confirm}
                         </button>
-                        <button type="button" onClick={() => onChoose(g, 'correct')} className="min-h-9 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
+                        <button type="button" onClick={() => onChoose(g, 'correct')} className="min-h-9 rounded-lg border border-line-strong bg-field px-2.5 text-sm font-semibold text-ink">
                           {ACTION_LABEL.correct}
                         </button>
                       </div>

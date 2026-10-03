@@ -40,7 +40,7 @@ export default function FacilitiesScreen() {
 
       <FacilitySummaryTable rows={summary} weekLabel={shortWeek(week)} />
 
-      <div className="flex flex-col gap-2 rounded-xl border border-line bg-card p-3 md:flex-row md:gap-x-8">
+      <div className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-3 md:flex-row md:gap-x-8">
         <Segmented
           label="Harvest"
           value={period}

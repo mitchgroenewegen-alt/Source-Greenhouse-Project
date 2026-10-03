@@ -68,21 +68,21 @@ export function FlagGroupCard({
       <p className="text-sm">{group.explanation}</p>
 
       {!missing && (
-        <div>
-          <table className="num w-full max-w-md text-sm">
+        <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile px-2 py-2 sm:px-3">
+          <table className="num w-full max-w-md text-xs sm:text-sm">
             <caption className="sr-only">Recorded values in this item</caption>
             <thead>
               <tr className="text-xs text-ink-2">
-                <th scope="col" className="py-1 pr-3 text-left font-semibold">Date</th>
-                <th scope="col" className="py-1 pr-3 text-right font-semibold">Recorded</th>
+                <th scope="col" className="py-1 pr-2 text-left font-semibold sm:pr-3">Date</th>
+                <th scope="col" className="py-1 pr-2 text-right font-semibold sm:pr-3">Recorded</th>
                 {group.suggestionNote && <th scope="col" className="py-1 text-right font-semibold">Suggested</th>}
               </tr>
             </thead>
             <tbody>
               {samples.map((f) => (
                 <tr key={f.id} className="border-t border-line-soft">
-                  <td className="py-1 pr-3">{formatDate(f.date)}</td>
-                  <td className="py-1 pr-3 text-right">{f.value === null ? '–' : `${plain(f.value)} ${config.unit}`}</td>
+                  <td className="py-1 pr-2 sm:pr-3">{formatDate(f.date)}</td>
+                  <td className="py-1 pr-2 text-right sm:pr-3">{f.value === null ? '–' : `${plain(f.value)} ${config.unit}`}</td>
                   {group.suggestionNote && <td className="py-1 text-right font-semibold">{f.suggestion === null ? '–' : `${plain(f.suggestion)} ${config.unit}`}</td>}
                 </tr>
               ))}
@@ -97,7 +97,7 @@ export function FlagGroupCard({
       )}
 
       {status === 'decided' ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-ok-bg px-3 py-2 text-sm text-ok-ink">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ok-line bg-ok-bg px-3 py-2 text-sm text-ok-ink">
           <div>
             <p className="font-semibold">{decisionOutcome(decisions)}</p>
             <p className="text-xs">
@@ -105,7 +105,7 @@ export function FlagGroupCard({
               {decisions[0]!.note ? ` · “${decisions[0]!.note}”` : ''}
             </p>
           </div>
-          <button type="button" onClick={onReopen} className="min-h-9 rounded-lg border border-ok-line bg-card px-3 text-sm font-semibold text-ok-ink">
+          <button type="button" onClick={onReopen} className="min-h-9 rounded-lg border border-ok-line bg-field px-3 text-sm font-semibold text-ok-ink">
             Reopen
           </button>
         </div>
@@ -121,10 +121,10 @@ export function FlagGroupCard({
               <button type="button" onClick={() => onChoose('confirm')} className="min-h-10 rounded-lg border border-ok-line bg-ok-bg px-3 text-sm font-semibold text-ok-ink">
                 {ACTION_LABEL.confirm}
               </button>
-              <button type="button" onClick={() => onChoose('correct')} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
+              <button type="button" onClick={() => onChoose('correct')} className="min-h-10 rounded-lg border border-line-strong bg-field px-3 text-sm font-semibold text-ink">
                 {ACTION_LABEL.correct}
               </button>
-              <button type="button" onClick={() => onChoose('exclude')} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
+              <button type="button" onClick={() => onChoose('exclude')} className="min-h-10 rounded-lg border border-line-strong bg-field px-3 text-sm font-semibold text-ink">
                 {ACTION_LABEL.exclude}
               </button>
             </div>

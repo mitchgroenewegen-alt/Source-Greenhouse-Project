@@ -23,16 +23,17 @@ export function WeeklyTable({
   pointsOf: (kpi: string) => (WeeklyPoint | undefined)[]
 }) {
   return (
-    <section aria-labelledby="weekly-table-title" className="rounded-2xl border border-line bg-card shadow-sm">
-      <h3 id="weekly-table-title" className="px-4 pt-3 text-base font-semibold">
+    <section aria-labelledby="weekly-table-title" className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <h3 id="weekly-table-title" className="text-base font-semibold">
         Week by week
       </h3>
-      <p className="px-4 pb-2 text-xs text-ink-3">Actual on top, {planWordForAll(kpis)} below. The first column stays in view when you scroll sideways.</p>
-      <div className="overflow-x-auto border-t border-line-soft" tabIndex={0} role="region" aria-label="Weekly table, scrolls sideways">
+      <p className="mb-3 text-xs text-ink-3">Actual on top, {planWordForAll(kpis)} below. The first column stays in view when you scroll sideways.</p>
+      {/* The table is a tile inside the card, one step paler; the first column is pinned with the tile's colour. */}
+      <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile" tabIndex={0} role="region" aria-label="Weekly table, scrolls sideways">
         <table className="num w-max min-w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th scope="col" className="sticky left-0 z-10 min-w-36 bg-card px-3 py-2 text-left text-xs font-semibold text-ink-2 shadow-[1px_0_0_var(--color-line-soft)]">
+              <th scope="col" className="sticky left-0 z-10 min-w-36 bg-tile px-3 py-2 text-left text-xs font-semibold text-ink-2 shadow-[1px_0_0_var(--color-line-soft)]">
                 KPI
               </th>
               {weeks.map((w) => (
@@ -51,7 +52,7 @@ export function WeeklyTable({
               const points = pointsOf(config.name)
               return (
                 <tr key={config.name} className="border-t border-line-soft">
-                  <th scope="row" className="sticky left-0 z-10 bg-card px-3 py-1.5 text-left align-top text-xs font-semibold shadow-[1px_0_0_var(--color-line-soft)]">
+                  <th scope="row" className="sticky left-0 z-10 bg-tile px-3 py-1.5 text-left align-top text-xs font-semibold shadow-[1px_0_0_var(--color-line-soft)]">
                     {config.name}
                     <span className="block font-normal text-ink-3">{config.unit}</span>
                   </th>

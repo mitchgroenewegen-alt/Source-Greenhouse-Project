@@ -88,14 +88,14 @@ export default function AboutScreen() {
       </Section>
 
       {CATEGORY_ORDER.map((category) => (
-        <section key={category} className="rounded-2xl border border-line bg-card shadow-sm" aria-labelledby={`about-${category}`}>
-          <h2 id={`about-${category}`} className="px-4 pt-3 text-base font-semibold">
+        <section key={category} className="rounded-2xl border border-line bg-card p-4 shadow-sm" aria-labelledby={`about-${category}`}>
+          <h2 id={`about-${category}`} className="mb-3 text-base font-semibold">
             Scoring rules: {CATEGORY_LABEL[category]}
           </h2>
-          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={`${CATEGORY_LABEL[category]} scoring rules, scrolls sideways`}>
+          <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile" tabIndex={0} role="region" aria-label={`${CATEGORY_LABEL[category]} scoring rules, scrolls sideways`}>
             <table className="w-full min-w-[34rem] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-line text-left text-xs text-ink-2">
+                <tr className="border-b border-line-soft text-left text-xs text-ink-2">
                   <th scope="col" className="px-4 py-2 font-semibold">KPI</th>
                   <th scope="col" className="px-2 py-2 font-semibold">Per week</th>
                   <th scope="col" className="px-2 py-2 font-semibold">Better when</th>
@@ -107,7 +107,7 @@ export default function AboutScreen() {
                 {kpisInCategory(category).map((k) => {
                   const t = toleranceText(k)
                   return (
-                    <tr key={k.name} className="border-b border-line-soft align-top">
+                    <tr key={k.name} className="border-b border-line-soft align-top last:border-b-0">
                       <th scope="row" className="px-4 py-1.5 text-left font-semibold">
                         {k.name} <span className="font-normal text-ink-3">({k.unit})</span>
                       </th>

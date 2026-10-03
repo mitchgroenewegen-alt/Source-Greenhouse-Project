@@ -60,8 +60,8 @@ function HarvestCell({ summary, withTonnes = false }: { summary: PeriodSummary; 
 /** The quick status of every facility and of all of them together, before each facility's full breakdown. */
 export function FacilitySummaryTable({ rows, weekLabel }: { rows: FacilitySummaryRow[]; weekLabel: string }) {
   return (
-    <section aria-labelledby="facility-summary-title" className="rounded-2xl border border-line bg-card shadow-sm">
-      <div className="px-3 pt-3 sm:px-4">
+    <section aria-labelledby="facility-summary-title" className="rounded-2xl border border-line bg-card p-3 shadow-sm sm:p-4">
+      <div>
         <h2 id="facility-summary-title" className="text-base font-semibold">
           Status at a glance
         </h2>
@@ -70,11 +70,12 @@ export function FacilitySummaryTable({ rows, weekLabel }: { rows: FacilitySummar
         </p>
       </div>
       {/* Safety net: if a very large number ever makes the table wider than the card, it scrolls here, not the page. */}
-      <div className="mt-2 overflow-x-auto">
+      {/* A tile inside the card. On a phone it runs edge to edge (the card's padding is cancelled), because the table needs the card's whole width at 320 px. */}
+      <div className="-mx-3 mt-3 overflow-x-auto border-y border-line-soft bg-tile sm:mx-0 sm:rounded-xl sm:border">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">Harvest against budget in kg/m² for each facility and for all facilities together</caption>
           <thead>
-            <tr className="border-y border-line text-xs text-ink-2">
+            <tr className="border-b border-line-soft text-xs text-ink-2">
               <th scope="col" className="px-1.5 py-1.5 text-left font-semibold min-[360px]:px-2 sm:px-4">
                 Facility
               </th>
@@ -97,7 +98,7 @@ export function FacilitySummaryTable({ rows, weekLabel }: { rows: FacilitySummar
                   // The whole row is the tap target for a mouse or finger; the button in the first cell is the keyboard's way in,
                   // and its click bubbles up to here.
                   onClick={jump ? () => jumpToCard(jump) : undefined}
-                  className={`border-b border-line-soft last:border-b-0 ${jump ? 'cursor-pointer hover:bg-brand-soft/50 active:bg-brand-soft' : 'bg-page/70'}`}
+                  className={`border-b border-line-soft last:border-b-0 ${jump ? 'cursor-pointer hover:bg-brand-soft/50 active:bg-brand-soft' : 'bg-card'}`}
                 >
                   <th scope="row" className="px-1.5 py-2.5 text-left align-top font-semibold min-[360px]:px-2 sm:px-4">
                     {jump ? (

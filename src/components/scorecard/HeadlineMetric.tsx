@@ -28,7 +28,7 @@ export function HeadlineMetric({ result, label }: { result: KpiResult; label: st
     </>
   )
   return (
-    <div className="rounded-xl border border-line-soft bg-page/60 p-2.5">
+    <div className="rounded-xl border border-line-soft bg-tile p-2.5">
       <div className="text-xs font-medium text-ink-2">{label}</div>
       <div className="num mt-0.5 flex items-baseline gap-1">
         <span className="text-xl font-semibold">{formatValue(config, actual)}</span>

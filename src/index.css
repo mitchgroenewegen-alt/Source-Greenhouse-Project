@@ -3,45 +3,60 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  /* Surfaces and text */
-  --color-page: #f5f6f2;
-  --color-card: #ffffff;
-  --color-line: #dfe3dc;
-  --color-line-soft: #eceee9;
-  --color-ink: #1c2a22;
-  --color-ink-2: #4a5850;
-  --color-ink-3: #66736b;
+  /* Surfaces: a calm, greyed green instead of white. Each data cluster sits on a card, and a cluster inside a card
+     (a tile, a row, a chart plot, a table) is one step paler than the card, so the edges read as lines the eye can
+     follow. page < card < tile < field; nothing is pure white. */
+  --color-page: #c9d7cd;
+  --color-card: #e2ece5;
+  --color-tile: #eef4f0;
+  --color-field: #f7fbf8; /* the palest step: inputs, selects and the buttons that sit on a card */
 
-  /* Brand */
+  /* Lines: a card's edge, the dividers and tile edges inside a card, and the edge of a control (3:1 on every surface). */
+  --color-line: #a9bdb0;
+  --color-line-soft: #c6d6cb;
+  --color-line-strong: #5d7564; /* inputs and selects */
+  --color-track: #d2ddd5; /* the unfilled part of the Waste meter */
+
+  /* Text. ink-3 is the palest text and still 4.5:1 on the page, the darkest surface. */
+  --color-ink: #14231a;
+  --color-ink-2: #34433a;
+  --color-ink-3: #475850;
+
+  /* Brand. brand-soft is the active / hover fill: clearly greener than a card. */
   --color-brand: #1f5d3a;
-  --color-brand-soft: #e4efe8;
+  --color-brand-soft: #cfe3d6;
 
-  /* Status: tinted background, dark text on it, a solid colour for marks. Always used with a text label. */
-  --color-ok-bg: #e5f3ea;
-  --color-ok-ink: #12522d;
-  --color-ok-line: #a5d3b6;
-  --color-ok: #1f8a4c;
-  --color-warn-bg: #fdf0d3;
-  --color-warn-ink: #704200;
-  --color-warn-line: #e8c47a;
-  --color-warn: #c27c0e;
-  --color-bad-bg: #fce8e5;
-  --color-bad-ink: #84201a;
-  --color-bad-line: #eba8a1;
-  --color-bad: #c8372d;
-  --color-none-bg: #eceef0;
-  --color-none-ink: #46515a;
-  --color-none-line: #cfd5da;
+  /* Status: tinted background, dark text on it, a line and a solid colour for marks. Always used with a text label.
+     The backgrounds are stronger than the old pastels and the lines darker (3:1 on a card), so a badge stays distinct
+     from the green cards it sits on. */
+  --color-ok-bg: #bde4cb;
+  --color-ok-ink: #0e4426;
+  --color-ok-line: #3f8c5c;
+  --color-ok: #1a7f44;
+  --color-warn-bg: #fbe6b0;
+  --color-warn-ink: #5c3500;
+  --color-warn-line: #b27a14;
+  --color-warn: #a86500;
+  --color-bad-bg: #f8d5cf;
+  --color-bad-ink: #781a14;
+  --color-bad-line: #cc6458;
+  --color-bad: #c0322a;
+  --color-none-bg: #dde2e0;
+  --color-none-ink: #3b474a;
+  --color-none-line: #76848a;
 
   /* Chart marks */
   --color-actual: #2a78d6;
-  --color-target: #4a5850;
+  --color-target: #3c4b42;
+  --color-budget: #6b7b71; /* the budget bars on the Facilities charts: neutral, 3:1 on a tile */
   --color-flag: #6a46c6;
   --color-flag-ink: #4b2fa0;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Native controls (the open drop-down list, scroll bars) stay in the light scheme that matches the greens. */
+  color-scheme: light;
 }
 
 body {
@@ -60,7 +75,12 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid #2a78d6;
+  outline: 3px solid var(--color-actual);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+::placeholder {
+  color: var(--color-ink-3);
+  opacity: 1;
 }

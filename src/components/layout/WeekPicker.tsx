@@ -11,7 +11,7 @@ export function WeekPicker() {
       <select
         value={week}
         onChange={(e) => setWeek(e.target.value)}
-        className="min-h-10 w-full min-w-0 max-w-[14rem] rounded-lg border border-line bg-card px-2 text-sm font-semibold text-ink"
+        className="min-h-10 w-full min-w-0 max-w-[14rem] rounded-lg border border-line-strong bg-field px-2 text-sm font-semibold text-ink"
       >
         {[...weeks].reverse().map((w) => (
           <option key={w.id} value={w.id}>

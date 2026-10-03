@@ -123,18 +123,18 @@ export default function DataChecksScreen() {
       </div>
 
       {!persistent && (
-        <p role="status" className="rounded-xl border border-warn-line bg-warn-bg p-3 text-sm text-warn-ink">
+        <p role="status" className="rounded-2xl border border-warn-line bg-warn-bg p-3 text-sm text-warn-ink">
           This browser is not keeping decisions between visits (private window or blocked storage). They last until you close the page. Use Export CSV in the decision log to keep them.
         </p>
       )}
       {rawMode && (
-        <p role="status" className="rounded-xl border border-warn-line bg-warn-bg p-3 text-sm text-warn-ink">
+        <p role="status" className="rounded-2xl border border-warn-line bg-warn-bg p-3 text-sm text-warn-ink">
           “Show raw data” is on, so the scores currently count every value as recorded, whatever is decided here.
         </p>
       )}
 
       {notice && (
-        <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ok-line bg-ok-bg p-3 text-sm text-ok-ink">
+        <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-ok-line bg-ok-bg p-3 text-sm text-ok-ink">
           <span>{notice.text}</span>
           <span className="flex gap-2">
             <button
@@ -143,7 +143,7 @@ export default function DataChecksScreen() {
                 removeDecisions(notice.cellIds)
                 setNotice(null)
               }}
-              className="min-h-9 rounded-lg border border-ok-line bg-card px-3 font-semibold"
+              className="min-h-9 rounded-lg border border-ok-line bg-field px-3 font-semibold"
             >
               Undo
             </button>
@@ -154,7 +154,7 @@ export default function DataChecksScreen() {
         </div>
       )}
 
-      <div role="tablist" aria-label="Data checks" className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-card p-1">
+      <div role="tablist" aria-label="Data checks" className="grid grid-cols-3 gap-1 rounded-2xl border border-line bg-card p-1">
         {(
           [
             ['review', `To review`, openCount],
@@ -167,7 +167,7 @@ export default function DataChecksScreen() {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`min-h-11 rounded-lg px-1 text-sm font-semibold ${tab === id ? 'bg-brand text-white' : 'text-ink-2 hover:bg-line-soft'}`}
+            className={`min-h-11 rounded-xl px-1 text-sm font-semibold ${tab === id ? 'bg-brand text-white' : 'text-ink-2 hover:bg-line-soft'}`}
           >
             {label} <span className={`text-xs ${tab === id ? 'text-white/85' : 'text-ink-3'}`}>{count}</span>
           </button>
@@ -175,7 +175,7 @@ export default function DataChecksScreen() {
       </div>
 
       {tab !== 'log' && (
-        <div className="rounded-xl border border-line bg-card">
+        <div className="rounded-2xl border border-line bg-card">
           {/* Phones: one compact row that opens the filters. From md up the filters are always shown. */}
           <button
             type="button"
@@ -200,7 +200,7 @@ export default function DataChecksScreen() {
                   else next.set('cultivation', e.target.value)
                   setParams(next, { replace: true })
                 }}
-                className="min-h-11 rounded-lg border border-line bg-card px-2 text-base font-semibold text-ink md:min-h-10 md:text-sm"
+                className="min-h-11 rounded-lg border border-line-strong bg-field px-2 text-base font-semibold text-ink md:min-h-10 md:text-sm"
               >
                 <option value={ALL}>All cultivations</option>
                 {cultivations.map((c) => (
@@ -232,7 +232,7 @@ export default function DataChecksScreen() {
             {visibleReview.length} {visibleReview.length === 1 ? 'item' : 'items'} shown · {openCount} waiting for a decision · {decidedCount} confirmed, corrected or excluded.
           </p>
           {visibleReview.length === 0 ? (
-            <p className="rounded-xl border border-line bg-card p-6 text-center text-ink-2">
+            <p className="rounded-2xl border border-line bg-card p-6 text-center text-ink-2">
               {filter === 'open' ? 'Nothing is waiting for a decision here.' : 'No items match these filters.'}
             </p>
           ) : (

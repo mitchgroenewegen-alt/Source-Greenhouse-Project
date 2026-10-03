@@ -72,18 +72,18 @@ export function DecisionLog({
           <h2 id="log-title" className="text-lg font-semibold">
             Decision log
           </h2>
-          <p className="text-sm text-ink-2">{entries.length === 0 ? 'No decisions yet.' : `${decisions.length} values decided, in ${entries.length} entries. Newest first.`}</p>
+          <p className="text-sm text-ink-2">{entries.length === 0 ? 'No decisions yet.' : `${decisions.length} values decided, in ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}. Newest first.`}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={decisions.length === 0}
             onClick={() => download(decisionsToCsv(decisions), `crop-performance-decisions-${new Date().toISOString().slice(0, 10)}.csv`)}
-            className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink disabled:opacity-50"
+            className="min-h-10 rounded-lg border border-line-strong bg-card px-3 text-sm font-semibold text-ink disabled:opacity-50"
           >
             Export CSV
           </button>
-          <button type="button" onClick={() => fileInput.current?.click()} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
+          <button type="button" onClick={() => fileInput.current?.click()} className="min-h-10 rounded-lg border border-line-strong bg-card px-3 text-sm font-semibold text-ink">
             Import CSV
           </button>
           <input
@@ -102,7 +102,7 @@ export function DecisionLog({
       </div>
 
       {message && (
-        <div role="status" className={`rounded-xl border p-3 text-sm ${message.tone === 'ok' ? 'border-ok-line bg-ok-bg text-ok-ink' : 'border-bad-line bg-bad-bg text-bad-ink'}`}>
+        <div role="status" className={`rounded-2xl border p-3 text-sm ${message.tone === 'ok' ? 'border-ok-line bg-ok-bg text-ok-ink' : 'border-bad-line bg-bad-bg text-bad-ink'}`}>
           <p>{message.text}</p>
           {message.details && message.details.length > 0 && (
             <ul className="mt-1 list-disc pl-5">
@@ -115,12 +115,12 @@ export function DecisionLog({
       )}
 
       {entries.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line-soft rounded-2xl border border-line bg-card shadow-sm">
+        <ul className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-3 shadow-sm">
           {entries.map(({ key, decisions: list }) => {
             const first = list[0]!
             const last = list[list.length - 1]!
             return (
-              <li key={key} className="flex flex-wrap items-start justify-between gap-2 p-3">
+              <li key={key} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-line-soft bg-tile p-3">
                 <div className="min-w-0 text-sm">
                   <p className="font-semibold">
                     {first.cultivation} · {first.kpi} · {fieldWord(first.field, first.kpi)}
@@ -135,7 +135,7 @@ export function DecisionLog({
                     {first.note ? ` · “${first.note}”` : ''}
                   </p>
                 </div>
-                <button type="button" onClick={() => onReopen(list.map((d) => d.cellId))} className="min-h-9 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink-2">
+                <button type="button" onClick={() => onReopen(list.map((d) => d.cellId))} className="min-h-9 rounded-lg border border-line-strong bg-field px-3 text-sm font-semibold text-ink">
                   Reopen
                 </button>
               </li>

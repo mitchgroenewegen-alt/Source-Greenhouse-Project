@@ -33,7 +33,7 @@ export default function ScorecardScreen() {
       </div>
 
       {/* Phones: two drop-downs side by side. From md up: the chips. */}
-      <div className="grid grid-cols-2 gap-2 md:hidden">
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-card p-3 md:hidden">
         <FilterSelect
           label="Facility"
           value={facility}
@@ -47,13 +47,13 @@ export default function ScorecardScreen() {
           options={varieties.map((v) => ({ value: v, label: v === ALL ? 'All varieties' : v }))}
         />
       </div>
-      <div className="hidden flex-row flex-wrap gap-x-8 gap-y-2 rounded-xl border border-line bg-card p-3 md:flex">
+      <div className="hidden flex-row flex-wrap gap-x-8 gap-y-2 rounded-2xl border border-line bg-card p-3 md:flex">
         <Segmented label="Facility" value={facility} onChange={setFacility} options={facilities.map((f) => ({ value: f, label: f }))} />
         <Segmented label="Variety" value={variety} onChange={setVariety} options={varieties.map((v) => ({ value: v, label: v }))} />
       </div>
 
       {cards.length === 0 ? (
-        <p className="rounded-xl border border-line bg-card p-6 text-center text-ink-2">No cultivation matches these filters.</p>
+        <p className="rounded-2xl border border-line bg-card p-6 text-center text-ink-2">No cultivation matches these filters.</p>
       ) : (
         <>
           <p className="-mt-1 text-sm text-ink-3">

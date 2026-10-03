@@ -62,14 +62,14 @@ export function KpiGauge({ config, model, status }: { config: KpiConfig; model: 
       className="w-full max-w-36 @[14rem]:w-28 @[14rem]:shrink-0"
     >
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block h-auto w-full" aria-hidden="true" focusable="false">
-        <path d={arcPath(CX, CY, RADIUS, 0, 1)} fill="none" className="stroke-line" strokeWidth={STROKE} />
+        <path d={arcPath(CX, CY, RADIUS, 0, 1)} fill="none" className="stroke-track" strokeWidth={STROKE} />
         {model.fraction > 0 && <path d={arcPath(CX, CY, RADIUS, 0, model.fraction)} fill="none" className={FILL[status ?? 'none']} strokeWidth={STROKE} />}
         {model.over && (
           // The stop bar sits at the very end of the arc: the arc is full and the value went on.
           <line x1={stopFrom.x} y1={stopFrom.y - 2} x2={stopTo.x} y2={stopTo.y - 2} className="stroke-ink" strokeWidth={3} />
         )}
         {/* The budget tick: a light halo under a dark line, so it shows on the coloured fill as well as on the track. */}
-        <line x1={tickFrom.x} y1={tickFrom.y} x2={tickTo.x} y2={tickTo.y} className="stroke-card" strokeWidth={5} />
+        <line x1={tickFrom.x} y1={tickFrom.y} x2={tickTo.x} y2={tickTo.y} className="stroke-tile" strokeWidth={5} />
         <line x1={tickFrom.x} y1={tickFrom.y} x2={tickTo.x} y2={tickTo.y} className="stroke-ink" strokeWidth={2} />
         {/* The label is the budget value, inside the arc beside the tick; the "Budget" word is on the line below the meter. */}
         <text x={labelAt.x} y={labelAt.y + 4} textAnchor={anchor} className="fill-ink" fontSize={11} fontWeight={700}>

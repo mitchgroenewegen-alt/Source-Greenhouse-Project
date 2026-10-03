@@ -36,7 +36,8 @@ function labelAnchor(budgetFraction: number): 'start' | 'middle' | 'end' {
 /**
  * A compact semicircular meter: the arc fills from 0 to the actual in the tile's status colour, a tick marks the
  * budget, and the scale ends at `rangeOfBudget` x the budget (see `gauge` in src/config/kpis.ts). An actual beyond the
- * end of the scale fills the arc, puts a stop bar at its end and says so in words; nothing is drawn past the arc.
+ * end of the scale fills the arc and puts a stop bar at its end (the words are OverScaleNote, next to it); nothing is
+ * drawn past the arc.
  */
 export function KpiGauge({ config, model, status }: { config: KpiConfig; model: GaugeModel; status: Status | null }) {
   const plan = planWord(config)
@@ -81,14 +82,18 @@ export function KpiGauge({ config, model, status }: { config: KpiConfig; model: 
           {formatValue(config, model.scaleMax)}
         </text>
       </svg>
-      {model.over && (
-        <p className="num mt-1 flex items-start gap-1 text-[0.68rem] font-semibold leading-tight text-ink">
-          <AlertIcon width={12} height={12} className="mt-px shrink-0" />
-          <span>
-            Over scale: {shortValue(config, model.actual)} vs {shortValue(config, model.scaleMax)} max
-          </span>
-        </p>
-      )}
     </div>
+  )
+}
+
+/** The words that go with the stop bar when the actual is beyond the scale: "Over scale: 9.1% vs 4.8% max". */
+export function OverScaleNote({ config, model, className = '' }: { config: KpiConfig; model: GaugeModel; className?: string }) {
+  return (
+    <p className={`num flex items-start gap-1 text-[0.68rem] font-semibold leading-tight text-ink ${className}`}>
+      <AlertIcon width={12} height={12} className="mt-px shrink-0" />
+      <span>
+        Over scale: {shortValue(config, model.actual)} vs {shortValue(config, model.scaleMax)} max
+      </span>
+    </p>
   )
 }

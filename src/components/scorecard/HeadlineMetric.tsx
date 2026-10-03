@@ -3,7 +3,7 @@ import type { KpiResult } from '../../scoring/summary'
 import { formatValue, formatVariance } from '../../lib/kpiFormat'
 import { StatusBadge } from '../ui/StatusBadge'
 import { gaugeModel } from './gauge'
-import { KpiGauge } from './KpiGauge'
+import { KpiGauge, OverScaleNote } from './KpiGauge'
 
 /**
  * One of the four numbers on a cultivation card: actual, budget, and how far apart they are (all four are Production KPIs, so "budget").
@@ -35,11 +35,13 @@ export function HeadlineMetric({ result, label }: { result: KpiResult; label: st
         <span className="text-xs text-ink-3">{config.unit}</span>
       </div>
       {gauge ? (
-        // On a phone the meter sits under the value with the figures below it; a wide tile puts them side by side.
+        // On a phone the meter sits under the value, then its over-scale note, then the figures; a wide tile puts the
+        // figures beside the meter and the note underneath both.
         <div className="@container">
-          <div className="mt-1 flex flex-col gap-1.5 @[14rem]:flex-row @[14rem]:items-center @[14rem]:gap-3">
+          <div className="mt-1 flex flex-col gap-1.5 @[14rem]:flex-row @[14rem]:flex-wrap @[14rem]:items-center @[14rem]:gap-x-3">
             <KpiGauge config={config} model={gauge} status={score.status} />
-            <div className="min-w-0">{figures}</div>
+            {gauge.over && <OverScaleNote config={config} model={gauge} className="order-2 @[14rem]:order-3 @[14rem]:basis-full" />}
+            <div className="order-3 min-w-0 @[14rem]:order-2 @[14rem]:flex-1">{figures}</div>
           </div>
         </div>
       ) : (

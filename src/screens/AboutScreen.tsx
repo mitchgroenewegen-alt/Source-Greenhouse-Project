@@ -76,14 +76,14 @@ export default function AboutScreen() {
             The variance is compared with the green and amber tolerances for that KPI. Beyond amber it is red. A KPI with no plan value for the week is shown but not scored.
           </li>
           <li>
-            A category (Production, Plant, Climate, Irrigation, Resources) is rated from the share of its scored KPIs that are red or green: <strong>Off track</strong> when at least {shareWords(CATEGORY_ROLLUP.redShare)} of them are red, <strong>On track</strong> when at least {shareWords(CATEGORY_ROLLUP.greenShare)} are green (and fewer than {shareWords(CATEGORY_ROLLUP.redShare)} are red), otherwise <strong>Watch</strong>. A KPI without a score that week is not counted. The badge line still names the worst KPI, and how many are red, amber and green.
+            A category (Production, Plant, Climate, Irrigation, Resources) is rated from the share of its scored KPIs that are red or green: <strong>Off target</strong> when at least {shareWords(CATEGORY_ROLLUP.redShare)} of them are red, <strong>On track</strong> when at least {shareWords(CATEGORY_ROLLUP.greenShare)} are green (and fewer than {shareWords(CATEGORY_ROLLUP.redShare)} are red), otherwise <strong>Watch</strong>. A KPI without a score that week is not counted. The badge line still names the worst KPI, and how many are red, amber and green.
           </li>
           <li>
             Cultivations are sorted worst first. Production against budget is the outcome, so the Production status comes first (red, then amber, then on track, then not scored). Ties are ordered by the number of red categories among the other four (Plant, Climate, Irrigation, Resources), then the number of amber ones, then the shortfall on cumulative harvest.
           </li>
         </ol>
         <p className="text-ink-2">
-          Status always comes with words (On track, Watch, Off track, Not scored) and an icon, never colour alone. All thresholds come from <code>src/config/kpis.ts</code>; the tables below are generated from that file.
+          Status always comes with words (On track, Watch, Off target, Not scored) and an icon, never colour alone. All thresholds come from <code>src/config/kpis.ts</code>; the tables below are generated from that file.
         </p>
       </Section>
 

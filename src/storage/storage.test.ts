@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { decisionsToCsv, mergeDecisions, parseCsvRows, parseDecisionsCsv } from './csv'
 import { allHaveSuggestions, buildDecisions } from './decide'
 import { LocalStorageDecisionStore, MemoryDecisionStore } from './decisionStore'
-import type { Decision } from './types'
+import { decisionOutcome, decisionWords } from './outcome'
+import { ACTION_LABEL, DECISION_LABEL, type Decision } from './types'
 
 function decision(overrides: Partial<Decision> = {}): Decision {
   return {
@@ -231,5 +232,41 @@ describe('building decisions from flags', () => {
     expect(() => buildDecisions([flag(null)], { kind: 'correct', value: 'suggestion', decidedBy: 'a', note: '', now })).toThrow()
     expect(allHaveSuggestions([flag(20.6), flag(null)])).toBe(false)
     expect(allHaveSuggestions([flag(20.6)])).toBe(true)
+  })
+})
+
+describe('the three actions and their outcomes', () => {
+  it('labels the actions exactly Confirm values, Apply correction and Exclude', () => {
+    expect(ACTION_LABEL).toEqual({ confirm: 'Confirm values', correct: 'Apply correction', exclude: 'Exclude' })
+    expect(DECISION_LABEL).toEqual({ confirm: 'Values confirmed', correct: 'Correction applied', exclude: 'Excluded' })
+  })
+
+  it('states the outcome in the same words on the card and in the log', () => {
+    expect(decisionOutcome([decision({ kind: 'confirm', correctedValue: null })])).toBe('Values confirmed by Dana')
+    expect(decisionOutcome([decision({ kind: 'correct', correctedValue: 20.6 })])).toBe('Correction applied: 20.6 by Dana')
+    expect(decisionOutcome([decision({ kind: 'exclude', correctedValue: null })])).toBe('Excluded by Dana')
+  })
+
+  it('names the value once for a run of dates, and the range when each date got its own', () => {
+    const same = [decision({ cellId: 'a', correctedValue: 20.6 }), decision({ cellId: 'b', correctedValue: 20.6 })]
+    expect(decisionWords(same)).toBe('Correction applied: 20.6')
+    const each = [decision({ cellId: 'a', correctedValue: 21.4 }), decision({ cellId: 'b', correctedValue: 20.1 }), decision({ cellId: 'c', correctedValue: 20.6 })]
+    expect(decisionWords(each)).toBe('Correction applied: 20.1 to 21.4')
+  })
+
+  it('does not go wrong on a mix of kinds (an import can hold them) or on a missing name', () => {
+    expect(decisionWords([decision({ kind: 'confirm', correctedValue: null }), decision({ cellId: 'b', kind: 'exclude', correctedValue: null })])).toBe('Mixed decisions: Values confirmed, Excluded')
+    expect(decisionOutcome([decision({ kind: 'exclude', correctedValue: null, decidedBy: '' })])).toBe('Excluded by unknown')
+  })
+
+  it('keeps the stored ids and the CSV columns, so exports made before the new wording still import', () => {
+    const csv = decisionsToCsv([decision({ kind: 'confirm', correctedValue: null }), decision({ cellId: 'b|c|2025-07-02|actual', date: '2025-07-02', field: 'actual', kind: 'exclude', correctedValue: null })])
+    const [header, ...rows] = csv.trim().split('\r\n')
+    expect(header).toBe('cultivation,kpi,date,field,rule,original_value,decision,corrected_value,decided_by,decided_at,note')
+    expect(rows.map((r) => r.split(',')[6])).toEqual(['confirm', 'exclude'])
+    const oldExport = 'cultivation,kpi,date,field,rule,original_value,decision,corrected_value,decided_by,decided_at,note\r\nPA-P2-TOV,Temperature (24h),2025-07-01,target,unit-fahrenheit,69,correct,20.6,Dana,2025-09-01T10:00:00.000Z,\r\n'
+    const parsed = parseDecisionsCsv(oldExport)
+    expect(parsed.errors).toEqual([])
+    expect(decisionOutcome(parsed.decisions)).toBe('Correction applied: 20.6 by Dana')
   })
 })

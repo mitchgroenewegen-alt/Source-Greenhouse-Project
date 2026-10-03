@@ -3,22 +3,29 @@ import { useSearchParams } from 'react-router-dom'
 import { DecisionForm } from '../components/checks/DecisionForm'
 import { DecisionLog } from '../components/checks/DecisionLog'
 import { FlagGroupCard } from '../components/checks/FlagGroupCard'
+import { MissingValueList } from '../components/checks/MissingValueList'
 import { ChevronIcon, FilterIcon } from '../components/ui/icons'
 import { Segmented } from '../components/ui/Segmented'
-import { formatDate, formatRange } from '../data/dates'
 import { RULE_ORDER, RULE_TITLE, type FlagGroup, type RuleId } from '../flags'
-import { buildDecisions, type DecisionKind } from '../storage'
+import { buildDecisions, DECISION_LABEL, decisionWords, type Decision, type DecisionKind } from '../storage'
 import { useCropData } from '../state/CropDataContext'
 import { needsReview } from '../state/groupStatus'
 
 type Tab = 'review' | 'missing' | 'log'
-type StatusFilter = 'open' | 'decided' | 'all'
+/** What to show: items still waiting, items by the action taken (named as the outcome reads), or everything. */
+type StatusFilter = 'open' | DecisionKind | 'all'
 const ALL = 'all'
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: 'open', label: 'Waiting for a decision' },
-  { value: 'decided', label: 'Decided' },
-  { value: 'all', label: 'Both' },
+  { value: 'confirm', label: DECISION_LABEL.confirm },
+  { value: 'correct', label: DECISION_LABEL.correct },
+  { value: 'exclude', label: DECISION_LABEL.exclude },
+  { value: 'all', label: 'All' },
 ]
+/** A missing value cannot be excluded (it is already left out), so that filter is not offered on its tab. */
+const MISSING_STATUS_OPTIONS = STATUS_OPTIONS.filter((o) => o.value !== 'exclude')
+/** The note stored with each value when the whole Missing list is confirmed at once. */
+const CONFIRM_ALL_NOTE = 'Confirmed: not recorded'
 
 export default function DataChecksScreen() {
   const { groups, statusOf, decisions, decisionById, saveDecisions, removeDecisions, replaceDecisions, persistent, decidedBy, setDecidedBy, cultivations, rawMode } = useCropData()
@@ -41,10 +48,14 @@ export default function DataChecksScreen() {
   )
   const missingGroups = useMemo(() => groups.filter((g) => !needsReview(g)), [groups])
 
+  // The Excluded filter only exists on the review tab; coming from there to Missing falls back to showing everything.
+  const filter: StatusFilter = tab === 'missing' && statusFilter === 'exclude' ? 'all' : statusFilter
+  const decisionsOf = (g: FlagGroup) => g.flags.map((f) => decisionById.get(f.id)).filter((d): d is Decision => d !== undefined)
   const matches = (g: FlagGroup) => {
     if (cultivation !== ALL && g.cultivation !== cultivation) return false
-    const decided = statusOf(g) === 'decided'
-    return statusFilter === 'all' || (statusFilter === 'decided' ? decided : !decided)
+    if (filter === 'all') return true
+    if (filter === 'open') return statusOf(g) !== 'decided'
+    return decisionsOf(g).some((d) => d.kind === filter)
   }
   const inCultivation = (g: FlagGroup) => cultivation === ALL || g.cultivation === cultivation
 
@@ -59,7 +70,7 @@ export default function DataChecksScreen() {
 
   // What the collapsed phone row says, so the active filters are visible without opening the panel.
   const filterSummary = [
-    STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label,
+    STATUS_OPTIONS.find((o) => o.value === filter)?.label,
     cultivation !== ALL ? cultivation : null,
     tab === 'review' && rule !== ALL ? RULE_TITLE[rule] : null,
   ]
@@ -69,10 +80,37 @@ export default function DataChecksScreen() {
   const decide = (group: FlagGroup, kind: DecisionKind) => setForm({ groupId: group.id, kind })
   const reopen = (group: FlagGroup) => removeDecisions(group.flags.map((f) => f.id))
 
-  function acknowledgeAll(list: FlagGroup[]) {
+  function confirmAll(list: FlagGroup[]) {
     const name = decidedBy.trim()
     if (!name) return
-    saveDecisions(list.filter((g) => statusOf(g) !== 'decided').flatMap((g) => buildDecisions(g.flags, { kind: 'confirm', decidedBy: name, note: 'Acknowledged: not recorded' })))
+    const next = list.filter((g) => statusOf(g) !== 'decided').flatMap((g) => buildDecisions(g.flags, { kind: 'confirm', decidedBy: name, note: CONFIRM_ALL_NOTE }))
+    saveDecisions(next)
+    setNotice({
+      text: `${DECISION_LABEL.confirm}: ${next.length} missing ${next.length === 1 ? 'value' : 'values'}. They stay left out of the scores.`,
+      cellIds: next.map((d) => d.cellId),
+    })
+  }
+
+  /** The compact panel under a card or row, when one of its actions was clicked. */
+  function formFor(group: FlagGroup) {
+    if (form?.groupId !== group.id) return null
+    return (
+      <DecisionForm
+        group={group}
+        kind={form.kind}
+        defaultName={decidedBy}
+        onCancel={() => setForm(null)}
+        onSave={(next, name) => {
+          saveDecisions(next)
+          setDecidedBy(name)
+          setForm(null)
+          setNotice({
+            text: `${group.cultivation} · ${group.kpi} · ${decisionWords(next)} (${next.length} ${next.length === 1 ? 'value' : 'values'}). The scores have been updated. Find it under “${DECISION_LABEL[next[0]!.kind]}” or in the Decision log.`,
+            cellIds: next.map((d) => d.cellId),
+          })
+        }}
+      />
+    )
   }
 
   return (
@@ -172,7 +210,7 @@ export default function DataChecksScreen() {
                 ))}
               </select>
             </label>
-            <Segmented label="Show" value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} />
+            <Segmented label="Show" value={filter} onChange={setStatusFilter} options={tab === 'missing' ? MISSING_STATUS_OPTIONS : STATUS_OPTIONS} />
             {tab === 'review' && (
               <Segmented
                 label="Kind"
@@ -191,44 +229,25 @@ export default function DataChecksScreen() {
       {tab === 'review' && (
         <>
           <p className="text-sm text-ink-3">
-            {visibleReview.length} {visibleReview.length === 1 ? 'item' : 'items'} shown · {openCount} waiting · {decidedCount} decided.
+            {visibleReview.length} {visibleReview.length === 1 ? 'item' : 'items'} shown · {openCount} waiting for a decision · {decidedCount} confirmed, corrected or excluded.
           </p>
           {visibleReview.length === 0 ? (
             <p className="rounded-xl border border-line bg-card p-6 text-center text-ink-2">
-              {statusFilter === 'open' ? 'Nothing is waiting for a decision here.' : 'No items match these filters.'}
+              {filter === 'open' ? 'Nothing is waiting for a decision here.' : 'No items match these filters.'}
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               {visibleReview.map((group) => {
                 const status = statusOf(group)
-                const own = group.flags.map((f) => decisionById.get(f.id)).filter((d): d is NonNullable<typeof d> => d !== undefined)
                 return (
                   <FlagGroupCard
                     key={group.id}
                     group={group}
                     status={status}
-                    decisions={own}
+                    decisions={decisionsOf(group)}
                     onChoose={(kind) => decide(group, kind)}
                     onReopen={() => reopen(group)}
-                    form={
-                      form?.groupId === group.id ? (
-                        <DecisionForm
-                          group={group}
-                          kind={form.kind}
-                          defaultName={decidedBy}
-                          onCancel={() => setForm(null)}
-                          onSave={(next, name) => {
-                            saveDecisions(next)
-                            setDecidedBy(name)
-                            setForm(null)
-                            setNotice({
-                              text: `Saved: ${group.cultivation} · ${group.kpi} (${next.length} ${next.length === 1 ? 'value' : 'values'}). It moved to “Decided” and the scores have been updated.`,
-                              cellIds: next.map((d) => d.cellId),
-                            })
-                          }}
-                        />
-                      ) : null
-                    }
+                    form={formFor(group)}
                   />
                 )
               })}
@@ -238,101 +257,20 @@ export default function DataChecksScreen() {
       )}
 
       {tab === 'missing' && (
-        <MissingValues
+        <MissingValueList
           groups={visibleMissing}
           statusOf={statusOf}
+          decisionsOf={decisionsOf}
           decidedBy={decidedBy}
           setDecidedBy={setDecidedBy}
-          onAcknowledgeAll={acknowledgeAll}
-          onAcknowledge={(g) => decidedBy.trim() && saveDecisions(buildDecisions(g.flags, { kind: 'confirm', decidedBy: decidedBy.trim(), note: 'Acknowledged: not recorded' }))}
+          onConfirmAll={confirmAll}
+          onChoose={decide}
           onReopen={reopen}
+          formFor={formFor}
         />
       )}
 
       {tab === 'log' && <DecisionLog decisions={decisions} onReopen={removeDecisions} onReplace={replaceDecisions} />}
     </div>
-  )
-}
-
-function MissingValues({
-  groups,
-  statusOf,
-  decidedBy,
-  setDecidedBy,
-  onAcknowledgeAll,
-  onAcknowledge,
-  onReopen,
-}: {
-  groups: FlagGroup[]
-  statusOf: (g: FlagGroup) => 'open' | 'partial' | 'decided'
-  decidedBy: string
-  setDecidedBy: (name: string) => void
-  onAcknowledgeAll: (groups: FlagGroup[]) => void
-  onAcknowledge: (group: FlagGroup) => void
-  onReopen: (group: FlagGroup) => void
-}) {
-  const open = groups.filter((g) => statusOf(g) !== 'decided')
-  return (
-    <section className="flex flex-col gap-3" aria-label="Missing values">
-      <p className="text-sm text-ink-2">
-        <span className="md:hidden">
-          Empty cells in the workbook. They are left out of the scores, never counted as zero. There is nothing to decide; acknowledge them to tidy the list.
-        </span>
-        <span className="hidden md:inline">
-          These cells were empty in the workbook. An empty cell means “not recorded”, so it is left out of the scores and never counted as zero. Nothing is held back, so there is nothing you have to decide; acknowledge them to tidy the list.
-        </span>
-      </p>
-      <div className="flex items-end gap-2 rounded-xl border border-line bg-card p-3 md:gap-3">
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium md:max-w-xs">
-          Your name
-          <input value={decidedBy} onChange={(e) => setDecidedBy(e.target.value)} className="min-h-11 w-full min-w-0 rounded-lg border border-line bg-card px-2 text-base font-normal md:min-h-10 md:text-sm" />
-        </label>
-        <button
-          type="button"
-          disabled={open.length === 0 || !decidedBy.trim()}
-          onClick={() => onAcknowledgeAll(open)}
-          className="min-h-11 shrink-0 rounded-lg bg-brand px-3 text-sm font-semibold text-white disabled:opacity-50 md:min-h-10"
-        >
-          Acknowledge all {open.length}
-          <span className="hidden sm:inline"> shown</span>
-        </button>
-      </div>
-      {groups.length === 0 ? (
-        <p className="rounded-xl border border-line bg-card p-6 text-center text-ink-2">No missing values match these filters.</p>
-      ) : (
-        <ul className="divide-y divide-line-soft rounded-2xl border border-line bg-card shadow-sm">
-          {groups.map((g) => {
-            const decided = statusOf(g) === 'decided'
-            return (
-              <li key={g.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-                <div className="min-w-0 text-sm">
-                  <p className="font-semibold">
-                    {g.cultivation} · {g.kpi}
-                  </p>
-                  <p className="text-ink-2">
-                    {g.startDate === g.endDate ? formatDate(g.startDate) : formatRange(g.startDate, g.endDate)}
-                    {g.flags.length > 1 ? ` · ${g.flags.length} values` : ''}
-                  </p>
-                </div>
-                {decided ? (
-                  <button type="button" onClick={() => onReopen(g)} className="min-h-9 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink-2">
-                    Acknowledged · Reopen
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={!decidedBy.trim()}
-                    onClick={() => onAcknowledge(g)}
-                    className="min-h-9 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink disabled:opacity-50"
-                  >
-                    Acknowledge
-                  </button>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </section>
   )
 }

@@ -130,10 +130,10 @@ export default function AboutScreen() {
           <li><strong>Impossible values:</strong> humidity or any percentage above 100, negative amounts, drain pH outside {T.phRange[0]} to {T.phRange[1]}.</li>
           <li><strong>Jumps:</strong> a value more than {T.jumpHigh} times, or less than {T.jumpLow} times, the cultivation’s own median for that KPI.</li>
           <li><strong>Plan and actual far apart:</strong> over a week, the budget or target is more than {T.apartFactor} times away from the actual.</li>
-          <li><strong>Missing values:</strong> an empty cell. It is left out and never counted as zero.</li>
+          <li><strong>Missing values:</strong> an empty cell. It is already left out of the scores and never counted as zero; you can still Confirm values (nothing was recorded) or Apply correction (enter the missing value).</li>
         </ul>
         <p>
-          Ordinary zeros are not flagged (weekend harvest, no heating on a warm day, a young crop in its first {T.youngCropWeeks} weeks). KPIs that follow the weather, such as solar radiation, skip the jump check. One cell gets at most one flag, from the most specific rule. A flagged value is left out of the scores until a person confirms it, corrects it or excludes it; the decision, who made it and when are kept in the decision log, in this browser, and can be exported and imported as CSV. “Show raw data” scores everything as recorded.
+          Ordinary zeros are not flagged (weekend harvest, no heating on a warm day, a young crop in its first {T.youngCropWeeks} weeks). KPIs that follow the weather, such as solar radiation, skip the jump check. One cell gets at most one flag, from the most specific rule. A flagged value is left out of the scores until a person chooses <strong>Confirm values</strong> (kept exactly as recorded and counted), <strong>Apply correction</strong> (the suggested or a typed value is used instead) or <strong>Exclude</strong> (left out of the scores). The decision, who made it and when are kept in the decision log, in this browser, and can be exported and imported as CSV. “Show raw data” scores everything as recorded.
         </p>
       </Section>
 

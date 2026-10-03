@@ -1,22 +1,64 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { kpiConfig } from '../../config/kpis'
-import { plain } from '../../lib/format'
+import { formatDate } from '../../data/dates'
+import { plain, withUnit } from '../../lib/format'
 import type { FlagGroup } from '../../flags'
-import { allHaveSuggestions, buildDecisions, type Decision, type DecisionKind } from '../../storage'
+import { ACTION_LABEL, allHaveSuggestions, buildDecisions, type Decision, type DecisionKind } from '../../storage'
 
-const TITLE: Record<DecisionKind, string> = {
-  confirm: 'Confirm the value is correct',
-  correct: 'Correct the value',
-  exclude: 'Exclude the value',
+/** Per-date suggestions listed in the panel before it says "and N more" (the card's table above has every one). */
+const SUGGESTIONS_LISTED = 5
+
+/** The one sentence that says what the action will do to these values. */
+function whatHappens(kind: DecisionKind, group: FlagGroup, hasSuggestions: boolean): string {
+  const many = group.flags.length > 1
+  const missing = group.rule === 'missing-value'
+  const subject = many ? `All ${group.flags.length} values in this item are` : 'The value is'
+  switch (kind) {
+    case 'confirm':
+      return missing
+        ? 'You accept that nothing was recorded: the value stays empty and left out of the scores.'
+        : `${subject} kept exactly as recorded and counted in the scores.`
+    case 'exclude':
+      return `${subject} left out of the scores.`
+    case 'correct':
+      return `${hasSuggestions ? 'The suggested correction' : 'The value you enter'} is used in the scores ${missing ? 'for the empty value' : 'in place of the recorded one'}. The workbook is not changed.`
+  }
 }
 
-const HELP: Record<DecisionKind, string> = {
-  confirm: 'The value stays exactly as recorded and counts in the scores.',
-  correct: 'The corrected value replaces the recorded one in the scores. The workbook is not changed.',
-  exclude: 'The value is left out of the scores, as if it had not been recorded.',
+/** The suggested correction(s) of a group, shown so it is clear what Apply correction will save. */
+function SuggestedCorrection({ group }: { group: FlagGroup }) {
+  const unit = kpiConfig(group.kpi).unit
+  const values = group.flags.map((f) => f.suggestion as number)
+  const lo = Math.min(...values)
+  const hi = Math.max(...values)
+  const same = lo === hi
+  const perDate = group.flags.length > 1 && !same
+  return (
+    <div className="rounded-lg border border-line-soft bg-page/70 p-2.5 text-sm">
+      <div className="text-xs font-semibold text-ink-2">Suggested correction{perDate ? ', one for each date' : ''}</div>
+      <div className="num text-base font-semibold">
+        {same ? withUnit(lo, unit) : `${plain(lo)} to ${withUnit(hi, unit)}`}
+      </div>
+      {group.suggestionNote && <div className="text-xs text-ink-2">{group.suggestionNote}</div>}
+      {perDate && (
+        <ul className="num mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-2" aria-label="Suggested value for each date">
+          {group.flags.slice(0, SUGGESTIONS_LISTED).map((f) => (
+            <li key={f.id}>
+              {formatDate(f.date)}: <strong className="font-semibold text-ink">{plain(f.suggestion as number)}</strong>
+            </li>
+          ))}
+          {group.flags.length > SUGGESTIONS_LISTED && <li>and {group.flags.length - SUGGESTIONS_LISTED} more</li>}
+        </ul>
+      )}
+    </div>
+  )
 }
 
-/** Who / note (and the new value, for a correction) for one decision about a whole grouped item. */
+/**
+ * The compact panel that opens under an action button. All three actions share it: a sentence saying what will happen,
+ * (for Apply correction) the suggested value and one plain field for a different value, the person's name, an optional
+ * note, and a primary button that repeats the action's label.
+ */
 export function DecisionForm({
   group,
   kind,
@@ -34,72 +76,63 @@ export function DecisionForm({
   const unit = kpiConfig(group.kpi).unit
   const [name, setName] = useState(defaultName)
   const [note, setNote] = useState('')
-  const [mode, setMode] = useState<'suggestion' | 'value'>(hasSuggestions ? 'suggestion' : 'value')
   const [typed, setTyped] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
+  const label = ACTION_LABEL[kind]
+  const many = group.flags.length > 1
 
-  const suggestions = group.flags.map((f) => f.suggestion).filter((s): s is number => s !== null)
+  // The panel opens where the person just clicked; move keyboard and screen reader focus into it.
+  useEffect(() => heading.current?.focus({ preventScroll: true }), [])
 
   function submit(event: FormEvent) {
     event.preventDefault()
     if (!name.trim()) return setError('Please add your name so the log shows who decided.')
     let value: number | 'suggestion' | undefined
     if (kind === 'correct') {
-      if (mode === 'suggestion') value = 'suggestion'
+      if (typed.trim() === '' && hasSuggestions) value = 'suggestion'
       else {
-        const parsed = Number(typed.replace(',', '.'))
-        if (typed.trim() === '' || !Number.isFinite(parsed)) return setError('Enter the corrected value as a number.')
+        const parsed = Number(typed.trim().replace(',', '.'))
+        if (typed.trim() === '' || !Number.isFinite(parsed)) return setError(hasSuggestions ? 'Enter the value as a number, or leave the field empty to use the suggestion.' : 'Enter the value as a number.')
         value = parsed
       }
     }
     onSave(buildDecisions(group.flags, { kind, decidedBy: name, note, value }), name.trim())
   }
 
-  const idPrefix = `${group.id}-${kind}`
+  const valueLabel = hasSuggestions
+    ? `Or type a different value${many ? ' for all dates' : ''} (${unit})`
+    : `${group.rule === 'missing-value' ? 'Missing value' : 'Corrected value'}${many ? ' for all dates' : ''} (${unit})`
+
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 rounded-xl border border-line bg-page/70 p-3" aria-label={TITLE[kind]}>
+    <form onSubmit={submit} noValidate className="flex flex-col gap-3 rounded-xl border border-line bg-page/70 p-3" aria-label={label}>
       <div>
-        <h4 className="font-semibold">{TITLE[kind]}</h4>
-        <p className="text-sm text-ink-2">
-          {HELP[kind]} Applies to all {group.flags.length} {group.flags.length === 1 ? 'value' : 'values'} in this item.
-        </p>
+        <h4 ref={heading} tabIndex={-1} className="font-semibold outline-none">
+          {label}
+        </h4>
+        <p className="text-sm text-ink-2">{whatHappens(kind, group, hasSuggestions)}</p>
       </div>
 
       {kind === 'correct' && (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-medium">New value</legend>
-          {hasSuggestions && (
-            <label className="flex items-start gap-2 text-sm">
-              <input type="radio" name={`${idPrefix}-mode`} checked={mode === 'suggestion'} onChange={() => setMode('suggestion')} className="mt-1 size-4" />
-              <span>
-                Use the suggested {suggestions.length === 1 ? 'value' : 'values'}:{' '}
-                <strong className="num">
-                  {Math.min(...suggestions) === Math.max(...suggestions)
-                    ? plain(suggestions[0]!)
-                    : `${plain(Math.min(...suggestions))} to ${plain(Math.max(...suggestions))}`}{' '}
-                  {unit}
-                </strong>
-                {group.suggestionNote && <span className="text-ink-3"> ({group.suggestionNote})</span>}
-              </span>
-            </label>
-          )}
-          <label className="flex flex-wrap items-center gap-2 text-sm">
-            {hasSuggestions && (
-              <input type="radio" name={`${idPrefix}-mode`} checked={mode === 'value'} onChange={() => setMode('value')} className="size-4" aria-label="Enter a value" />
-            )}
-            <span>{hasSuggestions ? 'Or enter a value' : 'Enter the correct value'} ({unit})</span>
+        <>
+          {hasSuggestions && <SuggestedCorrection group={group} />}
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            {valueLabel}
             <input
               inputMode="decimal"
               value={typed}
-              onFocus={() => setMode('value')}
-              onChange={(e) => {
-                setTyped(e.target.value)
-                setMode('value')
-              }}
-              className="num min-h-10 w-32 rounded-lg border border-line bg-card px-2"
+              onChange={(e) => setTyped(e.target.value)}
+              required={!hasSuggestions}
+              aria-describedby={hasSuggestions ? `${group.id}-value-hint` : undefined}
+              className="num min-h-10 w-40 rounded-lg border border-line bg-card px-2 font-normal"
             />
+            {hasSuggestions && (
+              <span id={`${group.id}-value-hint`} className="text-xs font-normal text-ink-2">
+                Leave empty to save the suggested {many && new Set(group.flags.map((f) => f.suggestion)).size > 1 ? 'values' : 'value'}.
+              </span>
+            )}
           </label>
-        </fieldset>
+        </>
       )}
 
       <label className="flex flex-col gap-1 text-sm font-medium">
@@ -118,7 +151,7 @@ export function DecisionForm({
       )}
       <div className="flex flex-wrap gap-2">
         <button type="submit" className="min-h-10 rounded-lg bg-brand px-4 text-sm font-semibold text-white">
-          Save decision
+          {label}
         </button>
         <button type="button" onClick={onCancel} className="min-h-10 rounded-lg border border-line bg-card px-4 text-sm font-semibold text-ink-2">
           Cancel

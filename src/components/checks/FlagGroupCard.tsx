@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom'
 import { kpiConfig, planWord } from '../../config/kpis'
 import { formatDate, formatRange } from '../../data/dates'
 import { fieldWord, ruleTitleFor, type FlagGroup } from '../../flags'
-import { plain } from '../../lib/format'
-import { formatDateTime } from '../../lib/format'
-import { DECISION_LABEL, type Decision, type DecisionKind } from '../../storage'
+import { formatDateTime, plain } from '../../lib/format'
+import { ACTION_LABEL, decisionOutcome, type Decision, type DecisionKind } from '../../storage'
 import type { GroupStatus } from '../../state/groupStatus'
 import { FlagIcon } from '../ui/icons'
 
@@ -16,19 +15,7 @@ const SEVERITY_STYLE = {
 }
 const SEVERITY_WORD = { error: 'Likely error', warning: 'Check', info: 'For information' }
 
-function decisionSummary(decisions: Decision[]): string {
-  const first = decisions[0]!
-  const same = decisions.every((d) => d.kind === first.kind && d.correctedValue === first.correctedValue)
-  const what =
-    first.kind === 'correct'
-      ? same
-        ? `Corrected to ${plain(first.correctedValue!)}`
-        : 'Corrected (a value for each date)'
-      : DECISION_LABEL[first.kind]
-  return `${what} by ${first.decidedBy || 'unknown'} on ${formatDateTime(first.decidedAt)}${first.note ? `. “${first.note}”` : ''}`
-}
-
-/** One grouped flag: what is wrong, the values, and the three ways to decide. */
+/** One grouped flag: what is wrong, the values, and the three actions: Confirm values, Apply correction, Exclude. */
 export function FlagGroupCard({
   group,
   status,
@@ -111,7 +98,13 @@ export function FlagGroupCard({
 
       {status === 'decided' ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-ok-bg px-3 py-2 text-sm text-ok-ink">
-          <span>{decisionSummary(decisions)}</span>
+          <div>
+            <p className="font-semibold">{decisionOutcome(decisions)}</p>
+            <p className="text-xs">
+              {formatDateTime(decisions[0]!.decidedAt)}
+              {decisions[0]!.note ? ` · “${decisions[0]!.note}”` : ''}
+            </p>
+          </div>
           <button type="button" onClick={onReopen} className="min-h-9 rounded-lg border border-ok-line bg-card px-3 text-sm font-semibold text-ok-ink">
             Reopen
           </button>
@@ -126,16 +119,14 @@ export function FlagGroupCard({
           {!form && (
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => onChoose('confirm')} className="min-h-10 rounded-lg border border-ok-line bg-ok-bg px-3 text-sm font-semibold text-ok-ink">
-                {missing ? 'Acknowledge' : 'Confirm correct'}
+                {ACTION_LABEL.confirm}
               </button>
               <button type="button" onClick={() => onChoose('correct')} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
-                {missing ? 'Enter a value' : 'Correct…'}
+                {ACTION_LABEL.correct}
               </button>
-              {!missing && (
-                <button type="button" onClick={() => onChoose('exclude')} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
-                  Exclude
-                </button>
-              )}
+              <button type="button" onClick={() => onChoose('exclude')} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
+                {ACTION_LABEL.exclude}
+              </button>
             </div>
           )}
           {form}

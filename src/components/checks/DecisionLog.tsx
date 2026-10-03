@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { formatDate, formatRange } from '../../data/dates'
-import { formatDateTime, plain } from '../../lib/format'
+import { formatDateTime } from '../../lib/format'
 import { fieldWord } from '../../flags'
-import { DECISION_LABEL, decisionsToCsv, mergeDecisions, parseDecisionsCsv, type Decision } from '../../storage'
+import { decisionOutcome, decisionsToCsv, mergeDecisions, parseDecisionsCsv, type Decision } from '../../storage'
 
 interface Entry {
   key: string
@@ -119,7 +119,6 @@ export function DecisionLog({
           {entries.map(({ key, decisions: list }) => {
             const first = list[0]!
             const last = list[list.length - 1]!
-            const sameValue = list.every((d) => d.correctedValue === first.correctedValue)
             return (
               <li key={key} className="flex flex-wrap items-start justify-between gap-2 p-3">
                 <div className="min-w-0 text-sm">
@@ -127,13 +126,12 @@ export function DecisionLog({
                     {first.cultivation} · {first.kpi} · {fieldWord(first.field, first.kpi)}
                   </p>
                   <p>
-                    {DECISION_LABEL[first.kind]}
-                    {first.kind === 'correct' && sameValue && first.correctedValue !== null ? ` to ${plain(first.correctedValue)}` : ''}
+                    {decisionOutcome(list)}
                     {' · '}
                     {list.length === 1 ? formatDate(first.date) : `${list.length} values, ${formatRange(first.date, last.date)}`}
                   </p>
                   <p className="text-ink-2">
-                    {first.decidedBy || 'unknown'} · {formatDateTime(first.decidedAt)}
+                    {formatDateTime(first.decidedAt)}
                     {first.note ? ` · “${first.note}”` : ''}
                   </p>
                 </div>

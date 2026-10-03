@@ -125,7 +125,7 @@ describe('what a screen reader hears', () => {
     const text = gaugeValueText(gaugeModel(9.1, 4, 1.2)!, format, 'budget')
     expect(text).toContain('9.1%')
     expect(text).toContain('budget 4.0%')
-    expect(text).toContain('Over scale')
+    expect(text).toContain('Off the scale')
   })
 })
 

@@ -47,6 +47,8 @@
 
   /* Chart marks */
   --color-actual: #2a78d6;
+  /* The keyboard focus ring: a deeper blue than the actual line, so it clears 3:1 on the page green as well as the cards. */
+  --color-focus: #1d5fb0;
   --color-target: #3c4b42;
   --color-budget: #6b7b71; /* the budget bars on the Facilities charts: neutral, 3:1 on a tile */
   --color-flag: #6a46c6;
@@ -75,7 +77,7 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-actual);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: 4px;
 }

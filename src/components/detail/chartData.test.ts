@@ -24,17 +24,22 @@ const point = (week: string, actual: number | null, target: number | null, extra
 })
 
 describe('tolerance bands', () => {
-  it('close to target: target +/- the tolerance, in percent or in units', () => {
-    expect(toleranceBands(kpiConfig('Fruit weight'), 100).green).toEqual([95, 105])
-    expect(toleranceBands(kpiConfig('Fruit weight'), 100).amber).toEqual([90, 110])
-    expect(toleranceBands(kpiConfig('Temperature (24h)'), 21).green).toEqual([19.5, 22.5])
-    expect(toleranceBands(kpiConfig('Temperature (24h)'), 21).amber).toEqual([18, 24])
+  it('close to target: green is target +/- the tolerance, with an amber strip on each side that does not overlap it', () => {
+    const fruit = toleranceBands(kpiConfig('Fruit weight'), 100)
+    expect(fruit.green).toEqual([95, 105])
+    expect(fruit.amber).toEqual([90, 95])
+    expect(fruit.amberAbove).toEqual([105, 110])
+    const temperature = toleranceBands(kpiConfig('Temperature (24h)'), 21)
+    expect(temperature.green).toEqual([19.5, 22.5])
+    expect(temperature.amber).toEqual([18, 19.5])
+    expect(temperature.amberAbove).toEqual([22.5, 24])
   })
 
   it('higher is better: amber strip below the green strip, which stops at the budget, nothing above', () => {
-    const { green, amber } = toleranceBands(kpiConfig('Harvest'), 100) // green 3 %, amber 8 %
+    const { green, amber, amberAbove } = toleranceBands(kpiConfig('Harvest'), 100) // green 3 %, amber 8 %
     expect(green).toEqual([97, 100])
     expect(amber).toEqual([92, 97])
+    expect(amberAbove).toBeNull()
   })
 
   it('lower is better: green strip from the budget up, then the amber strip, nothing below', () => {

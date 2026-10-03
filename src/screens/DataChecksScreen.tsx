@@ -105,7 +105,11 @@ export default function DataChecksScreen() {
           setDecidedBy(name)
           setForm(null)
           setNotice({
-            text: `${group.cultivation} · ${group.kpi} · ${decisionWords(next)} (${next.length} ${next.length === 1 ? 'value' : 'values'}). The scores have been updated. Find it under “${DECISION_LABEL[next[0]!.kind]}” or in the Decision log.`,
+            text: `${group.cultivation} · ${group.kpi} · ${decisionWords(next)} (${next.length} ${next.length === 1 ? 'value' : 'values'}). ${
+              group.rule === 'missing-value' && next[0]!.kind === 'confirm'
+                ? `${next.length === 1 ? 'It stays' : 'They stay'} left out of the scores.`
+                : 'The scores have been updated.'
+            } Find it under “${DECISION_LABEL[next[0]!.kind]}” or in the Decision log.`,
             cellIds: next.map((d) => d.cellId),
           })
         }}

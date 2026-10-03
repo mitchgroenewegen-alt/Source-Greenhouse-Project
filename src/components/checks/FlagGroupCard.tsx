@@ -69,7 +69,7 @@ export function FlagGroupCard({
 
       {!missing && (
         <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile px-2 py-2 sm:px-3">
-          <table className="num w-full max-w-md text-xs sm:text-sm">
+          <table className="num w-full text-xs sm:text-sm">
             <caption className="sr-only">Recorded values in this item</caption>
             <thead>
               <tr className="text-xs text-ink-2">

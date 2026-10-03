@@ -75,6 +75,9 @@ describe('marks and edges (3:1)', () => {
     for (const k of ['ok', 'warn', 'bad']) for (const s of ['card', 'tile']) over(k, s, 3)
     for (const c of ['actual', 'target', 'flag', 'budget']) for (const s of ['card', 'tile']) over(c, s, 3)
   })
+  it('the keyboard focus ring shows on every surface, the page green included', () => {
+    for (const s of SURFACES) over('focus', s, 3)
+  })
   it('badge edges stand out from the card or tile, so a badge never melts into the green', () => {
     for (const k of ['ok', 'warn', 'bad', 'none']) for (const s of ['card', 'tile']) over(`${k}-line`, s, 3)
   })

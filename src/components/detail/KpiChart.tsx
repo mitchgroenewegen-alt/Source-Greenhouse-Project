@@ -129,6 +129,7 @@ export function KpiChart({
           <Tooltip content={(props) => <ChartTooltip {...props} config={config} weeks={weeks} />} cursor={{ stroke: 'var(--color-ink-3)', strokeDasharray: '2 3' }} />
           <ReferenceLine x={selectedLabel} stroke="var(--color-brand)" strokeOpacity={0.16} strokeWidth={14} />
           <Area dataKey="amber" type="monotone" stroke="none" fill="var(--color-warn)" fillOpacity={0.28} isAnimationActive={false} activeDot={false} legendType="none" />
+          <Area dataKey="amberAbove" type="monotone" stroke="none" fill="var(--color-warn)" fillOpacity={0.28} isAnimationActive={false} activeDot={false} legendType="none" />
           <Area dataKey="green" type="monotone" stroke="none" fill="var(--color-ok)" fillOpacity={0.3} isAnimationActive={false} activeDot={false} legendType="none" />
           <Line dataKey="target" type="monotone" stroke={TARGET} strokeWidth={2} strokeDasharray="5 4" dot={markedDot(TARGET, (r) => r.targetMark)} activeDot={{ r: 4 }} isAnimationActive={false} />
           <Line dataKey="actual" type="monotone" stroke={ACTUAL} strokeWidth={2} dot={markedDot(ACTUAL, (r) => r.actualMark)} activeDot={{ r: 5 }} isAnimationActive={false} />

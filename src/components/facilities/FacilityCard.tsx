@@ -90,16 +90,19 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
         </li>
       </ul>
 
-      {/* Safety net: if a very large number ever makes the table wider than the card, it scrolls here, not the page. */}
-      <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile px-1">
-        <table className="num w-full text-xs sm:text-sm">
+      {/* Safety net: if a very large number ever makes the table wider than the card, it scrolls here, not the page.
+          The inset is on the first and last cells, not the wrapper, so the total row's shading runs to the tile's edge.
+          The area has its own column only on a single- or two-column page; on a phone and in the three-column layout
+          (xl) it sits under the name, which leaves room for the badges. */}
+      <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile">
+        <table className="num w-full text-xs sm:text-sm [&_tr>:first-child]:pl-2 [&_tr>:last-child]:pr-2">
           <caption className="sr-only">
             {facility}: harvest against budget in {unitLabel}
           </caption>
           <thead>
             <tr className="border-b border-line-soft text-xs text-ink-2">
               <th scope="col" className="py-1.5 pr-1 text-left font-semibold">Cultivation</th>
-              <th scope="col" className="hidden px-0.5 py-1.5 text-right font-semibold sm:table-cell">m²</th>
+              <th scope="col" className="hidden px-0.5 py-1.5 text-right font-semibold sm:table-cell xl:hidden">m²</th>
               <th scope="col" className="px-0.5 py-1.5 text-right font-semibold">
                 Budget<span className="block font-normal text-ink-3">{unitLabel}</span>
               </th>
@@ -114,13 +117,13 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
               <tr key={r.cultivation.id} className="border-b border-line-soft align-top">
                 <th scope="row" className="py-2 pr-1 text-left text-xs font-semibold sm:text-sm">
                   {r.cultivation.id}
-                  <span className="block text-xs font-normal text-ink-3 sm:hidden">{fixed(r.cultivation.areaM2, 0)} m²</span>
+                  <span className="block text-xs font-normal text-ink-3 sm:hidden xl:block">{fixed(r.cultivation.areaM2, 0)} m²</span>
                   {/* On a phone the badge sits under the name, which frees a column's width for the numbers. */}
                   <span className="mt-1 block font-normal sm:hidden">
                     <StatusBadge status={r.status} compact />
                   </span>
                 </th>
-                <td className="hidden px-0.5 py-2 text-right text-ink-2 sm:table-cell">{fixed(r.cultivation.areaM2, 0)}</td>
+                <td className="hidden px-0.5 py-2 text-right text-ink-2 sm:table-cell xl:hidden">{fixed(r.cultivation.areaM2, 0)}</td>
                 <td className="px-0.5 py-2 text-right">{show(r.budget, r.cultivation.areaM2)}</td>
                 <td className="py-2 pl-1 pr-0.5 text-right font-semibold">{show(r.actual, r.cultivation.areaM2)}</td>
                 <td className="py-2 pl-1 text-right">
@@ -134,12 +137,12 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
             <tr className="bg-card align-top font-semibold">
               <th scope="row" className="py-2 pr-1 text-left text-xs sm:text-sm">
                 Facility total{unit === 'kgm2' ? ' (area-weighted)' : ''}
-                <span className="block text-xs font-normal text-ink-3 sm:hidden">{fixed(total.areaM2, 0)} m²</span>
+                <span className="block text-xs font-normal text-ink-3 sm:hidden xl:block">{fixed(total.areaM2, 0)} m²</span>
                 <span className="mt-1 block font-normal sm:hidden">
                   <StatusBadge status={total.status} compact />
                 </span>
               </th>
-              <td className="hidden px-0.5 py-2 text-right text-ink-2 sm:table-cell">{fixed(total.areaM2, 0)}</td>
+              <td className="hidden px-0.5 py-2 text-right text-ink-2 sm:table-cell xl:hidden">{fixed(total.areaM2, 0)}</td>
               <td className="px-0.5 py-2 text-right">{show(total.budget, total.areaM2)}</td>
               <td className="py-2 pl-1 pr-0.5 text-right">{show(total.actual, total.areaM2)}</td>
               <td className="py-2 pl-1 text-right">

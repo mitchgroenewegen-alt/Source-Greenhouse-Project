@@ -70,5 +70,5 @@ export function arcPath(cx: number, cy: number, radius: number, from: number, to
  */
 export function gaugeValueText(model: GaugeModel, format: (value: number) => string, planWord: string): string {
   const base = `${format(model.actual)}, ${planWord} ${format(model.budget)}, scale 0 to ${format(model.scaleMax)}.`
-  return model.over ? `${base} Over scale: the value is beyond the end of the meter.` : base
+  return model.over ? `${base} Off the scale: the value is beyond the end of the meter.` : base
 }

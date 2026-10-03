@@ -40,7 +40,7 @@ export function HeadlineMetric({ result, label }: { result: KpiResult; label: st
         <div className="@container">
           <div className="mt-1 flex flex-col gap-1.5 @[12rem]:flex-row @[12rem]:flex-wrap @[12rem]:items-center @[12rem]:gap-x-0.5 @[14rem]:gap-x-3">
             <KpiGauge config={config} model={gauge} status={score.status} />
-            {gauge.over && <OverScaleNote config={config} model={gauge} className="order-2 @[12rem]:order-3 @[12rem]:basis-full" />}
+            {gauge.over && <OverScaleNote config={config} model={gauge} status={score.status} className="order-2 @[12rem]:order-3 @[12rem]:basis-full" />}
             <div className="order-3 min-w-0 @[12rem]:order-2 @[12rem]:flex-1">{figures}</div>
           </div>
         </div>

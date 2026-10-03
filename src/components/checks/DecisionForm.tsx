@@ -16,7 +16,9 @@ function whatHappens(kind: DecisionKind, group: FlagGroup, hasSuggestions: boole
   switch (kind) {
     case 'confirm':
       return missing
-        ? 'You accept that nothing was recorded: the value stays empty and left out of the scores.'
+        ? many
+          ? `You accept that nothing was recorded: all ${group.flags.length} values stay empty and left out of the scores.`
+          : 'You accept that nothing was recorded: the value stays empty and left out of the scores.'
         : `${subject} kept exactly as recorded and counted in the scores.`
     case 'exclude':
       return `${subject} left out of the scores.`

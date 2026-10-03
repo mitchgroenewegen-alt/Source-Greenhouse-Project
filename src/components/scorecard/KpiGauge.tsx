@@ -87,13 +87,18 @@ export function KpiGauge({ config, model, status }: { config: KpiConfig; model: 
   )
 }
 
-/** The words that go with the stop bar when the actual is beyond the scale: "Over scale: 9.1% vs 4.8% max". */
-export function OverScaleNote({ config, model, className = '' }: { config: KpiConfig; model: GaugeModel; className?: string }) {
+/**
+ * The words that go with the stop bar when the actual is beyond the scale: "Off the scale (ends at 4.8%)". The value itself is
+ * already the tile's big number, so the note only says where the meter stops.
+ * The warning icon is only for an off-target (red) tile: a value can pass the end of the meter and still be inside the
+ * tolerance (1.9% against a 1.5% budget is on track), and a warning there would contradict the badge.
+ */
+export function OverScaleNote({ config, model, status, className = '' }: { config: KpiConfig; model: GaugeModel; status: Status | null; className?: string }) {
   return (
     <p className={`num flex items-start gap-1 text-[0.68rem] font-semibold leading-tight text-ink ${className}`}>
-      <AlertIcon width={12} height={12} className="mt-px shrink-0" />
+      {status === 'red' && <AlertIcon width={12} height={12} className="mt-px shrink-0" />}
       <span>
-        Over scale: {shortValue(config, model.actual)} vs {shortValue(config, model.scaleMax)} max
+        Off the scale (ends at {shortValue(config, model.scaleMax)})
       </span>
     </p>
   )

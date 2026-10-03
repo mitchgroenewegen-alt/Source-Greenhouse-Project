@@ -5,7 +5,8 @@ import { AlertIcon } from '../ui/icons'
 import { arcPath, arcPoint, gaugeValueText, type GaugeModel } from './gauge'
 
 // The meter is drawn in its own pixel units (one SVG unit is one CSS pixel at the narrowest tile, 320 px phones), so
-// the small text never shrinks; wider tiles scale it up, to a limit.
+// the small text never shrinks. It never grows past 112 px wide (stacked or beside the figures), so the Waste tile
+// stays close to the height of its neighbours; the one narrower size (96 px) is for a tile with about 190-220 px of room.
 const WIDTH = 104
 const HEIGHT = 56
 const CX = WIDTH / 2
@@ -59,7 +60,7 @@ export function KpiGauge({ config, model, status }: { config: KpiConfig; model: 
       aria-valuemax={Number(model.scaleMax.toFixed(4))}
       aria-valuenow={Number(model.clampedActual.toFixed(4))}
       aria-valuetext={gaugeValueText(model, (v) => shortValue(config, v), plan)}
-      className="w-full max-w-36 @[14rem]:w-28 @[14rem]:shrink-0"
+      className="w-full max-w-28 @[12rem]:w-24 @[12rem]:shrink-0 @[14rem]:w-28"
     >
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block h-auto w-full" aria-hidden="true" focusable="false">
         <path d={arcPath(CX, CY, RADIUS, 0, 1)} fill="none" className="stroke-track" strokeWidth={STROKE} />

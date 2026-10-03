@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { KPI_CONFIG, kpiConfig } from '../config/kpis'
 import { loadTestData } from '../test/loadData'
-import { scoreKpi, worstStatus } from './score'
+import { scoreKpi, STATUS_LABEL, worstStatus } from './score'
 
 const data = loadTestData()
 
@@ -172,5 +172,11 @@ describe('the KPI config', () => {
     expect(KPI_CONFIG.filter((k) => k.showOnScorecard).map((k) => k.name).sort()).toEqual(
       ['Cumulative harvest', 'Fruit weight', 'Harvest', 'Waste'],
     )
+  })
+})
+
+describe('status words', () => {
+  it('calls red "Off target" (not "Off track") and leaves On track and Watch as they were', () => {
+    expect(STATUS_LABEL).toEqual({ green: 'On track', amber: 'Watch', red: 'Off target' })
   })
 })

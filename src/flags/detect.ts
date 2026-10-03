@@ -10,6 +10,7 @@ import { rollup } from '../data/aggregate'
 import { addDays, cropWeekOn } from '../data/dates'
 import type { Cultivation, DailyRow } from '../data/types'
 import { plain, withUnit } from '../lib/format'
+import { fieldWord } from './group'
 import { FLAG_THRESHOLDS as T, flagSettings, slipKinds, type KpiFlagSettings } from './settings'
 import { cellId, type Field, type Flag, type RuleId, type Severity } from './types'
 
@@ -50,8 +51,6 @@ interface Hit {
 /** Harvest and the change in cumulative harvest may differ by this much (kg/m²) and still agree. */
 const HARVEST_AGREES_WITHIN = 0.01
 
-const FIELD_NAME: Record<Field, string> = { actual: 'Actual', target: 'Target' }
-
 function typicalOf(values: (number | null)[], settings: KpiFlagSettings): number | null {
   const present = values.filter((v): v is number => v !== null)
   return median(settings.zeroIsNormal ? present.filter((v) => v !== 0) : present)
@@ -70,7 +69,7 @@ function findSlip(
   const looksRight = (candidate: number) =>
     references.some((r) => candidate / r >= T.looksRightLow && candidate / r <= T.looksRightHigh)
   const typical = references[references.length - 1]!
-  const name = FIELD_NAME[field]
+  const name = fieldWord(field, ctx.kpi, { capitalised: true })
   const slips = slipKinds(ctx.kpi)
 
   if (slips.fahrenheit) {
@@ -112,7 +111,7 @@ function findSlip(
 
 function impossibleReason(value: number, ctx: SeriesContext, field: Field): string | null {
   const { min, max } = ctx.settings
-  const name = FIELD_NAME[field]
+  const name = fieldWord(field, ctx.kpi, { capitalised: true })
   const shown = withUnit(value, ctx.unit)
   if (ctx.kpi === 'Drain pH') {
     if ((min !== undefined && value < min) || (max !== undefined && value > max)) {
@@ -141,7 +140,7 @@ function jumpDirection(value: number, typical: number | null, settings: KpiFlagS
 }
 
 function describeJump(value: number, typical: number, direction: 'high' | 'low', ctx: SeriesContext, field: Field): string {
-  const name = FIELD_NAME[field]
+  const name = fieldWord(field, ctx.kpi, { capitalised: true })
   if (direction === 'high') {
     return `${name} is ${withUnit(value, ctx.unit)}, ${plain(value / typical, 2)} times this cultivation's usual value for the KPI (${withUnit(typical, ctx.unit)}).`
   }
@@ -272,7 +271,7 @@ export function detectFlags(daily: DailyRow[], cultivations: Cultivation[]): Fla
           slip ?? {
             rule: 'target-actual-apart',
             suggestion: null,
-            explanation: `In ${week.split('-')[1]} the target (${withUnit(result.target, ctx.unit)}) and the actual (${withUnit(result.actual, ctx.unit)}) are ${plain(ratio > 1 ? ratio : 1 / ratio, 2)} times apart. Either the plan or the measurement may be wrong.`,
+            explanation: `In ${week.split('-')[1]} the ${fieldWord('target', kpi)} (${withUnit(result.target, ctx.unit)}) and the actual (${withUnit(result.actual, ctx.unit)}) are ${plain(ratio > 1 ? ratio : 1 / ratio, 2)} times apart. Either the plan or the measurement may be wrong.`,
           },
         )
       }

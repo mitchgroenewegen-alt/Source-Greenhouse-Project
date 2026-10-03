@@ -1,17 +1,32 @@
 import { diffDays, formatDate } from '../data/dates'
 import type { DailyRow } from '../data/types'
-import { kpiConfig } from '../config/kpis'
+import { hasKpiConfig, kpiConfig, planWord } from '../config/kpis'
 import { plain, withUnit } from '../lib/format'
 import type { Field, Flag, FlagGroup, RuleId } from './types'
 
+/** The titles of the rules in a list or filter, where one title covers budget KPIs and target KPIs alike. */
 export const RULE_TITLE: Record<RuleId, string> = {
   'unit-fahrenheit': 'Fahrenheit entered as Celsius',
   'unit-fraction': 'Fraction entered as percent',
   'unit-factor-10': 'Factor of 10 slip',
   'impossible-value': 'Impossible value',
   'jump-vs-median': 'Jump against the usual value',
-  'target-actual-apart': 'Target and actual far apart',
+  'target-actual-apart': 'Plan and actual far apart',
   'missing-value': 'Missing value',
+}
+
+/** The title on a card, in the plan word of its own KPI: "Budget and actual far apart" or "Target and actual far apart". */
+export function ruleTitleFor(rule: RuleId, kpi: string): string {
+  return rule === 'target-actual-apart' ? `${fieldWord('target', kpi, { capitalised: true })} and actual far apart` : RULE_TITLE[rule]
+}
+
+/**
+ * How a column of the KPIs sheet is named for this KPI: "actual", or the KPI's plan word ("budget" or "target").
+ * A decision imported for a KPI that is no longer in the data falls back to "target", the column's name in the workbook.
+ */
+export function fieldWord(field: Field, kpi: string, { capitalised = false }: { capitalised?: boolean } = {}): string {
+  const word = field === 'actual' ? 'actual' : hasKpiConfig(kpi) ? planWord(kpiConfig(kpi)) : 'target'
+  return capitalised ? word.charAt(0).toUpperCase() + word.slice(1) : word
 }
 
 export const RULE_ORDER: RuleId[] = [
@@ -40,7 +55,7 @@ function describeGroup(group: Omit<FlagGroup, 'explanation' | 'suggestionNote' |
     flags.length === 1
       ? `on ${formatDate(startDate)}`
       : `on ${flags.length} ${isDaily(flags) ? 'days' : 'dates'} from ${formatDate(startDate)} to ${formatDate(endDate)}`
-  const fieldName = field === 'actual' ? 'actual' : 'target'
+  const fieldName = fieldWord(field, group.kpi)
   if (rule === 'missing-value') return `No ${fieldName} was recorded ${span}.`
   const values = flags.map((f) => f.value).filter((v): v is number => v !== null)
   const lo = Math.min(...values)
@@ -60,7 +75,7 @@ function describeGroup(group: Omit<FlagGroup, 'explanation' | 'suggestionNote' |
     case 'jump-vs-median':
       return `The ${fieldName} reads ${range} ${span}, far from this cultivation's usual value for this KPI.`
     case 'target-actual-apart':
-      return `Week by week, the target is more than 2.5 times away from the actual ${span}.`
+      return `Week by week, the ${fieldName} is more than 2.5 times away from the actual ${span}.`
   }
 }
 

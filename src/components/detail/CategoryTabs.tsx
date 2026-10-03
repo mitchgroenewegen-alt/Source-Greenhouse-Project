@@ -15,7 +15,7 @@ export function CategoryTabs({
   categories: CategoryResult[]
 }) {
   return (
-    <div role="tablist" aria-label="KPI category" className="grid grid-cols-5 gap-0.5 rounded-xl border border-line bg-card p-1 sm:gap-1">
+    <div role="tablist" aria-label="KPI category" className="grid grid-cols-5 gap-0.5 rounded-2xl border border-line bg-card p-1 sm:gap-1">
       {CATEGORY_ORDER.map((category) => {
         const result = categories.find((c) => c.category === category)!
         const selected = category === value
@@ -28,13 +28,13 @@ export function CategoryTabs({
             aria-selected={selected}
             aria-controls="category-panel"
             onClick={() => onChange(category)}
-            className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0 text-[0.66rem] font-semibold sm:px-1 sm:text-sm ${
+            className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0 text-[0.66rem] font-semibold sm:px-1 sm:text-sm ${
               selected ? 'bg-brand text-white' : 'text-ink-2 hover:bg-line-soft'
             }`}
           >
             <span>{CATEGORY_LABEL[category]}</span>
             <span className={`flex items-center gap-0.5 text-[0.62rem] font-medium sm:gap-1 sm:text-xs ${selected ? 'text-white/90' : 'text-ink-3'}`}>
-              <span className={`inline-block h-2 w-2 rounded-full ring-1 ${selected ? 'ring-white' : 'ring-transparent'} ${STATUS_SOLID[result.status ?? 'none']}`} aria-hidden="true" />
+              <span className={`inline-block h-2 w-2 rounded-full ring-1 ${selected ? 'ring-field' : 'ring-transparent'} ${STATUS_SOLID[result.status ?? 'none']}`} aria-hidden="true" />
               {statusText}
             </span>
           </button>

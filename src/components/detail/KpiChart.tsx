@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { KpiConfig } from '../../config/kpis'
+import { planWord, type KpiConfig } from '../../config/kpis'
 import { shortWeek } from '../../data/dates'
 import type { WeekInfo } from '../../data/types'
 import { formatValue, formatVariance } from '../../lib/kpiFormat'
@@ -20,7 +20,7 @@ function markedDot(color: string, markOf: (row: ChartRow) => FlagMark) {
     const mark = markOf(payload)
     return (
       <g key={props.index}>
-        <circle cx={cx} cy={cy} r={3.5} fill={color} stroke="#fff" strokeWidth={1.5} />
+        <circle cx={cx} cy={cy} r={3.5} fill={color} stroke="var(--color-tile)" strokeWidth={1.5} />
         {mark && (
           <circle
             cx={cx}
@@ -44,7 +44,7 @@ function FlagMarker(props: { cx?: number; cy?: number; payload?: ChartRow; index
   const open = payload.openFlags > 0
   return (
     <g key={props.index} transform={`translate(${cx} ${cy + 7})`}>
-      <path d="M0 -6 L6 5 L-6 5 Z" fill={open ? FLAG : '#fff'} stroke={FLAG} strokeWidth={1.8} strokeLinejoin="round" />
+      <path d="M0 -6 L6 5 L-6 5 Z" fill={open ? FLAG : 'var(--color-tile)'} stroke={FLAG} strokeWidth={1.8} strokeLinejoin="round" />
     </g>
   )
 }
@@ -65,14 +65,14 @@ function ChartTooltip({
   const info = weeks.find((w) => w.id === row.week)
   const score = scoreWith(config, row.actual, row.target)
   return (
-    <div className="rounded-lg border border-line bg-card p-2.5 text-sm shadow-md">
+    <div className="rounded-lg border border-line-strong bg-field p-2.5 text-sm shadow-md">
       <div className="font-semibold">
         {shortWeek(row.week)} <span className="font-normal text-ink-3">{info ? `${info.start} to ${info.end}` : ''}</span>
       </div>
       <div className="num mt-1 grid grid-cols-[auto_auto] gap-x-3">
         <span className="text-ink-2">Actual</span>
         <span className="text-right font-semibold">{formatValue(config, row.actual)}</span>
-        <span className="text-ink-2">Budget</span>
+        <span className="text-ink-2">{planWord(config, { capitalised: true })}</span>
         <span className="text-right font-semibold">{formatValue(config, row.target)}</span>
         {score.variance !== null && (
           <>
@@ -128,8 +128,9 @@ export function KpiChart({
           />
           <Tooltip content={(props) => <ChartTooltip {...props} config={config} weeks={weeks} />} cursor={{ stroke: 'var(--color-ink-3)', strokeDasharray: '2 3' }} />
           <ReferenceLine x={selectedLabel} stroke="var(--color-brand)" strokeOpacity={0.16} strokeWidth={14} />
-          <Area dataKey="amber" type="monotone" stroke="none" fill="var(--color-warn)" fillOpacity={0.13} isAnimationActive={false} activeDot={false} legendType="none" />
-          <Area dataKey="green" type="monotone" stroke="none" fill="var(--color-ok)" fillOpacity={0.15} isAnimationActive={false} activeDot={false} legendType="none" />
+          <Area dataKey="amber" type="monotone" stroke="none" fill="var(--color-warn)" fillOpacity={0.28} isAnimationActive={false} activeDot={false} legendType="none" />
+          <Area dataKey="amberAbove" type="monotone" stroke="none" fill="var(--color-warn)" fillOpacity={0.28} isAnimationActive={false} activeDot={false} legendType="none" />
+          <Area dataKey="green" type="monotone" stroke="none" fill="var(--color-ok)" fillOpacity={0.3} isAnimationActive={false} activeDot={false} legendType="none" />
           <Line dataKey="target" type="monotone" stroke={TARGET} strokeWidth={2} strokeDasharray="5 4" dot={markedDot(TARGET, (r) => r.targetMark)} activeDot={{ r: 4 }} isAnimationActive={false} />
           <Line dataKey="actual" type="monotone" stroke={ACTUAL} strokeWidth={2} dot={markedDot(ACTUAL, (r) => r.actualMark)} activeDot={{ r: 5 }} isAnimationActive={false} />
           <Line dataKey="flagY" stroke="none" dot={FlagMarker} activeDot={false} isAnimationActive={false} legendType="none" />
@@ -140,7 +141,8 @@ export function KpiChart({
 }
 
 /** What the lines and shading mean. Plain HTML so it reads the same everywhere. */
-export function ChartLegend({ hasTarget, hasFlags }: { hasTarget: boolean; hasFlags: boolean }) {
+/** `planLabel` is the KPI's plan word, capitalised: "Budget" or "Target". */
+export function ChartLegend({ hasTarget, hasFlags, planLabel }: { hasTarget: boolean; hasFlags: boolean; planLabel: string }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Chart key">
       <li className="flex items-center gap-1.5">
@@ -155,14 +157,14 @@ export function ChartLegend({ hasTarget, hasFlags }: { hasTarget: boolean; hasFl
             <svg width="22" height="8" aria-hidden="true">
               <line x1="0" y1="4" x2="22" y2="4" stroke={TARGET} strokeWidth="2.5" strokeDasharray="5 3" />
             </svg>
-            Budget
+            {planLabel}
           </li>
           <li className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-4 rounded-sm bg-ok/20" aria-hidden="true" />
+            <span className="inline-block h-3 w-4 rounded-sm border border-ok-line/60 bg-ok/30" aria-hidden="true" />
             On track
           </li>
           <li className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-4 rounded-sm bg-warn/15" aria-hidden="true" />
+            <span className="inline-block h-3 w-4 rounded-sm border border-warn-line/60 bg-warn/25" aria-hidden="true" />
             Watch
           </li>
         </>

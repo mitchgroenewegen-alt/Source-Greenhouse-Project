@@ -61,6 +61,8 @@ export function scoreKpiResult(config: KpiConfig, point: WeeklyPoint | undefined
   let note: KpiResult['note'] = null
   if (score.status === null) {
     if (point && point.openFlags > 0) note = 'under-review'
+    // A week with a plan value but nothing recorded is missing its actual, not its plan value.
+    else if (point && !point.paired && point.actual === null && point.target !== null) note = 'no-actual'
     else note = score.reason ?? null
   }
   return { config, point, score, note }

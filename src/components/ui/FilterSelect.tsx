@@ -19,7 +19,7 @@ export function FilterSelect<T extends string>({
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
         // 16px on a phone: smaller text makes iOS zoom the page when the menu opens.
-        className="min-h-11 w-full min-w-0 rounded-lg border border-line bg-card px-2 text-base font-semibold text-ink md:text-sm"
+        className="min-h-11 w-full min-w-0 rounded-lg border border-line-strong bg-field px-2 text-base font-semibold text-ink md:text-sm"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

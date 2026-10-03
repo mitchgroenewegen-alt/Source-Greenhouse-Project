@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { FacilityCard, type Unit } from '../components/facilities/FacilityCard'
+import { buildFacilitySummary } from '../components/facilities/facilitySummary'
+import { FacilitySummaryTable } from '../components/facilities/FacilitySummaryTable'
 import { harvestRow, KPI_FOR_PERIOD, type Period } from '../components/facilities/facilityTotals'
 import { Segmented } from '../components/ui/Segmented'
 import { formatRange, shortWeek } from '../data/dates'
@@ -24,6 +26,9 @@ export default function FacilitiesScreen() {
     [facilities, cultivations, point, period, week],
   )
 
+  // The summary follows the week but not the toggles below: it always shows both periods.
+  const summary = useMemo(() => buildFacilitySummary(cultivations, (id, kpi) => point(id, kpi, week)), [cultivations, point, week])
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -33,7 +38,9 @@ export default function FacilitiesScreen() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-line bg-card p-3 md:flex-row md:gap-x-8">
+      <FacilitySummaryTable rows={summary} weekLabel={shortWeek(week)} />
+
+      <div className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-3 md:flex-row md:gap-x-8">
         <Segmented
           label="Harvest"
           value={period}

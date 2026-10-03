@@ -16,7 +16,7 @@ export interface Score {
 
 export const STATUS_RANK: Record<Status, number> = { green: 0, amber: 1, red: 2 }
 
-export const STATUS_LABEL: Record<Status, string> = { green: 'On track', amber: 'Watch', red: 'Off track' }
+export const STATUS_LABEL: Record<Status, string> = { green: 'On track', amber: 'Watch', red: 'Off target' }
 
 /** Slack for floating point noise when a variance sits exactly on a threshold. */
 const EPSILON = 1e-9

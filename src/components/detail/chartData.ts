@@ -15,10 +15,12 @@ export interface ChartRow {
   /** Green zone. Around the budget for close-to-target KPIs; between the green limit and the budget for one-sided KPIs. */
   green: Band | null
   /**
-   * Amber zone. Close-to-target KPIs: the whole +/- amber range (drawn underneath the green zone).
-   * One-sided KPIs: only the strip between the amber limit and the green limit, nothing beyond.
+   * Amber zone. One-sided KPIs: the strip between the amber limit and the green limit, nothing beyond.
+   * Close-to-target KPIs: the strip below the green zone (the one above it is `amberAbove`).
    */
   amber: Band | null
+  /** Close-to-target KPIs only: the amber strip above the green zone. The three zones meet but never overlap. */
+  amberAbove: Band | null
   /** Set (to the top of the plot) when this week holds a flagged value, to draw the flag marker. */
   flagY: number | null
   actualMark: FlagMark
@@ -38,23 +40,25 @@ export interface ChartModel {
 
 /**
  * The green and amber zones for one target value, for this KPI's direction and variance mode.
- *   close to target : green is target +/- green; amber is target +/- amber, so it contains the green zone (draw it first).
+ *   close to target : green is target +/- green; amber is the strip below it [target - amber, target - green] and
+ *                     amberAbove the strip above it [target + green, target + amber].
  *   higher is better: amber is [target - amber, target - green]; green is [target - green, target]. Nothing above the target,
  *                     because beating the budget is not something to shade.
  *   lower is better : green is [target, target + green]; amber is [target + green, target + amber]. Nothing below the target.
- * Every band has finite edges. The two bands of a one-sided KPI meet but do not overlap.
+ * Every band has finite edges, and the zones meet without overlapping, so each shows in its own legend colour (a
+ * translucent green drawn over a translucent amber would blend to olive).
  */
-export function toleranceBands(config: KpiConfig, target: number): { green: Band; amber: Band } {
+export function toleranceBands(config: KpiConfig, target: number): { green: Band; amber: Band; amberAbove: Band | null } {
   const size = (tolerance: number) => (config.variance === 'percent' ? (Math.abs(target) * tolerance) / 100 : tolerance)
   const g = size(config.green)
   const a = size(config.amber)
   switch (config.direction) {
     case 'higher':
-      return { green: [target - g, target], amber: [target - a, target - g] }
+      return { green: [target - g, target], amber: [target - a, target - g], amberAbove: null }
     case 'lower':
-      return { green: [target, target + g], amber: [target + g, target + a] }
+      return { green: [target, target + g], amber: [target + g, target + a], amberAbove: null }
     case 'target':
-      return { green: [target - g, target + g], amber: [target - a, target + a] }
+      return { green: [target - g, target + g], amber: [target - a, target - g], amberAbove: [target + g, target + a] }
   }
 }
 
@@ -81,7 +85,7 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
   for (const { p, bands } of raw) {
     if (p?.actual != null) finite.push(p.actual)
     if (p?.target != null) finite.push(p.target)
-    if (bands) for (const v of [...bands.green, ...bands.amber]) finite.push(v)
+    if (bands) for (const v of [...bands.green, ...bands.amber, ...(bands.amberAbove ?? [])]) finite.push(v)
   }
   const lo = finite.length ? Math.min(...finite) : 0
   const hi = finite.length ? Math.max(...finite) : 1
@@ -99,6 +103,7 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
       target: p?.target ?? null,
       green: bands ? bands.green : null,
       amber: bands ? bands.amber : null,
+      amberAbove: bands?.amberAbove ?? null,
       flagY: flagged ? domainHi : null,
       actualMark: p?.actualMark ?? null,
       targetMark: p?.targetMark ?? null,

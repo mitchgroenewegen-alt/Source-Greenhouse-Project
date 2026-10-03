@@ -26,7 +26,7 @@ export default function CultivationScreen() {
 
   if (!cultivation || !score) {
     return (
-      <div className="rounded-xl border border-line bg-card p-6 text-center">
+      <div className="rounded-2xl border border-line bg-card p-6 text-center">
         <h1 className="text-xl font-semibold">Cultivation not found</h1>
         <p className="mt-1 text-ink-2">There is no cultivation called "{id}".</p>
         <Link to="/" className="mt-3 inline-block font-semibold text-brand hover:underline">

@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { kpiConfig } from '../../config/kpis'
+import { kpiConfig, planWord } from '../../config/kpis'
 import { formatDate, formatRange } from '../../data/dates'
-import { RULE_TITLE, type FlagGroup } from '../../flags'
-import { plain } from '../../lib/format'
-import { formatDateTime } from '../../lib/format'
-import { DECISION_LABEL, type Decision, type DecisionKind } from '../../storage'
+import { fieldWord, ruleTitleFor, type FlagGroup } from '../../flags'
+import { formatDateTime, plain } from '../../lib/format'
+import { ACTION_LABEL, decisionOutcome, type Decision, type DecisionKind } from '../../storage'
 import type { GroupStatus } from '../../state/groupStatus'
 import { FlagIcon } from '../ui/icons'
 
@@ -16,19 +15,7 @@ const SEVERITY_STYLE = {
 }
 const SEVERITY_WORD = { error: 'Likely error', warning: 'Check', info: 'For information' }
 
-function decisionSummary(decisions: Decision[]): string {
-  const first = decisions[0]!
-  const same = decisions.every((d) => d.kind === first.kind && d.correctedValue === first.correctedValue)
-  const what =
-    first.kind === 'correct'
-      ? same
-        ? `Corrected to ${plain(first.correctedValue!)}`
-        : 'Corrected (a value for each date)'
-      : DECISION_LABEL[first.kind]
-  return `${what} by ${first.decidedBy || 'unknown'} on ${formatDateTime(first.decidedAt)}${first.note ? `. “${first.note}”` : ''}`
-}
-
-/** One grouped flag: what is wrong, the values, and the three ways to decide. */
+/** One grouped flag: what is wrong, the values, and the three actions: Confirm values, Apply correction, Exclude. */
 export function FlagGroupCard({
   group,
   status,
@@ -48,12 +35,14 @@ export function FlagGroupCard({
   const [showAll, setShowAll] = useState(false)
   const config = kpiConfig(group.kpi)
   const missing = group.rule === 'missing-value'
+  // The workbook column is always "Target"; a budget KPI says so, a target KPI just names the column.
+  const columnLabel = group.field === 'actual' ? 'Actual column' : planWord(config) === 'budget' ? 'Budget (target column)' : 'Target column'
   const samples = showAll ? group.flags : group.flags.slice(0, 3)
   const range =
     group.startDate === group.endDate ? formatDate(group.startDate) : formatRange(group.startDate, group.endDate)
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm" aria-label={`${group.cultivation}, ${group.kpi}, ${group.field}`}>
+    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm" aria-label={`${group.cultivation}, ${group.kpi}, ${fieldWord(group.field, group.kpi)}`}>
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-base font-semibold leading-tight">
@@ -63,7 +52,7 @@ export function FlagGroupCard({
             · {group.kpi}
           </h3>
           <p className="text-sm text-ink-2">
-            {group.field === 'target' ? 'Budget (target column)' : 'Actual column'} · {range}
+            {columnLabel} · {range}
             {group.flags.length > 1 ? ` · ${group.flags.length} values` : ''}
           </p>
         </div>
@@ -72,28 +61,28 @@ export function FlagGroupCard({
             <FlagIcon width={12} height={12} />
             {SEVERITY_WORD[group.severity]}
           </span>
-          <span className="whitespace-nowrap rounded-full bg-flag/10 px-2 py-0.5 text-xs font-semibold text-flag-ink">{RULE_TITLE[group.rule]}</span>
+          <span className="whitespace-nowrap rounded-full bg-flag/10 px-2 py-0.5 text-xs font-semibold text-flag-ink">{ruleTitleFor(group.rule, group.kpi)}</span>
         </div>
       </header>
 
       <p className="text-sm">{group.explanation}</p>
 
       {!missing && (
-        <div>
-          <table className="num w-full max-w-md text-sm">
+        <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile px-2 py-2 sm:px-3">
+          <table className="num w-full text-xs sm:text-sm">
             <caption className="sr-only">Recorded values in this item</caption>
             <thead>
               <tr className="text-xs text-ink-2">
-                <th scope="col" className="py-1 pr-3 text-left font-semibold">Date</th>
-                <th scope="col" className="py-1 pr-3 text-right font-semibold">Recorded</th>
+                <th scope="col" className="py-1 pr-2 text-left font-semibold sm:pr-3">Date</th>
+                <th scope="col" className="py-1 pr-2 text-right font-semibold sm:pr-3">Recorded</th>
                 {group.suggestionNote && <th scope="col" className="py-1 text-right font-semibold">Suggested</th>}
               </tr>
             </thead>
             <tbody>
               {samples.map((f) => (
                 <tr key={f.id} className="border-t border-line-soft">
-                  <td className="py-1 pr-3">{formatDate(f.date)}</td>
-                  <td className="py-1 pr-3 text-right">{f.value === null ? '–' : `${plain(f.value)} ${config.unit}`}</td>
+                  <td className="py-1 pr-2 sm:pr-3">{formatDate(f.date)}</td>
+                  <td className="py-1 pr-2 text-right sm:pr-3">{f.value === null ? '–' : `${plain(f.value)} ${config.unit}`}</td>
                   {group.suggestionNote && <td className="py-1 text-right font-semibold">{f.suggestion === null ? '–' : `${plain(f.suggestion)} ${config.unit}`}</td>}
                 </tr>
               ))}
@@ -108,9 +97,15 @@ export function FlagGroupCard({
       )}
 
       {status === 'decided' ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-ok-bg px-3 py-2 text-sm text-ok-ink">
-          <span>{decisionSummary(decisions)}</span>
-          <button type="button" onClick={onReopen} className="min-h-9 rounded-lg border border-ok-line bg-card px-3 text-sm font-semibold text-ok-ink">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ok-line bg-ok-bg px-3 py-2 text-sm text-ok-ink">
+          <div>
+            <p className="font-semibold">{decisionOutcome(decisions)}</p>
+            <p className="text-xs">
+              {formatDateTime(decisions[0]!.decidedAt)}
+              {decisions[0]!.note ? ` · “${decisions[0]!.note}”` : ''}
+            </p>
+          </div>
+          <button type="button" onClick={onReopen} className="min-h-9 rounded-lg border border-ok-line bg-field px-3 text-sm font-semibold text-ok-ink">
             Reopen
           </button>
         </div>
@@ -124,16 +119,14 @@ export function FlagGroupCard({
           {!form && (
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => onChoose('confirm')} className="min-h-10 rounded-lg border border-ok-line bg-ok-bg px-3 text-sm font-semibold text-ok-ink">
-                {missing ? 'Acknowledge' : 'Confirm correct'}
+                {ACTION_LABEL.confirm}
               </button>
-              <button type="button" onClick={() => onChoose('correct')} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
-                {missing ? 'Enter a value' : 'Correct…'}
+              <button type="button" onClick={() => onChoose('correct')} className="min-h-10 rounded-lg border border-line-strong bg-field px-3 text-sm font-semibold text-ink">
+                {ACTION_LABEL.correct}
               </button>
-              {!missing && (
-                <button type="button" onClick={() => onChoose('exclude')} className="min-h-10 rounded-lg border border-line bg-card px-3 text-sm font-semibold text-ink">
-                  Exclude
-                </button>
-              )}
+              <button type="button" onClick={() => onChoose('exclude')} className="min-h-10 rounded-lg border border-line-strong bg-field px-3 text-sm font-semibold text-ink">
+                {ACTION_LABEL.exclude}
+              </button>
             </div>
           )}
           {form}

@@ -3,9 +3,20 @@ import type { Field, RuleId } from '../flags'
 /** What a person decided about a flagged value. */
 export type DecisionKind = 'confirm' | 'correct' | 'exclude'
 
+/**
+ * The three actions, worded exactly as the buttons say them. The stored ids (confirm, correct, exclude) never change,
+ * so the CSV format and old exports stay as they were; only the words people read are these.
+ */
+export const ACTION_LABEL: Record<DecisionKind, string> = {
+  confirm: 'Confirm values',
+  correct: 'Apply correction',
+  exclude: 'Exclude',
+}
+
+/** What a decision is called once it is made: on the card, in the decision log and in the filters. */
 export const DECISION_LABEL: Record<DecisionKind, string> = {
-  confirm: 'Confirmed as correct',
-  correct: 'Corrected',
+  confirm: 'Values confirmed',
+  correct: 'Correction applied',
   exclude: 'Excluded',
 }
 

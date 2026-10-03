@@ -16,6 +16,9 @@
 // the column "Target" for all of them; this only changes the word people read. Change a KPI's `planLabel` here and
 // every screen follows.
 //
+// A KPI with `gauge: { rangeOfBudget: 1.2 }` gets a meter on its Scorecard tile (Waste has one). The meter runs from 0 to that
+// multiple of the week's budget or target; delete the setting to remove the meter, or add it to another Scorecard KPI.
+//
 // A category (Production, Plant, ...) is then rated from the share of its scored KPIs that are red or green:
 // see CATEGORY_ROLLUP at the bottom of this file.
 
@@ -44,6 +47,11 @@ export interface KpiConfig {
   showOnScorecard: boolean
   /** Decimals when showing a value. */
   decimals: number
+  /**
+   * A semicircular meter under the value on the Scorecard tile. The scale runs from 0 to `rangeOfBudget` x the week's
+   * budget or target (1 or more; 1.2 means 120 % of it), with a tick at the budget. Leave it out for a KPI with no meter.
+   */
+  gauge?: { rangeOfBudget: number }
 }
 
 type Tolerance = Pick<KpiConfig, 'direction' | 'variance' | 'green' | 'amber'>
@@ -65,7 +73,7 @@ export const KPI_CONFIG: KpiConfig[] = [
   { name: 'Cumulative harvest', category: 'Production', unit: 'kg/m²', aggregation: 'last', planLabel: 'budget', ...higherIsBetter(), showOnScorecard: true, decimals: 2 },
   { name: 'Fruit weight', category: 'Production', unit: 'g', aggregation: 'average', planLabel: 'budget', ...closeToTarget(5, 10), showOnScorecard: true, decimals: 1 },
   // Waste is a small percentage (about 1 to 5 %), so its tolerance is in percentage points: 0.6 % against a 0.5 % budget is fine.
-  { name: 'Waste', category: 'Production', unit: '%', aggregation: 'last', planLabel: 'budget', ...lowerIsBetterAbsolute(0.5, 1.5), showOnScorecard: true, decimals: 1 },
+  { name: 'Waste', category: 'Production', unit: '%', aggregation: 'last', planLabel: 'budget', ...lowerIsBetterAbsolute(0.5, 1.5), showOnScorecard: true, decimals: 1, gauge: { rangeOfBudget: 1.2 } },
 
   // Plant
   { name: 'Head thickness', category: 'Plant', unit: 'mm', aggregation: 'average', planLabel: 'target', ...closeToTarget(), showOnScorecard: false, decimals: 1 },

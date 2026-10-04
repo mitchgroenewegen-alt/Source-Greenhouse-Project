@@ -130,3 +130,32 @@ export function validateFruitType(input: FruitTypeInput, others: Pick<FruitType,
   if (price !== null && (!Number.isFinite(price) || price < 0)) errors.pricePerKg = 'Enter a price of 0 or more, or leave it empty.'
   return errors
 }
+
+/**
+ * What to save for a change to one fruit type. While the workspace has none yet, the defaults are saved along with it,
+ * so from then on the list is the workspace's own and the other eight are not lost.
+ */
+export function itemsToSave(stored: FruitType[], changed: FruitType): FruitType[] {
+  return stored.length > 0 ? [changed] : [...DEFAULT_FRUIT_TYPES.filter((d) => d.id !== changed.id), changed]
+}
+
+/** What the fruit type form starts from: the numbers as text, or empty for a new type. */
+export function fruitTypeFormOf(type?: FruitType): FruitTypeInput {
+  const text = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(n))
+  return { name: type?.name ?? '', weightMinG: text(type?.weightMinG), weightMaxG: text(type?.weightMaxG), diameterMinMm: text(type?.diameterMinMm), diameterMaxMm: text(type?.diameterMaxMm), pricePerKg: text(type?.pricePerKg) }
+}
+
+/** The fruit type the form describes (call it only when validateFruitType found nothing wrong). */
+export function fruitTypeFromForm(id: string, input: FruitTypeInput, placeholder: boolean): FruitType {
+  const num = (text: string) => (text.trim() === '' ? null : Number(text))
+  return {
+    id,
+    name: input.name.trim(),
+    weightMinG: Number(input.weightMinG),
+    weightMaxG: Number(input.weightMaxG),
+    diameterMinMm: num(input.diameterMinMm),
+    diameterMaxMm: num(input.diameterMaxMm),
+    pricePerKg: num(input.pricePerKg),
+    placeholder,
+  }
+}

@@ -24,11 +24,12 @@ export function useView(): View {
 }
 
 export function ViewProvider({ children }: { children: ReactNode }) {
-  const { weeks } = useCropData()
-  // The latest week in the data (W34, 18-24 Aug 2025) is the default.
-  const [chosen, setWeek] = useState(() => weeks[weeks.length - 1]!.id)
-  // If the chosen week is no longer in the data (a change from someone else), fall back to the latest.
-  const week = weeks.some((w) => w.id === chosen) ? chosen : weeks[weeks.length - 1]!.id
+  const { weeks, defaultWeek } = useCropData()
+  // The latest week with recorded values (W34, 18-24 Aug 2025) is the default; budgets copied into later weeks do not move it.
+  const fallback = defaultWeek ?? weeks[weeks.length - 1]!.id
+  const [chosen, setWeek] = useState(() => fallback)
+  // If the chosen week is no longer in the data (a change from someone else), fall back to the default.
+  const week = weeks.some((w) => w.id === chosen) ? chosen : fallback
   const [facility, setFacility] = useState(ALL)
   const [variety, setVariety] = useState(ALL)
   const value = useMemo<View>(

@@ -86,3 +86,9 @@ export const DatabaseIcon = (p: IconProps) => (
     <path d="M5 6v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-6" />
   </svg>
 )
+export const CoinIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M14.8 9.4c-.5-.9-1.5-1.4-2.8-1.4-1.6 0-2.7.8-2.7 2s1 1.7 2.7 2c1.7.3 2.8.8 2.8 2s-1.2 2-2.8 2c-1.3 0-2.4-.5-2.9-1.5M12 6.2V8M12 16v1.8" />
+  </svg>
+)

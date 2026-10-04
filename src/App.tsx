@@ -9,6 +9,8 @@ import { WorkspaceProvider } from './workspace/WorkspaceContext'
 // The screens with charts load on demand, so the first screen (the Scorecard) opens quickly on a phone.
 const CultivationScreen = lazy(() => import('./screens/CultivationScreen'))
 const FacilitiesScreen = lazy(() => import('./screens/FacilitiesScreen'))
+const FinancialsScreen = lazy(() => import('./screens/FinancialsScreen'))
+const PricesCostsScreen = lazy(() => import('./screens/PricesCostsScreen'))
 const ForecastScreen = lazy(() => import('./screens/ForecastScreen'))
 const DataScreen = lazy(() => import('./screens/DataScreen'))
 const EnterDataScreen = lazy(() => import('./screens/EnterDataScreen'))
@@ -33,6 +35,8 @@ export default function App() {
               <Route path="/" element={<ScorecardScreen />} />
               <Route path="/cultivation/:id" element={<CultivationScreen />} />
               <Route path="/facilities" element={<FacilitiesScreen />} />
+              <Route path="/financials" element={<FinancialsScreen />} />
+              <Route path="/prices" element={<PricesCostsScreen />} />
               <Route path="/forecast" element={<ForecastScreen />} />
               <Route path="/data" element={<DataScreen />} />
               <Route path="/data/enter" element={<EnterDataScreen />} />

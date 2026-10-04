@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { loadTestData } from '../test/loadData'
+import { MemoryDecisionStore } from '../storage/decisionStore'
 import { scoreCultivationWeek } from '../scoring/summary'
 import { buildWeekly, applyDecisions } from '../scoring/effective'
 import { detectFlags } from '../flags'
+import { LocalWorkspaceStore } from './localStore'
 import { MemoryWorkspaceStore } from './memoryStore'
 import { merge } from './merge'
+import { itemToRow, rowToItem, tableSpec } from './supabaseStore'
 import { WorkspaceReadOnlyError, ENTITY_KEY, type EnteredRow, type ValueEdit, type WorkspaceCultivation } from './types'
 
 const base = loadTestData()
@@ -94,6 +97,8 @@ describe('merge', () => {
   })
 })
 
+const samplesDecision = { cellId: 'PA-P2-TOV|Temperature (24h)|2025-07-01|target', cultivation: 'PA-P2-TOV', kpi: 'Temperature (24h)', date: '2025-07-01', field: 'target' as const, rule: 'unit-fahrenheit' as const, originalValue: 69, kind: 'correct' as const, correctedValue: 20.6, decidedBy: 'Dana', decidedAt: '2025-09-01T10:00:00.000Z', note: '' }
+
 describe('MemoryWorkspaceStore', () => {
   const samples = {
     facilities: [{ id: 'f1', name: 'Pennsylvania', region: 'US-East', currency: 'USD' }],
@@ -131,5 +136,41 @@ describe('MemoryWorkspaceStore', () => {
     const store = new MemoryWorkspaceStore({}, 'offline-readonly')
     await expect(store.save('facilities', samples.facilities)).rejects.toBeInstanceOf(WorkspaceReadOnlyError)
     expect(store.snapshot().data.facilities).toEqual([])
+  })
+})
+
+describe('Supabase row mapping', () => {
+  it('maps every entity to snake_case columns and back', () => {
+    const probe = {
+      facilities: { id: 'f1', name: 'PA', region: 'East', currency: 'USD' },
+      greenhouses: { id: 'g1', facilityId: 'f1', name: 'P1', areaM2: 10, ledWattsPerM2: 5 },
+      valueEdits: edit(),
+      rates: { facilityId: 'f1', heatPerKwh: 0.1, electricityPerKwh: null, waterPerM3: 2 },
+    }
+    for (const [entity, item] of Object.entries(probe)) {
+      const spec = tableSpec(entity as keyof typeof probe)
+      const row = itemToRow(spec, item)
+      expect(Object.keys(row).every((k) => k === k.toLowerCase())).toBe(true)
+      expect(rowToItem(spec, row)).toEqual(item)
+    }
+    expect(itemToRow(tableSpec('greenhouses'), probe.greenhouses)).toMatchObject({ facility_id: 'f1', area_m2: 10, led_watts_per_m2: 5 })
+    expect(itemToRow(tableSpec('valueEdits'), probe.valueEdits)).toMatchObject({ created_by_name: 'dana@example.com', date_from: '2025-08-24' })
+  })
+})
+
+describe('LocalWorkspaceStore', () => {
+  it('keeps decisions where they were and works without IndexedDB', async () => {
+    const old = { ...samplesDecision }
+    const decisions = new MemoryDecisionStore([old])
+    const store = new LocalWorkspaceStore(decisions)
+    expect(store.snapshot().ready).toBe(false)
+    await store.start() // Node has no IndexedDB: starts empty and carries on
+    expect(store.snapshot().ready).toBe(true)
+    expect(store.snapshot().status).toBe('local')
+    expect(store.snapshot().data.decisions).toEqual([old])
+    await store.save('decisions', [{ ...old, kind: 'confirm', correctedValue: null }])
+    expect(decisions.getAll()[0]!.kind).toBe('confirm')
+    await store.save('facilities', [{ id: 'f1', name: 'PA', region: 'East', currency: 'USD' }])
+    expect(store.snapshot().data.facilities).toHaveLength(1)
   })
 })

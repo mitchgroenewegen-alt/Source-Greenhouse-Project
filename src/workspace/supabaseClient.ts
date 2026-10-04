@@ -28,9 +28,35 @@ const url = cleanSupabaseUrl(rawUrl)
 /** True when both settings are present; otherwise the app keeps everything in this browser, as before. */
 export const supabaseConfigured = Boolean(rawUrl && key)
 
+/** True for a key that must never reach a browser: a secret key, or an old-style service_role key. */
+export function isSecretKey(value: string): boolean {
+  if (/^sb_secret_/i.test(value)) return true
+  const payload = value.split('.')[1]
+  if (!payload) return false
+  try {
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).role === 'service_role'
+  } catch {
+    return false
+  }
+}
+
+/** What is wrong with the two settings, in words for the banner, or null when they look usable. */
+export function settingsProblem(rawUrl: string, key: string): string | null {
+  if (!rawUrl || !key) return null
+  // A secret key bypasses every sign-in rule in the database, so the app refuses to use it at all.
+  if (isSecretKey(key) || isSecretKey(rawUrl)) {
+    return 'A secret key was put in the app settings. It is not used. Revoke it in Supabase and use the publishable (anon) key instead.'
+  }
+  if (!cleanSupabaseUrl(rawUrl)) {
+    return /^(sb_publishable_|eyJ)/.test(rawUrl)
+      ? 'VITE_SUPABASE_URL holds a key, not the address. It should look like https://abcd.supabase.co.'
+      : 'VITE_SUPABASE_URL is not a web address. It should look like https://abcd.supabase.co.'
+  }
+  return null
+}
+
 let client: SupabaseClient | null = null
-let problem: string | null =
-  supabaseConfigured && !url ? 'VITE_SUPABASE_URL is not a web address. It should look like https://abcd.supabase.co.' : null
+let problem: string | null = settingsProblem(rawUrl, key)
 
 /** The client, or null when the settings are missing or unusable (the app then keeps working in this browser). */
 export function getSupabase(): SupabaseClient | null {

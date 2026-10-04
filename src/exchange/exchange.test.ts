@@ -225,8 +225,26 @@ describe('the export', () => {
   const sheets = buildExport(input)
   const sheet = (name: string) => sheets.find((s) => s.name === name)!
 
-  it('has the sheets in order, without Forecast and Financials', () => {
-    expect(sheets.map((s) => s.name)).toEqual(['Read me', 'Greenhouses', 'KPIs', 'Weekly scores', 'Data checks', 'Edit log', 'Settings'])
+  it('has the sheets in order, without Financials', () => {
+    expect(sheets.map((s) => s.name)).toEqual(['Read me', 'Greenhouses', 'KPIs', 'Weekly scores', 'Forecast', 'Data checks', 'Edit log', 'Settings'])
+  })
+
+  it('has one Forecast row per cultivation and forecast week, with low, expected, high and the method', () => {
+    // Made from the workbook alone: the filled workspace above adds a day after the last data week, which moves the forecast's start.
+    const rows = buildExport(exportInput(emptyWorkspace())).find((s) => s.name === 'Forecast')!.rows
+    expect(rows[0]).toEqual(['Cultivation', 'Facility', 'Data up to week', 'Forecast week', 'Low (kg/m²)', 'Expected (kg/m²)', 'High (kg/m²)', 'Expected (kg)', 'Method', 'Correction factor', 'Weeks compared'])
+    const pa = rows.slice(1).filter((r) => r[0] === PA)
+    expect(pa).toHaveLength(6)
+    expect(new Set(pa.map((r) => r[8]))).toEqual(new Set(['Corrected']))
+    for (const r of pa) {
+      expect(r[4] as number).toBeLessThanOrEqual(r[5] as number)
+      expect(r[5] as number).toBeLessThanOrEqual(r[6] as number)
+    }
+    expect(new Set(pa.map((r) => r[2]))).toEqual(new Set(['2025-W34']))
+    expect(pa.map((r) => r[3])).toEqual(['2025-W35', '2025-W36', '2025-W37', '2025-W38', '2025-W39', '2025-W40'])
+    expect(new Set(rows.slice(1).map((r) => r[0])).size).toBe(base.cultivations.length)
+    // The same sheet from the filled workspace still has a row for every forecast cultivation and week, and a method for each.
+    for (const r of sheet('Forecast').rows.slice(1)) expect(['Corrected', 'Uncorrected estimate']).toContain(r[8])
   })
 
   it('has one KPIs row per merged day, with the original columns first', () => {

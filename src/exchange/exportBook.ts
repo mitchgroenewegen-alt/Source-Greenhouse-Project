@@ -8,6 +8,9 @@ import { kpiConfig, hasKpiConfig, planWord } from '../config/kpis'
 import { addDays, cropWeekOn, formatDate } from '../data/dates'
 import type { Cultivation, DailyRow, DataFile } from '../data/types'
 import { logItems } from '../editing/log'
+import { forecastAll } from '../forecast'
+import { METHOD_LABEL } from '../forecast/text'
+import { latestWeekWithActuals } from '../setup/dataState'
 import { fieldWord, ruleTitleFor, type Flag } from '../flags'
 import { formatDateTime } from '../lib/format'
 import type { WeeklyPoint } from '../scoring/effective'
@@ -89,6 +92,7 @@ const readMeSheet: SheetBuilder = (input) => {
     ['Greenhouses', 'One row per cultivation, new ones included: the workbook columns, plus fruit type, planned end date and whether it is archived.'],
     ['KPIs', 'One row per cultivation, date and KPI, with the values in use (edits and entries applied). Original actual and Original target are what the workbook had; Source says where the row now comes from: workbook, entered, imported, edited or corrected. This sheet can be imported again.'],
     ['Weekly scores', 'One row per cultivation, week and KPI: the weekly actual, the budget or target, the variance and the status, as the app scores them (flagged values waiting for a decision are left out).'],
+    ['Forecast', 'One row per cultivation and forecast week: the expected harvest with its low and high, in kg/m² a week (and in kg on the growing area), and the method: Corrected or Uncorrected estimate. The forecast looks six weeks ahead of the last week with a recorded value.'],
     ['Data checks', 'Every value the data checks flag, with the decision made about it, if any.'],
     ['Edit log', 'Every edit and every entry or import, newest first: who, when, what and why.'],
     ['Settings', 'Fruit types and their specs.'],
@@ -177,6 +181,26 @@ const weeklyScoresSheet: SheetBuilder = ({ merged, point }) => {
   return { name: 'Weekly scores', rows, widths: [14, 10, 32, 14, 10, 14, 15, 10, 12, 11, 7, 16] }
 }
 
+/**
+ * One row per cultivation and forecast week: low, expected and high harvest (kg/m² a week, and the expected one in kg on the
+ * growing area), and the method. Made from the same weekly values as the scores, so edits, entered days and decisions count.
+ */
+const forecastSheet: SheetBuilder = ({ merged, point }) => {
+  const rows: Cell[][] = [['Cultivation', 'Facility', 'Data up to week', 'Forecast week', 'Low (kg/m²)', 'Expected (kg/m²)', 'High (kg/m²)', 'Expected (kg)', 'Method', 'Correction factor', 'Weeks compared']]
+  const asOf = latestWeekWithActuals(merged.daily, merged.weeks)
+  if (asOf) {
+    const forecasts = forecastAll(merged.cultivations, asOf, merged.weeks.map((w) => w.id), point)
+    for (const c of merged.cultivations) {
+      const f = forecasts.get(c.id)
+      if (!f) continue
+      for (const w of f.weeks) {
+        rows.push([c.id, c.facility, asOf, w.week, w.low, w.expected, w.high, w.expected * c.areaM2, METHOD_LABEL[f.correction.method], f.correction.factor, f.correction.weeks.length])
+      }
+    }
+  }
+  return { name: 'Forecast', rows, widths: [14, 14, 15, 13, 12, 15, 12, 14, 22, 16, 15] }
+}
+
 const dataChecksSheet: SheetBuilder = ({ flags, decisions }) => {
   const decisionOf = new Map(decisions.map((d) => [d.cellId, d]))
   const rows: Cell[][] = [
@@ -238,7 +262,7 @@ const settingsSheet: SheetBuilder = ({ workspace }) => {
   return { name: 'Settings', rows, widths: [20, 20, 15, 14, 18, 16, 13, 19] }
 }
 
-/** The sheets of the export, in order. Forecast and Financials join here in later steps. */
-export const EXPORT_SHEETS: SheetBuilder[] = [readMeSheet, greenhousesSheet, kpisSheet, weeklyScoresSheet, dataChecksSheet, editLogSheet, settingsSheet]
+/** The sheets of the export, in order. Financials joins here in a later step. */
+export const EXPORT_SHEETS: SheetBuilder[] = [readMeSheet, greenhousesSheet, kpisSheet, weeklyScoresSheet, forecastSheet, dataChecksSheet, editLogSheet, settingsSheet]
 
 export const buildExport = (input: ExportInput): SheetSpec[] => EXPORT_SHEETS.map((build) => build(input))

@@ -4,6 +4,7 @@ import { ChevronRightIcon } from '../components/ui/icons'
 const ITEMS = [
   { to: '/setup', title: 'Setup', text: 'Facilities, greenhouses and cultivations: add, edit and archive them.' },
   { to: '/fruit-types', title: 'Fruit types and specs', text: 'The weight range each fruit type should have, and its price.' },
+  { to: '/edits', title: 'Edit log', text: 'Every edited budget, target and correction, with who and why, and Undo.' },
   { to: '/about', title: 'About', text: 'How the scores work, the data period, assumptions and what was left out.' },
 ]
 

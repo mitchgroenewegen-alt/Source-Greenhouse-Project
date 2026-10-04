@@ -13,6 +13,7 @@ const DataChecksScreen = lazy(() => import('./screens/DataChecksScreen'))
 const MoreScreen = lazy(() => import('./screens/MoreScreen'))
 const SetupScreen = lazy(() => import('./screens/SetupScreen'))
 const FruitTypesScreen = lazy(() => import('./screens/FruitTypesScreen'))
+const EditLogScreen = lazy(() => import('./screens/EditLogScreen'))
 const AboutScreen = lazy(() => import('./screens/AboutScreen'))
 const SignInScreen = lazy(() => import('./screens/SignInScreen'))
 
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="/more" element={<MoreScreen />} />
               <Route path="/setup" element={<SetupScreen />} />
               <Route path="/fruit-types" element={<FruitTypesScreen />} />
+              <Route path="/edits" element={<EditLogScreen />} />
               <Route path="/about" element={<AboutScreen />} />
               <Route path="/sign-in" element={<SignInScreen />} />
               <Route path="*" element={<ScorecardScreen />} />

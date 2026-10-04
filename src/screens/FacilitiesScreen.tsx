@@ -8,6 +8,8 @@ import { Segmented } from '../components/ui/Segmented'
 import { facilitySummarySheet, harvestSheet, viewFilePart } from '../exchange/viewSheets'
 import { DATA_STATE_LABEL } from '../setup/dataState'
 import { formatRange, shortWeek } from '../data/dates'
+import { facilityForecast, forecastWeekIds } from '../forecast'
+import { useForecasts } from '../state/useForecasts'
 import { useCropData } from '../state/CropDataContext'
 import { useView } from '../state/ViewContext'
 
@@ -43,6 +45,11 @@ export default function FacilitiesScreen() {
     const rowsFor = (period: Period) => ordered.map((c) => harvestRow(c, point(c.id, KPI_FOR_PERIOD[period], week), period))
     return [facilitySummarySheet(summary, weekInfo), harvestSheet(rowsFor('week'), rowsFor('cumulative'), weekInfo)]
   }
+  // Expected harvest over the forecast weeks in kg per facility: kg/m² x growing area.
+  const { asOf, byCultivation } = useForecasts()
+  const forecastWeeks = asOf ? forecastWeekIds(asOf) : []
+  const forecastOf = (facility: string) =>
+    asOf ? { totals: facilityForecast(visibleCultivations.filter((c) => c.facility === facility), byCultivation), fromWeek: forecastWeeks[0]!, toWeek: forecastWeeks[forecastWeeks.length - 1]! } : undefined
   const hiddenCount = cultivations.length - visibleCultivations.length
 
   return (
@@ -86,7 +93,7 @@ export default function FacilitiesScreen() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {byFacility.map(({ facility, rows }) => (
-          <FacilityCard key={facility} facility={facility} rows={rows} period={period} unit={unit} emptyLabelOf={emptyLabelOf} />
+          <FacilityCard key={facility} facility={facility} rows={rows} period={period} unit={unit} emptyLabelOf={emptyLabelOf} forecast={forecastOf(facility)} />
         ))}
       </div>
     </div>

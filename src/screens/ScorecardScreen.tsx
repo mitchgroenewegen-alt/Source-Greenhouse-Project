@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { ExportViewButton } from '../components/exchange/ExportViewButton'
 import { CultivationCard } from '../components/scorecard/CultivationCard'
 import { FilterSelect } from '../components/ui/FilterSelect'
+import { Link } from 'react-router-dom'
+import { useForecasts } from '../state/useForecasts'
 import { Segmented } from '../components/ui/Segmented'
 import { formatRange, shortWeek } from '../data/dates'
 import { scorecardSheet, viewFilePart } from '../exchange/viewSheets'
@@ -11,6 +13,7 @@ import { ALL, useView } from '../state/ViewContext'
 
 export default function ScorecardScreen() {
   const { cultivations, visibleCultivations, scoreOf, openReviewGroups, dataStateOf } = useCropData()
+  const { byCultivation } = useForecasts()
   const { week, weekInfo, facility, setFacility, variety, setVariety } = useView()
 
   const facilities = useMemo(() => [ALL, ...new Set(visibleCultivations.map((c) => c.facility))], [visibleCultivations])
@@ -73,6 +76,14 @@ export default function ScorecardScreen() {
               Sorted by Production first (red, then amber, then on track), then by the number of red and amber categories among the other four, then by the shortfall on cumulative harvest.
             </span>
           </p>
+          {![...byCultivation.values()].some((f) => f.seasonEnd) && (
+            <p className="-mt-1 text-sm">
+              A card shows Forecast at end once its cultivation has a season budget (a Harvest budget after the last data week); there is none yet.{' '}
+              <Link to="/forecast" className="font-semibold text-brand hover:underline">
+                See the six-week forecast
+              </Link>
+            </p>
+          )}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {cards.map(({ cultivation, score }) => {
               const groups = openReviewGroups(cultivation.id)
@@ -86,6 +97,7 @@ export default function ScorecardScreen() {
                   weekLabel={shortWeek(week)}
                   openFlags={groups.length}
                   openFlagsThisWeek={groups.filter((g) => g.startDate <= weekInfo.end && g.endDate >= weekInfo.start).length}
+                  seasonEnd={byCultivation.get(cultivation.id)?.seasonEnd}
                 />
               )
             })}

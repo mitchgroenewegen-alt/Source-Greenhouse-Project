@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { cropWeekOn, formatDate } from '../../data/dates'
 import type { Cultivation } from '../../data/types'
+import type { SeasonEnd } from '../../forecast'
 import { fixed } from '../../lib/format'
 import type { CultivationScore } from '../../scoring/summary'
 import type { DataState } from '../../setup/dataState'
@@ -17,6 +18,7 @@ export function CultivationCard({
   weekLabel,
   openFlags,
   openFlagsThisWeek,
+  seasonEnd,
 }: {
   cultivation: Cultivation
   score: CultivationScore
@@ -26,6 +28,8 @@ export function CultivationCard({
   weekLabel: string
   openFlags: number
   openFlagsThisWeek: number
+  /** The forecast at the end of the season: only a cultivation with a season budget has one, and only then does the card say so. */
+  seasonEnd?: SeasonEnd | null
 }) {
   const kpi = (name: string) => score.kpis.find((k) => k.config.name === name)!
   return (
@@ -60,6 +64,13 @@ export function CultivationCard({
           <HeadlineMetric label="Fruit weight" result={kpi('Fruit weight')} />
           <HeadlineMetric label="Waste" result={kpi('Waste')} />
         </div>
+
+        {seasonEnd && (
+          <p className="num rounded-xl border border-line-soft bg-tile px-3 py-2 text-sm text-ink-2">
+            Forecast at end <span className="font-semibold text-ink">{fixed(seasonEnd.expected, 1)} kg/m²</span>
+            <span className="block text-xs text-ink-3">{fixed(seasonEnd.low, 1)} to {fixed(seasonEnd.high, 1)}</span>
+          </p>
+        )}
 
         <CategoryStatusList categories={score.categories} />
         </>

@@ -59,6 +59,18 @@ export function merge(base: DataFile, workspace: MergeInput, options: MergeOptio
       const key = cellKey(edit.cultivation, edit.kpi, date)
       const row = cells.get(key)
       if (row) cells.set(key, { ...row, [edit.field]: edit.newValue })
+      // A one-day edit on a day with no row makes the row (the other value stays empty): that is how a new cultivation,
+      // which has no days yet, gets its copied budgets. A longer range only changes days that exist.
+      else if (edit.dateFrom === edit.dateTo && cultivationIds.has(edit.cultivation) && kpiNames.has(edit.kpi)) {
+        cells.set(key, {
+          date,
+          week: isoWeekOf(date),
+          cultivation: edit.cultivation,
+          kpi: edit.kpi,
+          actual: edit.field === 'actual' ? edit.newValue : null,
+          target: edit.field === 'target' ? edit.newValue : null,
+        })
+      }
     }
   }
 

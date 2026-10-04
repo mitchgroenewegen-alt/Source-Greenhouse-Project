@@ -4,6 +4,7 @@ import { detectFlags, groupFlags, type Flag, type FlagGroup } from '../flags'
 import { applyDecisions, buildWeekly, weeklyKey, type WeeklyLookup, type WeeklyPoint } from '../scoring/effective'
 import { scoreCultivationWeek, type CultivationScore } from '../scoring/summary'
 import { readPreference, writePreference, type Decision } from '../storage'
+import { dataStateOf, dataStates, latestWeekWithActuals, type DataState } from '../setup/dataState'
 import { correctionEdit, correctionEditId } from '../workspace/corrections'
 import { merge } from '../workspace/merge'
 import { useWorkspace } from '../workspace/WorkspaceContext'
@@ -13,7 +14,20 @@ import { groupStatus, needsReview, type GroupStatus } from './groupStatus'
 export interface CropData {
   data: DataFile
   weeks: WeekInfo[]
+  /** Every cultivation, archived ones included (history stays). */
   cultivations: Cultivation[]
+  /** The cultivations as the workbook has them, before anything from the workspace is laid over them. */
+  workbookCultivations: Cultivation[]
+  /** The workbook's own period and counts, which setup changes do not move. */
+  workbookMeta: DataFile['meta']
+  /** The ones the Scorecard and Facilities show: without the archived ones unless "Show archived" is on. */
+  visibleCultivations: Cultivation[]
+  showArchived: boolean
+  setShowArchived: (show: boolean) => void
+  /** Does it have budgets and recorded values yet? A new cultivation has neither until budgets are copied or entered. */
+  dataStateOf: (cultivation: string) => DataState
+  /** The week the app opens on: the latest one with recorded values. */
+  defaultWeek: string | undefined
   cultivationById: (id: string) => Cultivation | undefined
   flags: Flag[]
   groups: FlagGroup[]
@@ -112,6 +126,12 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
   const groups = useMemo(() => groupFlags(flags, checked.daily), [flags, checked])
   const decisionById = useMemo(() => new Map(decisions.map((d) => [d.cellId, d])), [decisions])
 
+  const [showArchived, setShowArchivedState] = useState(() => readPreference('showArchived', false))
+  const setShowArchived = useCallback((show: boolean) => {
+    setShowArchivedState(show)
+    writePreference('showArchived', show)
+  }, [])
+
   const [rawMode, setRawModeState] = useState(() => readPreference('rawMode', false))
   const setRawMode = useCallback((raw: boolean) => {
     setRawModeState(raw)
@@ -137,10 +157,18 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
   const value = useMemo<CropData>(() => {
     const cultivationMap = new Map(data.cultivations.map((c) => [c.id, c]))
     const scoreCache = new Map<string, CultivationScore>()
+    const seen = dataStates(data.daily)
     return {
       data,
       weeks: data.weeks,
       cultivations: data.cultivations,
+      workbookCultivations: base.cultivations,
+      workbookMeta: base.meta,
+      visibleCultivations: showArchived ? data.cultivations : data.cultivations.filter((c) => !c.archived),
+      showArchived,
+      setShowArchived,
+      dataStateOf: (id) => dataStateOf(seen, id),
+      defaultWeek: latestWeekWithActuals(data.daily, data.weeks),
       cultivationById: (id) => cultivationMap.get(id),
       flags,
       groups,
@@ -195,7 +223,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
         if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
       },
     }
-  }, [data, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly])
+  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

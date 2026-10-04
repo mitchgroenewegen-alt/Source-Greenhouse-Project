@@ -3,13 +3,16 @@ import { cropWeekOn, formatDate } from '../../data/dates'
 import type { Cultivation } from '../../data/types'
 import { fixed } from '../../lib/format'
 import type { CultivationScore } from '../../scoring/summary'
+import type { DataState } from '../../setup/dataState'
 import { FlagIcon } from '../ui/icons'
 import { CategoryStatusList } from './CategoryStatusList'
 import { HeadlineMetric } from './HeadlineMetric'
+import { NoDataTile } from './NoDataTile'
 
 export function CultivationCard({
   cultivation,
   score,
+  state,
   weekEnd,
   weekLabel,
   openFlags,
@@ -17,6 +20,8 @@ export function CultivationCard({
 }: {
   cultivation: Cultivation
   score: CultivationScore
+  /** Anything but 'ready' replaces the numbers with a note. */
+  state: DataState
   weekEnd: string
   weekLabel: string
   openFlags: number
@@ -34,6 +39,7 @@ export function CultivationCard({
           </h2>
           <p className="text-sm text-ink-2">
             {cultivation.facility} · {cultivation.greenhouse} · {cultivation.variety}
+            {cultivation.archived && ' · Archived'}
           </p>
           <p className="text-xs text-ink-3">
             {fixed(cultivation.areaM2, 0)} m² · planted {formatDate(cultivation.plantingDate)}
@@ -44,14 +50,20 @@ export function CultivationCard({
         </span>
       </header>
 
-      <div className="grid grid-cols-2 gap-2">
-        <HeadlineMetric label="Cumulative harvest" result={kpi('Cumulative harvest')} />
-        <HeadlineMetric label={`Harvest, ${weekLabel}`} result={kpi('Harvest')} />
-        <HeadlineMetric label="Fruit weight" result={kpi('Fruit weight')} />
-        <HeadlineMetric label="Waste" result={kpi('Waste')} />
-      </div>
+      {state !== 'ready' ? (
+        <NoDataTile state={state} />
+      ) : (
+        <>
+        <div className="grid grid-cols-2 gap-2">
+          <HeadlineMetric label="Cumulative harvest" result={kpi('Cumulative harvest')} />
+          <HeadlineMetric label={`Harvest, ${weekLabel}`} result={kpi('Harvest')} />
+          <HeadlineMetric label="Fruit weight" result={kpi('Fruit weight')} />
+          <HeadlineMetric label="Waste" result={kpi('Waste')} />
+        </div>
 
-      <CategoryStatusList categories={score.categories} />
+        <CategoryStatusList categories={score.categories} />
+        </>
+      )}
 
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-line-soft pt-3">
         <Link

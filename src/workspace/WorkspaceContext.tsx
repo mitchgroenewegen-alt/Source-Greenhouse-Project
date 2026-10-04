@@ -19,8 +19,9 @@ export interface Workspace {
   /** Set when a change could not be saved; the change has been undone on screen. */
   saveError: string | null
   clearSaveError: () => void
-  save: <K extends EntityName>(entity: K, items: WorkspaceData[K]) => Promise<void>
-  remove: (entity: EntityName, keys: string[]) => Promise<void>
+  /** Resolve to false when the change could not be saved (the reason is in `saveError`), so a form can stay open. */
+  save: <K extends EntityName>(entity: K, items: WorkspaceData[K]) => Promise<boolean>
+  remove: (entity: EntityName, keys: string[]) => Promise<boolean>
   signIn: (email: string) => Promise<void>
   signOut: () => Promise<void>
 }
@@ -43,11 +44,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return () => store.dispose()
   }, [store])
 
-  const guard = useCallback(async (work: Promise<void>) => {
+  const guard = useCallback(async (work: Promise<void>): Promise<boolean> => {
     try {
       await work
+      return true
     } catch (error) {
       setSaveError(error instanceof Error && error.message ? error.message : 'The change could not be saved.')
+      return false
     }
   }, [])
 

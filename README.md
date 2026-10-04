@@ -8,7 +8,7 @@ A web app for the Chief Growing Officer and the Director of Growing. It shows ho
 - **Cultivation detail**: facility, greenhouse, variety, planting date, crop week and growing area; one tab per category; every KPI as actual vs budget (Production, Heating energy, LED lighting) or target (the growing KPIs) over the 13 weeks with the green and amber zones shaded (for higher-is-better or lower-is-better KPIs only the side that counts against the KPI is shaded) and flagged points marked; a weekly table underneath.
 - **Facilities**: a summary table at the top (one row per facility and an all-facilities row: this week's harvest and the harvest since planting, each vs budget, with a status), then harvest vs budget per cultivation grouped by facility, as kg/m² and as tonnes, with area-weighted facility totals.
 - **Data checks**: the flagged inputs, grouped so a run of the same problem is one item, with three actions on each item (**Confirm values**, **Apply correction**, **Exclude**), a decision log, and CSV export and import.
-- **About**: data period, how each KPI is scored (generated from the config), assumptions, and what was left out.
+- **More**: the screens that are not used every day: **Setup**, **Fruit types and specs**, and **About** (data period, how each KPI is scored, generated from the config, assumptions, and what was left out).
 
 It is a static site. By default there is no backend and no login (decisions stay in the browser); with a Supabase project connected (see below) people sign in with an email link and share decisions and, in later steps, their own data. It works on a phone (bottom navigation, no sideways page scroll at 375 px) and installs as a PWA.
 
@@ -38,6 +38,7 @@ src/flags/                 data-check rules (detect.ts), their tuning knobs (set
 src/storage/               decisions behind one interface (localStorage), CSV export and import
 src/workspace/             everything kept beyond the workbook (decisions, edits, entered days) behind one store interface: memory, this browser (IndexedDB), or Supabase; merge.ts lays it over the workbook data
 supabase/schema.sql        the tables and access rules for the shared database
+src/setup/                 ids, validation, budget copy and fruit types for the Setup and Fruit types screens (plain functions, tested)
 src/state/                 data loading, the selected week and filters
 src/screens/               one file per screen
 src/components/            small components named after what they show
@@ -62,6 +63,19 @@ Then open the app, choose **Sign in** in the header, enter an invited email addr
 - If the database cannot be reached, the app shows the last saved copy, read-only, with a banner saying so.
 - The first time someone signs in on a browser that holds decisions from before the shared database, the app offers once to upload them.
 - If either variable is missing, the app falls back to the browser's own storage and shows no sign-in control.
+
+## Setup and fruit types
+
+Open **More > Setup** to see the facilities, greenhouses and cultivations (the workbook's and new ones) and to add or change them. Changing something saves a record in the workspace on top of the workbook; the workbook file is never touched. Everything here needs a signed-in person when the shared database is set up (otherwise the screens are read-only with a sign-in prompt).
+
+- **Facility**: name, region, currency (USD unless changed). The code (PA, AZ, ON) starts every cultivation id. The workbook has no facility sheet, so its facilities and greenhouses are worked out from the cultivation ids (PA-P1-TOV gives facility PA, greenhouse PA-P1); a greenhouse's area starts as the area of the workbook cultivations in it.
+- **Greenhouse**: facility, name, growing area, optional installed LED power (W/m²). Its code (P1, P2) follows the name ("Phase 2" gives P2).
+- **Cultivation**: greenhouse, fruit type, variety, planting date, planned end date (48 weeks after planting unless changed) and growing area. The id is built as `<facility code>-<greenhouse code>-<Variety>`, for example `ON-P2-TOV`; if it is taken the form suggests `-2`, and the id can be typed over. On a workbook cultivation you can change the area, planned end date and fruit type.
+- The cultivations of a greenhouse together must fit in its area (archived ones do not count), the planting date must not be after the planned end date, and ids must be unique. Names and codes of facilities and greenhouses, and ids, cannot change once set, because cultivations refer to them.
+- **Archive** a cultivation instead of deleting it. Archived cultivations keep their history but are hidden on the Scorecard and Facilities unless **Show archived** is on (a switch on Setup, remembered in the browser).
+- **Copy budgets from...** (on a cultivation added in the app): pick a cultivation of the same fruit type. Each of its targets is copied as a value edit (reason "Copied from <id>") onto the new cultivation's matching crop day (days since planting), so crop day N lines up with crop day N whatever the calendar dates. Until a cultivation has any targets, its Scorecard card, Facilities row and Cultivation screen say **No budget yet**; with budgets but no recorded values they say **No data yet**. The workbook only covers about 13 weeks per cultivation, so only those crop weeks get budgets. The app opens on the latest week that has recorded values, so budgets copied into later weeks do not move it.
+
+**Fruit types** (More > Fruit types and specs) hold the weight range in grams, an optional diameter range in mm, an optional price per kg (used later in Financials) and a "placeholder" marker. Next to each type is the average fruit weight the workbook measured for the cultivations of that type, as a sanity check. A type in use cannot be removed (the screen names the cultivations using it). Until the workspace has any fruit type the nine starting ones (Grape, Snack, Cherry, Grape on the vine, Cocktail, Plum, Roma, TOV, Beef, all placeholders from `src/setup/fruitTypes.ts`) are shown as defaults; the first change saves all of them as workspace rows. The workbook cultivations default to the type of their variety (TOV, Cherry, Cocktail, Snack) until one is chosen on Setup. On a Cultivation screen, the Fruit weight card says whether the selected week's average is under, within or over the type's range.
 
 ## Change a threshold or a KPI
 

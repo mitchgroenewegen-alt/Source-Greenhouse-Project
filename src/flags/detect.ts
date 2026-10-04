@@ -191,6 +191,9 @@ export function detectFlags(daily: DailyRow[], cultivations: Cultivation[]): Fla
     return today !== undefined && yesterday !== undefined && Math.abs(today - yesterday - value) <= HARVEST_AGREES_WITHIN
   }
 
+  // A cultivation with no recorded value at all (one set up in the app that only has budgets so far) has nothing missing yet.
+  const startedRecording = new Set(daily.filter((r) => r.actual !== null).map((r) => r.cultivation))
+
   const flags: Flag[] = []
   for (const rows of series.values()) {
     rows.sort((a, b) => a.date.localeCompare(b.date))
@@ -229,11 +232,13 @@ export function detectFlags(daily: DailyRow[], cultivations: Cultivation[]): Fla
     for (const row of rows) {
       const young = isYoung(row.date)
       if (row.actual === null) {
-        push(row, 'actual', {
-          rule: 'missing-value',
-          suggestion: null,
-          explanation: `Nothing was recorded for ${kpi} on this day. It is left out of the scores, never counted as zero.`,
-        })
+        if (startedRecording.has(cultivation)) {
+          push(row, 'actual', {
+            rule: 'missing-value',
+            suggestion: null,
+            explanation: `Nothing was recorded for ${kpi} on this day. It is left out of the scores, never counted as zero.`,
+          })
+        }
         continue
       }
       for (const field of ['actual', 'target'] as const) {

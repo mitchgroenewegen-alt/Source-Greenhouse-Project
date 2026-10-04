@@ -38,17 +38,17 @@ function kpisSaying(label: PlanLabel): string {
 }
 
 export default function AboutScreen() {
-  const { data } = useCropData()
-  const { meta } = data
+  const { data, workbookMeta: meta, visibleCultivations, defaultWeek } = useCropData()
+  // The workbook's weeks: budgets copied into later weeks in the app do not change the data period.
   const first = data.weeks[0]!
-  const last = data.weeks[data.weeks.length - 1]!
+  const last = data.weeks.find((w) => w.id === defaultWeek) ?? data.weeks[data.weeks.length - 1]!
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">About this tool</h1>
         <p>
-          Crop Performance shows how each of the {meta.cultivationCount} tomato cultivations is doing against its budget or target, and which inputs a person should check before trusting a number.
+          Crop Performance shows how each of the {visibleCultivations.length} tomato cultivations is doing against its budget or target, and which inputs a person should check before trusting a number.
         </p>
       </div>
 
@@ -57,7 +57,7 @@ export default function AboutScreen() {
           {formatDate(meta.periodStart)} to {formatDate(meta.periodEnd)}: {meta.dayCount} days, {meta.weekCount} ISO weeks ({first.id} to {last.id}). The latest full week is {last.id.split('-')[1]} ({formatDate(last.start)} to {formatDate(last.end)}), which is the default.
         </p>
         <p>
-          Source: <code>{meta.source}</code> (sheets Read me, Greenhouses, KPIs): {meta.cultivationCount} cultivations in 7 greenhouses at 3 facilities, {meta.kpiCount} KPIs in 5 categories. Everything is read from that one file and nothing is sent anywhere.
+          Source: <code>{meta.source}</code> (sheets Read me, Greenhouses, KPIs): {meta.cultivationCount} cultivations in 7 greenhouses at 3 facilities, {meta.kpiCount} KPIs in 5 categories. The workbook is the base data and is never changed. What is added in the app (cultivations, fruit types, edits to values and plan values) is kept in the workspace and laid over it.
         </p>
       </Section>
 
@@ -155,7 +155,7 @@ export default function AboutScreen() {
           <li>Forecasting and what-if scenarios.</li>
           <li>Alerts and notifications.</li>
           <li>Passwords and different roles. When a shared database is set up, invited people sign in with an email link and all see the same decisions; without one, decisions live in one browser and export and import move them.</li>
-          <li>Editing the plan or the workbook.</li>
+          <li>Changing the workbook file. Edits made in the app, such as a corrected value or budgets copied to a new cultivation, are kept apart and laid over it.</li>
           <li>Grower-level climate detail (hour by hour, per zone).</li>
           <li>Financials (revenue, cost, margin).</li>
           <li>A live data connection: the app reads one prepared file, refreshed at build time.</li>

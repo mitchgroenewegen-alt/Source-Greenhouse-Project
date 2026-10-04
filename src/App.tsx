@@ -10,6 +10,9 @@ import { WorkspaceProvider } from './workspace/WorkspaceContext'
 const CultivationScreen = lazy(() => import('./screens/CultivationScreen'))
 const FacilitiesScreen = lazy(() => import('./screens/FacilitiesScreen'))
 const DataChecksScreen = lazy(() => import('./screens/DataChecksScreen'))
+const MoreScreen = lazy(() => import('./screens/MoreScreen'))
+const SetupScreen = lazy(() => import('./screens/SetupScreen'))
+const FruitTypesScreen = lazy(() => import('./screens/FruitTypesScreen'))
 const AboutScreen = lazy(() => import('./screens/AboutScreen'))
 const SignInScreen = lazy(() => import('./screens/SignInScreen'))
 
@@ -25,6 +28,9 @@ export default function App() {
               <Route path="/cultivation/:id" element={<CultivationScreen />} />
               <Route path="/facilities" element={<FacilitiesScreen />} />
               <Route path="/checks" element={<DataChecksScreen />} />
+              <Route path="/more" element={<MoreScreen />} />
+              <Route path="/setup" element={<SetupScreen />} />
+              <Route path="/fruit-types" element={<FruitTypesScreen />} />
               <Route path="/about" element={<AboutScreen />} />
               <Route path="/sign-in" element={<SignInScreen />} />
               <Route path="*" element={<ScorecardScreen />} />

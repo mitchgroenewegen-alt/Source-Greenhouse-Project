@@ -29,7 +29,20 @@ function barsFor(rows: HarvestRow[], period: Period, unit: Unit): Bars[] {
   ]
 }
 
-export function FacilityCard({ facility, rows, period, unit }: { facility: string; rows: HarvestRow[]; period: Period; unit: Unit }) {
+export function FacilityCard({
+  facility,
+  rows,
+  period,
+  unit,
+  emptyLabelOf,
+}: {
+  facility: string
+  rows: HarvestRow[]
+  period: Period
+  unit: Unit
+  /** What a row with no status says instead of "Not scored", e.g. "No budget yet" for a new cultivation; undefined keeps "Not scored". */
+  emptyLabelOf?: (cultivationId: string) => string | undefined
+}) {
   const total = facilityTotal(rows, period)
   const decimals = unit === 'tonnes' ? 1 : 2
   const unitLabel = unit === 'tonnes' ? 't' : 'kg/m²'
@@ -123,7 +136,7 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
                   <span className="block text-xs font-normal text-ink-3 sm:hidden xl:block">{fixed(r.cultivation.areaM2, 0)} m²</span>
                   {/* On a phone the badge sits under the name, which frees a column's width for the numbers. */}
                   <span className="mt-1 block font-normal sm:hidden">
-                    <StatusBadge status={r.status} compact />
+                    <StatusBadge status={r.status} label={r.status ? undefined : emptyLabelOf?.(r.cultivation.id)} compact />
                   </span>
                 </th>
                 <td className="hidden px-0.5 py-2 text-right text-ink-2 sm:table-cell xl:hidden">{fixed(r.cultivation.areaM2, 0)}</td>
@@ -132,7 +145,7 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
                 <td className="py-2 pl-1 text-right">
                   <div className="font-semibold">{r.variance === null ? '–' : signedPercent(r.variance)}</div>
                   <div className="mt-0.5 hidden sm:block">
-                    <StatusBadge status={r.status} />
+                    <StatusBadge status={r.status} label={r.status ? undefined : emptyLabelOf?.(r.cultivation.id)} />
                   </div>
                 </td>
               </tr>

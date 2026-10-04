@@ -4,24 +4,38 @@ import { CategoryTabs } from '../components/detail/CategoryTabs'
 import { DetailHeader } from '../components/detail/DetailHeader'
 import { KpiCard } from '../components/detail/KpiCard'
 import { WeeklyTable } from '../components/detail/WeeklyTable'
+import { NoDataTile } from '../components/scorecard/NoDataTile'
 import { CATEGORY_LABEL, kpisInCategory } from '../config/kpis'
 import { formatRange, shortWeek } from '../data/dates'
 import type { Category } from '../data/types'
+import type { FruitType } from '../workspace/types'
+import { effectiveFruitTypes, fruitTypeIdOf, specCheck } from '../setup/fruitTypes'
 import { useCropData } from '../state/CropDataContext'
 import { useView } from '../state/ViewContext'
+import { useWorkspace } from '../workspace/WorkspaceContext'
+
+/** Under, within or over the fruit type's weight range; null when there is no average for the week. */
+const fruitWeightState = (average: number | null | undefined, type: FruitType) => (average === null || average === undefined ? null : specCheck(average, type))
 
 export default function CultivationScreen() {
   const { id = '' } = useParams()
-  const { cultivationById, weeks, point, scoreOf } = useCropData()
+  const { cultivationById, weeks, point, scoreOf, dataStateOf } = useCropData()
+  const workspace = useWorkspace()
   const { week, weekInfo } = useView()
   const [category, setCategory] = useState<Category>('Production')
   const cultivation = cultivationById(id)
 
+  const state = cultivation ? dataStateOf(cultivation.id) : 'ready'
   const score = cultivation ? scoreOf(cultivation.id, week) : undefined
   const kpis = useMemo(() => kpisInCategory(category), [category])
   const pointsByKpi = useMemo(
     () => (cultivation ? new Map(kpis.map((k) => [k.name, weeks.map((w) => point(cultivation.id, k.name, w.id))])) : new Map()),
     [cultivation, kpis, weeks, point],
+  )
+
+  const fruitType = useMemo(
+    () => (cultivation ? effectiveFruitTypes(workspace.data.fruitTypes).types.find((t) => t.id === fruitTypeIdOf(cultivation)) : undefined),
+    [cultivation, workspace.data.fruitTypes],
   )
 
   if (!cultivation || !score) {
@@ -38,7 +52,8 @@ export default function CultivationScreen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <DetailHeader cultivation={cultivation} weekEnd={weekInfo.end} weekLabel={shortWeek(week)} />
+      <DetailHeader cultivation={cultivation} fruitTypeName={fruitType?.name ?? null} weekEnd={weekInfo.end} weekLabel={shortWeek(week)} />
+      {state !== 'ready' && <NoDataTile state={state} />}
       <p className="text-sm">
         The status badges and the highlighted column are for {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}. Change the week at the top.
       </p>
@@ -55,6 +70,7 @@ export default function CultivationScreen() {
               points={pointsByKpi.get(config.name)!}
               selectedWeek={week}
               result={score.kpis.find((k) => k.config.name === config.name)!}
+              spec={config.name === 'Fruit weight' && fruitType ? { type: fruitType, state: fruitWeightState(point(cultivation.id, config.name, week)?.actual, fruitType) } : undefined}
             />
           ))}
         </div>

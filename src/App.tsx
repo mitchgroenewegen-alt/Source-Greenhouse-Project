@@ -4,15 +4,18 @@ import { AppShell } from './components/layout/AppShell'
 import ScorecardScreen from './screens/ScorecardScreen'
 import { CropDataProvider } from './state/CropDataContext'
 import { ViewProvider } from './state/ViewContext'
+import { WorkspaceProvider } from './workspace/WorkspaceContext'
 
 // The screens with charts load on demand, so the first screen (the Scorecard) opens quickly on a phone.
 const CultivationScreen = lazy(() => import('./screens/CultivationScreen'))
 const FacilitiesScreen = lazy(() => import('./screens/FacilitiesScreen'))
 const DataChecksScreen = lazy(() => import('./screens/DataChecksScreen'))
 const AboutScreen = lazy(() => import('./screens/AboutScreen'))
+const SignInScreen = lazy(() => import('./screens/SignInScreen'))
 
 export default function App() {
   return (
+    <WorkspaceProvider>
     <CropDataProvider>
       <ViewProvider>
         <AppShell>
@@ -23,11 +26,13 @@ export default function App() {
               <Route path="/facilities" element={<FacilitiesScreen />} />
               <Route path="/checks" element={<DataChecksScreen />} />
               <Route path="/about" element={<AboutScreen />} />
+              <Route path="/sign-in" element={<SignInScreen />} />
               <Route path="*" element={<ScorecardScreen />} />
             </Routes>
           </Suspense>
         </AppShell>
       </ViewProvider>
     </CropDataProvider>
+    </WorkspaceProvider>
   )
 }

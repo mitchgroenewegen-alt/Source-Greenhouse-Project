@@ -1,9 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Cultivation, DataFile, WeekInfo } from '../data/types'
 import { detectFlags, groupFlags, type Flag, type FlagGroup } from '../flags'
 import { applyDecisions, buildWeekly, weeklyKey, type WeeklyLookup, type WeeklyPoint } from '../scoring/effective'
 import { scoreCultivationWeek, type CultivationScore } from '../scoring/summary'
-import { createDecisionStore, readPreference, writePreference, type Decision, type DecisionStore } from '../storage'
+import { readPreference, writePreference, type Decision } from '../storage'
+import { correctionEdit, correctionEditId } from '../workspace/corrections'
+import { merge } from '../workspace/merge'
+import { useWorkspace } from '../workspace/WorkspaceContext'
+import type { WorkspaceStatus } from '../workspace/types'
 import { groupStatus, needsReview, type GroupStatus } from './groupStatus'
 
 export interface CropData {
@@ -22,8 +26,14 @@ export interface CropData {
   persistent: boolean
   rawMode: boolean
   setRawMode: (raw: boolean) => void
+  /** Who decides: the signed-in email, or the name typed in when there is no sign-in. */
   decidedBy: string
   setDecidedBy: (name: string) => void
+  /** Email of the signed-in person, null when nobody is. Their name is then not typed in. */
+  signedInAs: string | null
+  workspaceStatus: WorkspaceStatus
+  /** False when signed out or when the shared database cannot be reached: decisions cannot be saved. */
+  canWrite: boolean
   point: (cultivation: string, kpi: string, week: string) => WeeklyPoint | undefined
   scoreOf: (cultivation: string, week: string) => CultivationScore
   saveDecisions: (decisions: Decision[]) => void
@@ -63,7 +73,8 @@ function useDataFile(): [Load, () => void] {
 
 export function CropDataProvider({ children }: { children: ReactNode }) {
   const [load, retry] = useDataFile()
-  if (load.state === 'loading') return <FullPageMessage title="Loading crop data" detail="One moment." />
+  const { ready } = useWorkspace()
+  if (load.state === 'loading' || !ready) return <FullPageMessage title="Loading crop data" detail="One moment." />
   if (load.state === 'error') {
     return (
       <FullPageMessage title="The data could not be loaded" detail={load.message}>
@@ -86,13 +97,19 @@ function FullPageMessage({ title, detail, children }: { title: string; detail: s
   )
 }
 
-function ReadyProvider({ data, children }: { data: DataFile; children: ReactNode }) {
-  // Flags depend only on the workbook, so they are worked out once.
-  const flags = useMemo(() => detectFlags(data.daily, data.cultivations), [data])
-  const groups = useMemo(() => groupFlags(flags, data.daily), [flags, data])
+function ReadyProvider({ data: base, children }: { data: DataFile; children: ReactNode }) {
+  const workspace = useWorkspace()
+  const { save, remove, user, status, canWrite } = workspace
+  const decisions = workspace.data.decisions
 
-  const [store] = useState<DecisionStore>(() => createDecisionStore())
-  const decisions = useSyncExternalStore((listener) => store.subscribe(listener), () => store.getAll())
+  // Every screen uses the workbook with the workspace laid over it (added days, edits, new cultivations).
+  const data = useMemo(() => merge(base, workspace.data), [base, workspace.data])
+  // The data checks and the scores start from the values as recorded: "Apply correction" is applied through its
+  // decision, so the value edit it also leaves behind is not counted twice.
+  const checked = useMemo(() => merge(base, workspace.data, { skipCorrected: true }), [base, workspace.data])
+
+  const flags = useMemo(() => detectFlags(checked.daily, checked.cultivations), [checked])
+  const groups = useMemo(() => groupFlags(flags, checked.daily), [flags, checked])
   const decisionById = useMemo(() => new Map(decisions.map((d) => [d.cellId, d])), [decisions])
 
   const [rawMode, setRawModeState] = useState(() => readPreference('rawMode', false))
@@ -100,16 +117,21 @@ function ReadyProvider({ data, children }: { data: DataFile; children: ReactNode
     setRawModeState(raw)
     writePreference('rawMode', raw)
   }, [])
-  const [decidedBy, setDecidedByState] = useState(() => readPreference('decidedBy', ''))
-  const setDecidedBy = useCallback((name: string) => {
-    setDecidedByState(name)
-    writePreference('decidedBy', name)
-  }, [])
+  const [typedName, setTypedName] = useState(() => readPreference('decidedBy', ''))
+  const setDecidedBy = useCallback(
+    (name: string) => {
+      if (user) return // signed in: the name comes from the account
+      setTypedName(name)
+      writePreference('decidedBy', name)
+    },
+    [user],
+  )
+  const decidedBy = user ?? typedName
 
   // What actually goes into the scores: flagged values left out until decided, or the raw values.
   const weekly: WeeklyLookup = useMemo(
-    () => buildWeekly(applyDecisions(data.daily, flags, decisions, rawMode)),
-    [data, flags, decisions, rawMode],
+    () => buildWeekly(applyDecisions(checked.daily, flags, decisions, rawMode)),
+    [checked, flags, decisions, rawMode],
   )
 
   const value = useMemo<CropData>(() => {
@@ -129,11 +151,14 @@ function ReadyProvider({ data, children }: { data: DataFile; children: ReactNode
         groups.filter(
           (g) => needsReview(g) && (!cultivation || g.cultivation === cultivation) && groupStatus(g, decisionById) !== 'decided',
         ),
-      persistent: store.persistent,
+      persistent: workspace.persistent,
       rawMode,
       setRawMode,
       decidedBy,
       setDecidedBy,
+      signedInAs: user,
+      workspaceStatus: status,
+      canWrite,
       point: (cultivation, kpi, week) => weekly.get(weeklyKey(cultivation, kpi, week)),
       scoreOf: (cultivation, week) => {
         const key = `${cultivation}|${week}`
@@ -144,11 +169,33 @@ function ReadyProvider({ data, children }: { data: DataFile; children: ReactNode
         }
         return score
       },
-      saveDecisions: (next) => store.save(next),
-      removeDecisions: (ids) => store.remove(ids),
-      replaceDecisions: (next) => store.replaceAll(next),
+      saveDecisions: (next) => {
+        void save('decisions', next)
+        // "Apply correction" also writes a value edit; a cell decided another way loses the one it had.
+        const corrected = next.filter((d) => d.kind === 'correct')
+        if (corrected.length > 0) void save('valueEdits', corrected.map(correctionEdit))
+        const others = next.filter((d) => d.kind !== 'correct')
+        if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
+      },
+      removeDecisions: (ids) => {
+        void remove('decisions', ids)
+        void remove('valueEdits', ids.map(correctionEditId))
+      },
+      replaceDecisions: (next) => {
+        const keep = new Set(next.map((d) => d.cellId))
+        const gone = decisions.filter((d) => !keep.has(d.cellId)).map((d) => d.cellId)
+        if (gone.length > 0) {
+          void remove('decisions', gone)
+          void remove('valueEdits', gone.map(correctionEditId))
+        }
+        void save('decisions', next)
+        const corrected = next.filter((d) => d.kind === 'correct')
+        if (corrected.length > 0) void save('valueEdits', corrected.map(correctionEdit))
+        const others = next.filter((d) => d.kind !== 'correct')
+        if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
+      },
     }
-  }, [data, flags, groups, decisions, decisionById, store, rawMode, setRawMode, decidedBy, setDecidedBy, weekly])
+  }, [data, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

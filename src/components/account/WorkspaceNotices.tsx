@@ -42,9 +42,14 @@ function UploadOldDecisions() {
 
 /** Banners about the shared database: signed out, out of reach, a change that could not be saved, old decisions. */
 export function WorkspaceNotices() {
-  const { status, user, saveError, clearSaveError } = useWorkspace()
+  const { status, user, saveError, clearSaveError, settingsProblem } = useWorkspace()
   return (
     <>
+      {settingsProblem && (
+        <p role="status" className={NOTICE}>
+          The shared database settings could not be used, so changes stay in this browser. {settingsProblem}
+        </p>
+      )}
       {status === 'signed-out' && (
         <p role="status" className={NOTICE}>
           You are not signed in, so you see the workbook data only and cannot record decisions.{' '}

@@ -43,7 +43,7 @@ export interface WeeklyPoint {
 
 export type FlagMark = 'open' | 'decided' | null
 
-function markOf(states: CellState[]): FlagMark {
+export function markOf(states: CellState[]): FlagMark {
   if (states.includes('open')) return 'open'
   return states.some((s) => s === 'confirmed' || s === 'corrected' || s === 'excluded') ? 'decided' : null
 }

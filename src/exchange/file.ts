@@ -22,7 +22,21 @@ export interface TableRead {
   sheet: string | null
 }
 
-export async function readTableFile(file: PickedFile): Promise<TableRead> {
+/** What an import needs from an .xlsx: the sheet to prefer by name, how to tell a sheet has the columns, and what to say when none does. */
+export interface TableKind {
+  sheetName: string
+  hasColumns: (cells: unknown[][]) => boolean
+  noSheetMessage: string
+}
+
+/** The KPIs table: the workbook and the app's own export have a sheet called "KPIs". */
+export const KPI_TABLE: TableKind = {
+  sheetName: 'kpis',
+  hasColumns: (cells) => findHeader(cells).missing.length === 0,
+  noSheetMessage: 'There is no sheet called "KPIs" in this workbook, and no other sheet has the columns Date, Cultivation, KPI, Actual and Target.',
+}
+
+export async function readTableFile(file: PickedFile, kind: TableKind = KPI_TABLE): Promise<TableRead> {
   const extension = file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1]
   if (extension === 'csv') return { cells: parseCsvRows(await file.text()), sheet: null }
   if (extension !== 'xlsx' && extension !== 'xls' && extension !== 'xlsm') throw new ImportFileError('Choose an Excel file (.xlsx) or a CSV file (.csv).')
@@ -33,8 +47,8 @@ export async function readTableFile(file: PickedFile): Promise<TableRead> {
   } catch {
     throw new ImportFileError('That file could not be read as an Excel workbook. Is it damaged, or protected with a password?')
   }
-  const named = sheets.find((s) => s.name.trim().toLowerCase() === 'kpis')
-  const picked = named ?? (sheets.length === 1 ? sheets[0] : sheets.find((s) => findHeader(s.cells).missing.length === 0))
-  if (!picked) throw new ImportFileError('There is no sheet called "KPIs" in this workbook, and no other sheet has the columns Date, Cultivation, KPI, Actual and Target.')
+  const named = sheets.find((s) => s.name.trim().toLowerCase() === kind.sheetName)
+  const picked = named ?? (sheets.length === 1 ? sheets[0] : sheets.find((s) => kind.hasColumns(s.cells)))
+  if (!picked) throw new ImportFileError(kind.noSheetMessage)
   return { cells: picked.cells, sheet: picked.name }
 }

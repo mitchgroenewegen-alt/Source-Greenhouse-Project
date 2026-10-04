@@ -10,7 +10,7 @@ A web app for the Chief Growing Officer and the Director of Growing. It shows ho
 - **Data checks**: the flagged inputs, grouped so a run of the same problem is one item, with three actions on each item (**Confirm values**, **Apply correction**, **Exclude**), a decision log, and CSV export and import.
 - **About**: data period, how each KPI is scored (generated from the config), assumptions, and what was left out.
 
-It is a static site: no backend, no login. It works on a phone (bottom navigation, no sideways page scroll at 375 px) and installs as a PWA.
+It is a static site. By default there is no backend and no login (decisions stay in the browser); with a Supabase project connected (see below) people sign in with an email link and share decisions and, in later steps, their own data. It works on a phone (bottom navigation, no sideways page scroll at 375 px) and installs as a PWA.
 
 ## Run it
 
@@ -36,10 +36,32 @@ src/config/kpis.ts         the KPI rulebook: every threshold and direction
 src/scoring/               green/amber/red scoring, weekly values with decisions applied, category summary
 src/flags/                 data-check rules (detect.ts), their tuning knobs (settings.ts), grouping (group.ts)
 src/storage/               decisions behind one interface (localStorage), CSV export and import
+src/workspace/             everything kept beyond the workbook (decisions, edits, entered days) behind one store interface: memory, this browser (IndexedDB), or Supabase; merge.ts lays it over the workbook data
+supabase/schema.sql        the tables and access rules for the shared database
 src/state/                 data loading, the selected week and filters
 src/screens/               one file per screen
 src/components/            small components named after what they show
 ```
+
+## Shared database (Supabase)
+
+Without any setup the app keeps everything in the browser it runs in, exactly as before. To let several people share decisions (and, in later steps, edits and entered data), connect a free Supabase project. Steps for Mitch:
+
+1. Create a free project at supabase.com.
+2. In the project, open **Project Settings > API** and copy the **Project URL** and the **anon / publishable key**. Never use the `service_role` / secret key: it bypasses all access rules and must not be put in the app.
+3. In Vercel, open **Settings > Environment Variables** and add `VITE_SUPABASE_URL` (the Project URL) and `VITE_SUPABASE_ANON_KEY` (the anon key) for **Production** and **Preview**. Then redeploy, because the values are read at build time. (For local work, put the same two lines in a `.env.local` file; it is not committed.)
+4. In Supabase, open **Authentication > URL Configuration**. Set **Site URL** to the live Vercel URL. Under **Redirect URLs** add `https://*.vercel.app/**` and `http://localhost:5173/**`.
+5. Under **Authentication** (Sign In / Providers), turn off new sign-ups, so only people you invite can get in.
+6. Open the **SQL Editor** and run the contents of `supabase/schema.sql`. It is safe to run again.
+7. Under **Authentication > Users**, invite the people who should have access, by email.
+
+Then open the app, choose **Sign in** in the header, enter an invited email address and follow the link in the email. Notes:
+
+- Supabase's built-in email sender is limited to a few emails per hour. That is enough for a handful of people; for more, add your own SMTP provider under Authentication.
+- Signed out, the app shows the workbook data only, read-only. Signed in, decisions are saved for everyone and changes made in another browser appear without reloading.
+- If the database cannot be reached, the app shows the last saved copy, read-only, with a banner saying so.
+- The first time someone signs in on a browser that holds decisions from before the shared database, the app offers once to upload them.
+- If either variable is missing, the app falls back to the browser's own storage and shows no sign-in control.
 
 ## Change a threshold or a KPI
 

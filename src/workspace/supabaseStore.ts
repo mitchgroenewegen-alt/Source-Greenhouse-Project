@@ -68,7 +68,7 @@ function fromRow(spec: TableSpec, row: Row): unknown {
   return item
 }
 
-/** Put the key back together into the columns that make it up. */
+/** Split a composite key (see ENTITY_KEY) back into the columns that make it up. */
 function keyParts(entity: EntityName, key: string): string[] {
   return entity === 'enteredRows' ? key.split('|') : [key]
 }
@@ -77,6 +77,7 @@ function keyParts(entity: EntityName, key: string): string[] {
 const LOAD_TIMEOUT_MS = 8000
 const CACHE_KEY = 'shared-cache'
 const REFETCH_DELAY_MS = 200
+const DELETE_CHUNK = 50
 
 /**
  * The workspace in the shared Supabase database. Everything here is kept small and behind WorkspaceStore:
@@ -212,10 +213,16 @@ export class SupabaseWorkspaceStore extends MemoryWorkspaceStore {
     const spec = TABLES[entity]
     const previous = this.state.data[entity]
     await super.remove(entity, keys)
-    for (const key of keys) {
-      const parts = keyParts(entity, key)
+    const single = spec.keyColumns.length === 1
+    // One request per chunk of keys when the key is one column; one per item for the composite key.
+    const chunks = single ? Array.from({ length: Math.ceil(keys.length / DELETE_CHUNK) }, (_, i) => keys.slice(i * DELETE_CHUNK, (i + 1) * DELETE_CHUNK)) : keys.map((k) => [k])
+    for (const chunk of chunks) {
       let query = this.client.from(spec.table).delete()
-      spec.keyColumns.forEach((col, i) => (query = query.eq(col, parts[i]!)))
+      if (single) query = query.in(spec.keyColumns[0]!, chunk)
+      else {
+        const parts = keyParts(entity, chunk[0]!)
+        spec.keyColumns.forEach((col, i) => (query = query.eq(col, parts[i]!)))
+      }
       const { error } = await query
       if (error) {
         this.setItems(entity, previous)

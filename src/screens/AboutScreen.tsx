@@ -133,7 +133,7 @@ export default function AboutScreen() {
           <li><strong>Missing values:</strong> an empty cell. It is already left out of the scores and never counted as zero; you can still Confirm values (nothing was recorded) or Apply correction (enter the missing value).</li>
         </ul>
         <p>
-          Ordinary zeros are not flagged (weekend harvest, no heating on a warm day, a young crop in its first {T.youngCropWeeks} weeks). KPIs that follow the weather, such as solar radiation, skip the jump check. One cell gets at most one flag, from the most specific rule. A flagged value is left out of the scores until a person chooses <strong>Confirm values</strong> (kept exactly as recorded and counted), <strong>Apply correction</strong> (the suggested or a typed value is used instead) or <strong>Exclude</strong> (left out of the scores). The decision, who made it and when are kept in the decision log, in this browser, and can be exported and imported as CSV. “Show raw data” scores everything as recorded.
+          Ordinary zeros are not flagged (weekend harvest, no heating on a warm day, a young crop in its first {T.youngCropWeeks} weeks). KPIs that follow the weather, such as solar radiation, skip the jump check. One cell gets at most one flag, from the most specific rule. A flagged value is left out of the scores until a person chooses <strong>Confirm values</strong> (kept exactly as recorded and counted), <strong>Apply correction</strong> (the suggested or a typed value is used instead) or <strong>Exclude</strong> (left out of the scores). The decision, who made it and when are kept in the decision log (in the shared database when one is set up, otherwise in this browser), and can be exported and imported as CSV. “Show raw data” scores everything as recorded.
         </p>
       </Section>
 
@@ -154,7 +154,7 @@ export default function AboutScreen() {
         <ul className="list-disc pl-5">
           <li>Forecasting and what-if scenarios.</li>
           <li>Alerts and notifications.</li>
-          <li>Logins and shared decisions between people (decisions live in one browser; export and import move them).</li>
+          <li>Passwords and different roles. When a shared database is set up, invited people sign in with an email link and all see the same decisions; without one, decisions live in one browser and export and import move them.</li>
           <li>Editing the plan or the workbook.</li>
           <li>Grower-level climate detail (hour by hour, per zone).</li>
           <li>Financials (revenue, cost, margin).</li>

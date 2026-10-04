@@ -14,6 +14,7 @@ export function MissingValueList({
   decisionsOf,
   decidedBy,
   setDecidedBy,
+  signedIn,
   onConfirmAll,
   onChoose,
   onReopen,
@@ -24,6 +25,8 @@ export function MissingValueList({
   decisionsOf: (group: FlagGroup) => Decision[]
   decidedBy: string
   setDecidedBy: (name: string) => void
+  /** True when the name comes from the sign-in, so it is shown and not typed. */
+  signedIn: boolean
   onConfirmAll: (groups: FlagGroup[]) => void
   onChoose: (group: FlagGroup, kind: DecisionKind) => void
   onReopen: (group: FlagGroup) => void
@@ -35,10 +38,16 @@ export function MissingValueList({
     <section className="flex flex-col gap-3" aria-label="Missing values">
       <p className="text-sm">A missing value is already left out of the scores, never counted as zero.</p>
       <div className="flex items-end gap-2 rounded-2xl border border-line bg-card p-3 md:gap-3">
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium md:max-w-xs">
-          Your name
-          <input value={decidedBy} onChange={(e) => setDecidedBy(e.target.value)} className="min-h-11 w-full min-w-0 rounded-lg border border-line-strong bg-field px-2 text-base font-normal md:min-h-10 md:text-sm" />
-        </label>
+        {signedIn ? (
+          <p className="min-w-0 flex-1 truncate text-sm font-medium md:max-w-xs">
+            Deciding as <span className="font-semibold">{decidedBy}</span>
+          </p>
+        ) : (
+          <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium md:max-w-xs">
+            Your name
+            <input value={decidedBy} onChange={(e) => setDecidedBy(e.target.value)} className="min-h-11 w-full min-w-0 rounded-lg border border-line-strong bg-field px-2 text-base font-normal md:min-h-10 md:text-sm" />
+          </label>
+        )}
         <button
           type="button"
           disabled={open.length === 0 || !decidedBy.trim()}

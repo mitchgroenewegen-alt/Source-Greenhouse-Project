@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { DecisionForm } from '../components/checks/DecisionForm'
 import { DecisionLog } from '../components/checks/DecisionLog'
 import { FlagGroupCard } from '../components/checks/FlagGroupCard'
@@ -28,7 +28,7 @@ const MISSING_STATUS_OPTIONS = STATUS_OPTIONS.filter((o) => o.value !== 'exclude
 const CONFIRM_ALL_NOTE = 'Confirmed: not recorded'
 
 export default function DataChecksScreen() {
-  const { groups, statusOf, decisions, decisionById, saveDecisions, removeDecisions, replaceDecisions, persistent, decidedBy, setDecidedBy, cultivations, rawMode } = useCropData()
+  const { groups, statusOf, decisions, decisionById, saveDecisions, removeDecisions, replaceDecisions, persistent, decidedBy, setDecidedBy, signedInAs, canWrite, workspaceStatus, cultivations, rawMode } = useCropData()
   const [params, setParams] = useSearchParams()
   const [tab, setTab] = useState<Tab>('review')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('open')
@@ -36,6 +36,7 @@ export default function DataChecksScreen() {
   const [form, setForm] = useState<{ groupId: string; kind: DecisionKind } | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [notice, setNotice] = useState<{ text: string; cellIds: string[] } | null>(null)
+  const [blocked, setBlocked] = useState(false)
   const cultivation = params.get('cultivation') ?? ALL
 
   // Most certain problems first (unit slips, impossible values), then the ones that just need a look.
@@ -77,10 +78,16 @@ export default function DataChecksScreen() {
     .filter(Boolean)
     .join(' · ')
 
-  const decide = (group: FlagGroup, kind: DecisionKind) => setForm({ groupId: group.id, kind })
-  const reopen = (group: FlagGroup) => removeDecisions(group.flags.map((f) => f.id))
+  /** Writing needs a signed-in person (when there is a shared database) and a reachable database; otherwise say so. */
+  function mayWrite(): boolean {
+    setBlocked(!canWrite)
+    return canWrite
+  }
+  const decide = (group: FlagGroup, kind: DecisionKind) => mayWrite() && setForm({ groupId: group.id, kind })
+  const reopen = (group: FlagGroup) => mayWrite() && removeDecisions(group.flags.map((f) => f.id))
 
   function confirmAll(list: FlagGroup[]) {
+    if (!mayWrite()) return
     const name = decidedBy.trim()
     if (!name) return
     const next = list.filter((g) => statusOf(g) !== 'decided').flatMap((g) => buildDecisions(g.flags, { kind: 'confirm', decidedBy: name, note: CONFIRM_ALL_NOTE }))
@@ -99,6 +106,7 @@ export default function DataChecksScreen() {
         group={group}
         kind={form.kind}
         defaultName={decidedBy}
+        signedInAs={signedInAs}
         onCancel={() => setForm(null)}
         onSave={(next, name) => {
           saveDecisions(next)
@@ -137,6 +145,26 @@ export default function DataChecksScreen() {
         </p>
       )}
 
+      {blocked && !canWrite && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-warn-line bg-warn-bg p-3 text-sm text-warn-ink">
+          <span>
+            {workspaceStatus === 'signed-out'
+              ? 'Sign in to record decisions. Until then the data checks are read-only.'
+              : "Decisions can't be saved while the shared database is out of reach."}
+          </span>
+          <span className="flex gap-2">
+            {workspaceStatus === 'signed-out' && (
+              <Link to="/sign-in" className="inline-flex min-h-9 items-center rounded-lg border border-warn-line bg-field px-3 font-semibold">
+                Sign in
+              </Link>
+            )}
+            <button type="button" onClick={() => setBlocked(false)} className="min-h-9 rounded-lg px-2 font-semibold">
+              Dismiss
+            </button>
+          </span>
+        </div>
+      )}
+
       {notice && (
         <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-ok-line bg-ok-bg p-3 text-sm text-ok-ink">
           <span>{notice.text}</span>
@@ -144,6 +172,7 @@ export default function DataChecksScreen() {
             <button
               type="button"
               onClick={() => {
+                if (!mayWrite()) return
                 removeDecisions(notice.cellIds)
                 setNotice(null)
               }}
@@ -267,6 +296,7 @@ export default function DataChecksScreen() {
           decisionsOf={decisionsOf}
           decidedBy={decidedBy}
           setDecidedBy={setDecidedBy}
+          signedIn={signedInAs !== null}
           onConfirmAll={confirmAll}
           onChoose={decide}
           onReopen={reopen}
@@ -274,7 +304,7 @@ export default function DataChecksScreen() {
         />
       )}
 
-      {tab === 'log' && <DecisionLog decisions={decisions} onReopen={removeDecisions} onReplace={replaceDecisions} />}
+      {tab === 'log' && <DecisionLog decisions={decisions} onReopen={(ids) => mayWrite() && removeDecisions(ids)} onReplace={(next) => mayWrite() && replaceDecisions(next)} />}
     </div>
   )
 }

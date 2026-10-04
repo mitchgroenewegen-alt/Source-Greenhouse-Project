@@ -91,6 +91,12 @@ create table if not exists public.rates (
   created_at timestamptz not null default now()
 );
 
+-- Step 6 (Financials): price overrides per fruit type for the facility, and who changed the row and when.
+-- Idempotent: safe to run again, and needed once on a database created before this step.
+alter table public.rates add column if not exists price_overrides jsonb;
+alter table public.rates add column if not exists updated_by text;
+alter table public.rates add column if not exists updated_at timestamptz;
+
 create table if not exists public.decisions (
   cell_id text primary key,
   cultivation text not null,

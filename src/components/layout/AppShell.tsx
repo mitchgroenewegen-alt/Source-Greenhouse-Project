@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { AccountControl } from '../account/AccountControl'
+import { WorkspaceNotices } from '../account/WorkspaceNotices'
 import { useCropData } from '../../state/CropDataContext'
 import { BarsIcon, GridIcon, InfoIcon, ShieldIcon } from '../ui/icons'
 import { RawDataToggle } from './RawDataToggle'
@@ -30,6 +32,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <img src={`${import.meta.env.BASE_URL}icons/icon.svg`} alt="" width={28} height={28} className="rounded-md" />
             Crop Performance
           </Link>
+          {/* Phones: top right, level with the name. From md up it ends the row after the week picker. */}
+          <div className="ml-auto md:order-last md:ml-0">
+            <AccountControl />
+          </div>
           <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
             {items.map((item) => (
               <Link
@@ -56,6 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Raw data is on: flagged values count towards the scores exactly as recorded.
           </p>
         )}
+        <WorkspaceNotices />
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-4 md:py-6">{children}</main>

@@ -1,4 +1,5 @@
-import type { Aggregation } from './types'
+import { addDays } from './dates'
+import type { Aggregation, DailyRow, KpiDictionaryEntry, WeekInfo, WeeklyRow } from './types'
 
 export interface DatedPair {
   date: string
@@ -55,4 +56,43 @@ export function rollup(points: DatedPair[], rule: Aggregation): Rollup {
   }
   const targets = points.filter((p) => p.target !== null).map((p) => p.target as number)
   return { actual: null, target: aggregate(targets, rule), days: targets.length, paired: false }
+}
+
+/** The weeks that appear in the daily rows, oldest first, each with its Monday and Sunday. */
+export function buildWeeks(daily: DailyRow[]): WeekInfo[] {
+  const ids = [...new Set(daily.map((r) => r.week))].sort()
+  return ids.map((id) => {
+    const dates = daily.filter((r) => r.week === id).map((r) => r.date).sort()
+    // ISO weeks run Monday to Sunday; work out the Monday from any date in the week.
+    const first = dates[0]!
+    const dayOfWeek = (new Date(`${first}T00:00:00Z`).getUTCDay() + 6) % 7
+    const start = addDays(first, -dayOfWeek)
+    return { id, start, end: addDays(start, 6) }
+  })
+}
+
+/** One row per cultivation, KPI and week, rolled up with the KPI's own rule. Keeps the order of `daily`. */
+export function buildWeeklyRows(daily: DailyRow[], dictionary: KpiDictionaryEntry[]): WeeklyRow[] {
+  const rule = new Map(dictionary.map((k) => [k.name, k.aggregation]))
+  const groups = new Map<string, DailyRow[]>()
+  for (const row of daily) {
+    const key = `${row.cultivation}|${row.kpi}|${row.week}`
+    const group = groups.get(key)
+    if (group) group.push(row)
+    else groups.set(key, [row])
+  }
+  const weekly: WeeklyRow[] = []
+  for (const rows of groups.values()) {
+    const first = rows[0]!
+    const result = rollup(rows, rule.get(first.kpi)!)
+    weekly.push({
+      week: first.week,
+      cultivation: first.cultivation,
+      kpi: first.kpi,
+      actual: result.actual,
+      target: result.target,
+      days: result.days,
+    })
+  }
+  return weekly
 }

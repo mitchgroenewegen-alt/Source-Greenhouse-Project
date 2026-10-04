@@ -65,18 +65,22 @@ export function DecisionForm({
   group,
   kind,
   defaultName,
+  signedInAs,
   onCancel,
   onSave,
 }: {
   group: FlagGroup
   kind: DecisionKind
   defaultName: string
+  /** The signed-in email; when there is one it is the name on the decision and is not typed. */
+  signedInAs: string | null
   onCancel: () => void
   onSave: (decisions: Decision[], name: string) => void
 }) {
   const hasSuggestions = allHaveSuggestions(group.flags)
   const unit = kpiConfig(group.kpi).unit
-  const [name, setName] = useState(defaultName)
+  const [typedName, setName] = useState(defaultName)
+  const name = signedInAs ?? typedName
   const [note, setNote] = useState('')
   const [typed, setTyped] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -137,10 +141,16 @@ export function DecisionForm({
         </>
       )}
 
-      <label className="flex flex-col gap-1 text-sm font-medium">
-        Your name
-        <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className="min-h-10 rounded-lg border border-line-strong bg-field px-2 font-normal" />
-      </label>
+      {signedInAs ? (
+        <p className="text-sm font-medium">
+          Deciding as <span className="font-semibold">{signedInAs}</span>
+        </p>
+      ) : (
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          Your name
+          <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className="min-h-10 rounded-lg border border-line-strong bg-field px-2 font-normal" />
+        </label>
+      )}
       <label className="flex flex-col gap-1 text-sm font-medium">
         Note (optional)
         <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="rounded-lg border border-line-strong bg-field px-2 py-1.5 font-normal" placeholder="For example: checked with the grower, plan sheet was in °F" />

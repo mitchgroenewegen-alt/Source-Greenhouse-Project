@@ -97,6 +97,21 @@ alter table public.rates add column if not exists price_overrides jsonb;
 alter table public.rates add column if not exists updated_by text;
 alter table public.rates add column if not exists updated_at timestamptz;
 
+-- Step 7 (Climate): finer climate data from a climate computer export (timestamp, cultivation, parameter, value, setpoint).
+-- New table, so re-run this file once in the SQL Editor on a database created before this step (safe to run again).
+-- The timestamp is kept as text ("2025-08-20T14:30", local time as in the file) so no time zone shifts it.
+create table if not exists public.climate_readings (
+  cultivation text not null,
+  parameter text not null,
+  timestamp text not null,
+  value double precision not null,
+  setpoint double precision,
+  created_by_name text not null default '',
+  primary key (cultivation, parameter, timestamp),
+  created_by uuid default auth.uid(),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.decisions (
   cell_id text primary key,
   cultivation text not null,
@@ -165,6 +180,16 @@ create policy "entered_rows update for signed-in people" on public.entered_rows 
 drop policy if exists "entered_rows delete for signed-in people" on public.entered_rows;
 create policy "entered_rows delete for signed-in people" on public.entered_rows for delete to authenticated using (true);
 
+alter table public.climate_readings enable row level security;
+drop policy if exists "climate_readings select for signed-in people" on public.climate_readings;
+create policy "climate_readings select for signed-in people" on public.climate_readings for select to authenticated using (true);
+drop policy if exists "climate_readings insert for signed-in people" on public.climate_readings;
+create policy "climate_readings insert for signed-in people" on public.climate_readings for insert to authenticated with check (true);
+drop policy if exists "climate_readings update for signed-in people" on public.climate_readings;
+create policy "climate_readings update for signed-in people" on public.climate_readings for update to authenticated using (true) with check (true);
+drop policy if exists "climate_readings delete for signed-in people" on public.climate_readings;
+create policy "climate_readings delete for signed-in people" on public.climate_readings for delete to authenticated using (true);
+
 alter table public.fruit_types enable row level security;
 drop policy if exists "fruit_types select for signed-in people" on public.fruit_types;
 create policy "fruit_types select for signed-in people" on public.fruit_types for select to authenticated using (true);
@@ -200,7 +225,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['facilities', 'greenhouses', 'cultivations', 'value_edits', 'entered_rows', 'fruit_types', 'rates', 'decisions']
+  foreach t in array array['facilities', 'greenhouses', 'cultivations', 'value_edits', 'entered_rows', 'climate_readings', 'fruit_types', 'rates', 'decisions']
   loop
     if not exists (
       select 1 from pg_publication_tables

@@ -106,6 +106,7 @@ describe('MemoryWorkspaceStore', () => {
     cultivations: [{ ...base.cultivations[0]!, fruitType: 'ft1', plannedEndDate: '2025-12-01', archived: false }],
     valueEdits: [edit()],
     enteredRows: [{ cultivation: 'PA-P1-TOV', date: '2025-08-25', kpi: CUM, actual: 85, target: null, createdBy: 'd', createdAt: '2025-08-26T00:00:00Z', source: 'entered' as const }],
+    climateReadings: [{ cultivation: 'PA-P2-TOV', parameter: 'Temperature', timestamp: '2025-08-20T14:30', value: 22.4, setpoint: 22, createdBy: 'd', createdAt: '2025-08-26T00:00:00.000Z' }],
     fruitTypes: [{ id: 'ft1', name: 'Tomato', weightMinG: 80, weightMaxG: 120, diameterMinMm: null, diameterMaxMm: null, pricePerKg: null, placeholder: true }],
     rates: [{ facilityId: 'f1', heatPerKwh: 0.05, electricityPerKwh: null, waterPerM3: null, priceOverrides: { tov: 3.2 }, updatedBy: 'd', updatedAt: '2025-09-01T10:00:00.000Z' }],
     decisions: [
@@ -145,6 +146,7 @@ describe('Supabase row mapping', () => {
       facilities: { id: 'f1', name: 'PA', region: 'East', currency: 'USD' },
       greenhouses: { id: 'g1', facilityId: 'f1', name: 'P1', areaM2: 10, ledWattsPerM2: 5 },
       valueEdits: edit(),
+      climateReadings: { cultivation: 'PA-P2-TOV', parameter: 'CO2', timestamp: '2025-08-20T14:30', value: 640, setpoint: null, createdBy: 'dana@example.com', createdAt: '2025-08-26T00:00:00.000Z' },
       rates: { facilityId: 'f1', heatPerKwh: 0.1, electricityPerKwh: null, waterPerM3: 2, priceOverrides: { tov: 3.2 }, updatedBy: 'd', updatedAt: '2025-09-01T10:00:00.000Z' },
     }
     for (const [entity, item] of Object.entries(probe)) {
@@ -154,6 +156,7 @@ describe('Supabase row mapping', () => {
       expect(rowToItem(spec, row)).toEqual(item)
     }
     expect(itemToRow(tableSpec('greenhouses'), probe.greenhouses)).toMatchObject({ facility_id: 'f1', area_m2: 10, led_watts_per_m2: 5 })
+    expect(itemToRow(tableSpec('climateReadings'), probe.climateReadings)).toMatchObject({ timestamp: '2025-08-20T14:30', created_by_name: 'dana@example.com', setpoint: null })
     expect(itemToRow(tableSpec('valueEdits'), probe.valueEdits)).toMatchObject({ created_by_name: 'dana@example.com', date_from: '2025-08-24' })
   })
 })

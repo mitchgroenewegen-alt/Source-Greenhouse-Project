@@ -1,28 +1,27 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChangedRowList, FlaggedNote, NewRowList, ProblemList } from '../components/exchange/ImportPreviewLists'
+import { ChangedReadingList, ClimateProblemList, CoverageList, NewReadingList } from '../components/climate/ClimatePreviewLists'
 import { WriteNotice } from '../components/setup/WriteNotice'
 import { ChevronLeftIcon } from '../components/ui/icons'
 import { PRIMARY_BUTTON, SECONDARY_BUTTON, TextField } from '../components/ui/fields'
+import { CLIMATE_COLUMNS, CLIMATE_TABLE, MAX_CLIMATE_ROWS, parseClimateTable, previewClimateImport, toClimateReadings, type ClimatePreview } from '../climate/import'
 import { ImportFileError, readTableFile } from '../exchange/file'
-import { parseKpiTable } from '../exchange/parse'
-import { previewImport, toImportedRows, type ImportPreview } from '../exchange/preview'
 import { useCropData } from '../state/CropDataContext'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 
-/** Rows are saved this many at a time, so a big file does not freeze the screen and a request stays a sensible size. */
+/** Readings are saved this many at a time, so a big file does not freeze the screen. */
 const SAVE_CHUNK = 4000
 
 type Stage =
   | { name: 'choose' }
   | { name: 'reading'; file: string }
-  | { name: 'preview'; file: string; sheet: string | null; preview: ImportPreview; missing: string[]; blank: number }
+  | { name: 'preview'; file: string; sheet: string | null; preview: ClimatePreview; missing: string[]; blank: number; tooMany: number | null }
   | { name: 'saving'; done: number; total: number }
-  | { name: 'done'; count: number }
+  | { name: 'done'; count: number; cultivations: string[] }
 
-/** Bring values in from an Excel or CSV file: read it, show what would change, and only then save. */
-export default function ImportScreen() {
-  const { data, cultivations, canWrite, signedInAs, decidedBy, setDecidedBy } = useCropData()
+/** Bring in finer climate data from a climate computer export: read the file, show what would be saved, and only then save. */
+export default function ClimateImportScreen() {
+  const { cultivations, canWrite, signedInAs, decidedBy, setDecidedBy } = useCropData()
   const workspace = useWorkspace()
   const [stage, setStage] = useState<Stage>({ name: 'choose' })
   const [error, setError] = useState<string | null>(null)
@@ -34,10 +33,9 @@ export default function ImportScreen() {
     setError(null)
     setStage({ name: 'reading', file: file.name })
     try {
-      const { cells, sheet } = await readTableFile(file)
-      const known = { cultivations: new Set(cultivations.map((c) => c.id)), kpis: new Set(data.kpis.map((k) => k.name)) }
-      const parsed = parseKpiTable(cells, known)
-      setStage({ name: 'preview', file: file.name, sheet, preview: previewImport(parsed, data.daily, cultivations), missing: parsed.missingColumns, blank: parsed.blankRows })
+      const { cells, sheet } = await readTableFile(file, CLIMATE_TABLE)
+      const parsed = parseClimateTable(cells, new Set(cultivations.map((c) => c.id)))
+      setStage({ name: 'preview', file: file.name, sheet, preview: previewClimateImport(parsed, workspace.data.climateReadings), missing: parsed.missingColumns, blank: parsed.blankRows, tooMany: parsed.tooMany })
     } catch (e) {
       setError(e instanceof ImportFileError ? e.message : 'That file could not be read.')
       setStage({ name: 'choose' })
@@ -45,19 +43,18 @@ export default function ImportScreen() {
     if (picker.current) picker.current.value = '' // the same file can be chosen again
   }
 
-  async function apply(preview: ImportPreview) {
-    const rows = toImportedRows(preview, { createdBy: signedInAs ?? decidedBy, createdAt: new Date().toISOString() })
+  async function apply(preview: ClimatePreview) {
+    const rows = toClimateReadings(preview, { createdBy: signedInAs ?? decidedBy, createdAt: new Date().toISOString() })
     for (let done = 0; done < rows.length; done += SAVE_CHUNK) {
       setStage({ name: 'saving', done, total: rows.length })
-      // Let the screen paint the progress before the next chunk is worked on.
       await new Promise((resolve) => setTimeout(resolve, 0))
-      if (!(await workspace.save('enteredRows', rows.slice(done, done + SAVE_CHUNK)))) {
-        setError(`The import stopped after ${done} of ${rows.length} values${workspace.saveError ? `: ${workspace.saveError}` : '.'} Those ${done} are saved; undo them in the edit log, or choose the file again to bring in the rest.`)
+      if (!(await workspace.save('climateReadings', rows.slice(done, done + SAVE_CHUNK)))) {
+        setError(`The import stopped after ${done} of ${rows.length} readings${workspace.saveError ? `: ${workspace.saveError}` : '.'} Those ${done} are saved; choose the file again to bring in the rest.`)
         setStage({ name: 'choose' })
         return
       }
     }
-    setStage({ name: 'done', count: rows.length })
+    setStage({ name: 'done', count: rows.length, cultivations: [...new Set(rows.map((r) => r.cultivation))].sort() })
   }
 
   return (
@@ -66,20 +63,19 @@ export default function ImportScreen() {
         <Link to="/data" className="mb-1 inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-ink hover:underline">
           <ChevronLeftIcon width={16} height={16} /> Data
         </Link>
-        <h1 className="text-2xl font-semibold">Import</h1>
+        <h1 className="text-2xl font-semibold">Import climate readings</h1>
         <p>
-          Bring in values from an Excel (.xlsx) or CSV file. It needs the columns Date, Cultivation, KPI, Actual and Target, the same as the KPIs sheet of the workbook, so the workbook itself and this app&apos;s export both work. Other columns are ignored. You see what would change before anything is saved.
+          Finer climate data from a climate computer export, as an Excel (.xlsx) or CSV file with the columns {CLIMATE_COLUMNS.join(', ')}. One row is one reading: the value the greenhouse realised and the setpoint it was steered to, for a parameter such as Temperature, Relative humidity or CO2. Setpoint may be empty; other columns are ignored. Timestamps are read as written (2025-08-20 14:00), with no time zone applied. A file may have up to {MAX_CLIMATE_ROWS.toLocaleString('en-US')} rows, so send a month at a time. You see what would be saved before anything is.
         </p>
         <p className="mt-1">
-          Hourly or finer climate data from the climate computer goes in at{' '}
-          <Link to="/data/import/climate" className="font-semibold text-ink underline">
-            Import climate readings
-          </Link>
-          .
+          <a href={`${import.meta.env.BASE_URL}samples/climate-sample.csv`} download className="font-semibold text-ink underline">
+            Download a small sample file
+          </a>{' '}
+          (two days of PA-P2-TOV) to try it. The readings show on the Climate tab of the cultivation, under Hour by hour.
         </p>
       </div>
 
-      <WriteNotice what="import data" />
+      <WriteNotice what="import climate readings" />
 
       {error && (
         <p role="alert" className="rounded-2xl border border-bad-line bg-bad-bg p-3 text-sm font-semibold text-bad-ink">
@@ -89,12 +85,12 @@ export default function ImportScreen() {
 
       {(stage.name === 'choose' || stage.name === 'reading') && (
         <div className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4 shadow-sm">
-          <label htmlFor="import-file" className="text-sm font-medium">
-            File to import
+          <label htmlFor="climate-file" className="text-sm font-medium">
+            Climate file to import
           </label>
           <input
             ref={picker}
-            id="import-file"
+            id="climate-file"
             type="file"
             accept=".xlsx,.csv"
             onChange={(e) => void choose(e.target.files?.[0])}
@@ -102,7 +98,7 @@ export default function ImportScreen() {
             className="w-full min-w-0 text-sm text-ink file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand file:px-4 file:text-sm file:font-semibold file:text-white disabled:opacity-60"
           />
           <p role="status" className="text-sm text-ink-2">
-            {stage.name === 'reading' ? `Reading ${stage.file}. A big workbook takes a few seconds.` : 'An .xlsx or .csv file. A file the size of the workbook (about 16,000 rows) is fine.'}
+            {stage.name === 'reading' ? `Reading ${stage.file}.` : `An .xlsx or .csv file of up to ${MAX_CLIMATE_ROWS.toLocaleString('en-US')} rows.`}
           </p>
         </div>
       )}
@@ -122,18 +118,20 @@ export default function ImportScreen() {
 
       {stage.name === 'saving' && (
         <p role="status" className="rounded-2xl border border-line bg-card p-4 text-sm">
-          Saving {stage.done} of {stage.total} values…
+          Saving {stage.done} of {stage.total} readings…
         </p>
       )}
 
       {stage.name === 'done' && (
         <div role="status" className="flex flex-col gap-2 rounded-2xl border border-ok-line bg-ok-bg p-4 text-sm text-ok-ink">
-          <p className="font-semibold">Imported {stage.count} {stage.count === 1 ? 'value' : 'values'}.</p>
-          <p>They show as Imported in the weekly table and in the edit log, where each import can be undone.</p>
+          <p className="font-semibold">Imported {stage.count.toLocaleString('en-US')} {stage.count === 1 ? 'reading' : 'readings'}.</p>
+          <p>Open the Climate tab of {stage.cultivations.length === 1 ? 'the cultivation' : 'a cultivation'} and look under Hour by hour.</p>
           <div className="flex flex-wrap gap-2">
-            <Link to="/edits" className={SECONDARY_BUTTON}>
-              Open the edit log
-            </Link>
+            {stage.cultivations.map((id) => (
+              <Link key={id} to={`/cultivation/${encodeURIComponent(id)}`} className={SECONDARY_BUTTON}>
+                Open {id}
+              </Link>
+            ))}
             <button type="button" onClick={() => setStage({ name: 'choose' })} className={SECONDARY_BUTTON}>
               Import another file
             </button>
@@ -163,8 +161,9 @@ function PreviewCard({
   onApply: () => void
   onAnother: () => void
 }) {
-  const { preview, missing } = stage
+  const { preview, missing, tooMany } = stage
   const changes = preview.newRows.length + preview.changedRows.length
+  const unreadable = missing.length > 0 || tooMany !== null
   return (
     <section aria-label="Import preview" className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
       <div>
@@ -172,34 +171,39 @@ function PreviewCard({
         {stage.sheet && <p className="text-xs text-ink-3">Read the sheet “{stage.sheet}”.</p>}
       </div>
 
-      {missing.length > 0 ? (
+      {missing.length > 0 && (
         <p role="alert" className="text-sm font-semibold text-bad-ink">
-          The file has no {missing.length === 1 ? 'column' : 'columns'} called {missing.join(', ')}. Nothing was read. The first row must hold the column names Date, Cultivation, KPI, Actual and Target.
+          The file has no {missing.length === 1 ? 'column' : 'columns'} called {missing.join(', ')}. Nothing was read. The first row must hold the column names {CLIMATE_COLUMNS.join(', ')} (Setpoint may be left out).
         </p>
-      ) : (
+      )}
+      {tooMany !== null && (
+        <p role="alert" className="text-sm font-semibold text-bad-ink">
+          The file has {tooMany.toLocaleString('en-US')} rows; the limit is {MAX_CLIMATE_ROWS.toLocaleString('en-US')} per import. Nothing was read. Split it, for example by month, and import the parts one after the other.
+        </p>
+      )}
+
+      {!unreadable && (
         <>
           <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Count label="New days" value={preview.newRows.length} />
-            <Count label="Changed values" value={preview.changedRows.length} />
+            <Count label="New readings" value={preview.newRows.length} />
+            <Count label="Changed readings" value={preview.changedRows.length} />
             <Count label="Unchanged, skipped" value={preview.unchanged} />
             <Count label="Problems" value={preview.problems.length} />
           </dl>
-          <p className="text-sm">An empty cell in the file leaves the value the day has now. {stage.blank > 0 && `${stage.blank} empty ${stage.blank === 1 ? 'row was' : 'rows were'} skipped.`}</p>
-
-          <FlaggedNote flagged={preview.flagged} examples={preview.flaggedExamples} />
-          <NewRowList rows={preview.newRows} />
-          <ChangedRowList rows={preview.changedRows} />
-          <ProblemList problems={preview.problems} />
-
-          {changes === 0 && <p className="text-sm font-semibold">There is nothing to import: every day in this file is already in the app with the same values.</p>}
-          {changes > 0 && !signedIn && <TextField label="Your name" value={name} onChange={onName} hint="Saved with the import." error={needsName ? 'Type your name so the edit log can show who imported.' : undefined} />}
+          {stage.blank > 0 && <p className="text-sm">{stage.blank} empty {stage.blank === 1 ? 'row was' : 'rows were'} skipped.</p>}
+          <CoverageList coverage={preview.coverage} />
+          <NewReadingList rows={preview.newRows} />
+          <ChangedReadingList rows={preview.changedRows} />
+          <ClimateProblemList problems={preview.problems} />
+          {changes === 0 && <p className="text-sm font-semibold">There is nothing to import: every reading in this file is already in the app with the same values.</p>}
+          {changes > 0 && !signedIn && <TextField label="Your name" value={name} onChange={onName} hint="Saved with the readings." error={needsName ? 'Type your name so the readings show who imported them.' : undefined} />}
         </>
       )}
 
       <div className="flex flex-wrap gap-2">
-        {missing.length === 0 && changes > 0 && (
+        {!unreadable && changes > 0 && (
           <button type="button" onClick={onApply} disabled={!canApply} className={PRIMARY_BUTTON}>
-            Import {changes} {changes === 1 ? 'value' : 'values'}
+            Import {changes.toLocaleString('en-US')} {changes === 1 ? 'reading' : 'readings'}
           </button>
         )}
         <button type="button" onClick={onAnother} className={SECONDARY_BUTTON}>

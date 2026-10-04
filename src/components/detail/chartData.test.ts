@@ -127,3 +127,26 @@ describe('nice axis', () => {
     expect(ticks[ticks.length - 1]).toBeGreaterThanOrEqual(5)
   })
 })
+
+describe('edited budgets and targets on the chart', () => {
+  const config = kpiConfig('Harvest')
+  const points = [point('2025-W33', 1, 1.2), point('2025-W34', 1, 1.5)]
+
+  it('has no original line when nothing was edited', () => {
+    const model = buildChartModel(config, weeks, points)
+    expect(model.hasEdits).toBe(false)
+    expect(model.rows.every((r) => r.originalTarget === null && !r.edited)).toBe(true)
+  })
+
+  it('carries the original in every week once a week was edited, the same as the target where none was', () => {
+    const model = buildChartModel(config, weeks, points, [undefined, { original: 1.1 }])
+    expect(model.hasEdits).toBe(true)
+    expect(model.rows.map((r) => r.originalTarget)).toEqual([1.2, 1.1])
+    expect(model.rows.map((r) => r.edited)).toEqual([false, true])
+  })
+
+  it('keeps the original value inside the axis', () => {
+    const model = buildChartModel(config, weeks, points, [undefined, { original: 9 }])
+    expect(model.domain[1]).toBeGreaterThanOrEqual(9)
+  })
+})

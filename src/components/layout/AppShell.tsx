@@ -8,13 +8,13 @@ import { RawDataToggle } from './RawDataToggle'
 import { WeekPicker } from './WeekPicker'
 
 /** The screens reached from More, so its tab stays lit while one of them is open. */
-const MORE_PATHS = ['/more', '/setup', '/fruit-types', '/about']
+const MORE_PATHS = ['/more', '/setup', '/fruit-types', '/edits', '/about']
 
 const NAV = [
   { to: '/', label: 'Scorecard', icon: GridIcon, match: (p: string) => p === '/' || p.startsWith('/cultivation') },
   { to: '/facilities', label: 'Facilities', icon: BarsIcon, match: (p: string) => p.startsWith('/facilities') },
   { to: '/checks', label: 'Data checks', icon: ShieldIcon, match: (p: string) => p.startsWith('/checks') },
-  // More holds the screens that are not used every day: Setup, Fruit types and About. Financials and Data join it or the bar later.
+  // More holds the screens that are not used every day: Setup, Fruit types, the Edit log and About. Financials and Data join it or the bar later.
   { to: '/more', label: 'More', icon: MoreIcon, match: (p: string) => MORE_PATHS.some((m) => p.startsWith(m)) },
 ]
 

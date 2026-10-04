@@ -1,7 +1,8 @@
-import { planWordForAll, type KpiConfig } from '../../config/kpis'
+import { planWord, planWordForAll, type KpiConfig } from '../../config/kpis'
 import { shortWeek } from '../../data/dates'
 import type { WeekInfo } from '../../data/types'
 import { formatValue } from '../../lib/kpiFormat'
+import type { EditedWeek } from '../../editing/original'
 import type { WeeklyPoint } from '../../scoring/effective'
 import { scoreWith, STATUS_LABEL, type Status } from '../../scoring/score'
 import { AlertIcon, CheckIcon, CrossIcon } from '../ui/icons'
@@ -17,11 +18,14 @@ export function WeeklyTable({
   weeks,
   selectedWeek,
   pointsOf,
+  editedOf,
 }: {
   kpis: KpiConfig[]
   weeks: WeekInfo[]
   selectedWeek: string
   pointsOf: (kpi: string) => (WeeklyPoint | undefined)[]
+  /** Which weeks of a KPI had their budget or target edited (an entry per week, in the order of `weeks`). */
+  editedOf: (kpi: string) => (EditedWeek | undefined)[]
 }) {
   return (
     <section aria-labelledby="weekly-table-title" className="rounded-2xl border border-line bg-card p-4 shadow-sm">
@@ -51,6 +55,7 @@ export function WeeklyTable({
           <tbody>
             {kpis.map((config) => {
               const points = pointsOf(config.name)
+              const edits = editedOf(config.name)
               return (
                 <tr key={config.name} className="border-t border-line-soft">
                   <th scope="row" className="sticky left-0 z-10 bg-tile px-3 py-1.5 text-left align-top text-xs font-semibold shadow-[1px_0_0_var(--color-line-soft)]">
@@ -62,16 +67,18 @@ export function WeeklyTable({
                     const score = scoreWith(config, p?.paired ? p.actual : null, p?.paired ? p.target : null)
                     const Glyph = score.status ? GLYPH[score.status] : null
                     const flagged = p && p.openFlags + p.decidedFlags > 0
+                    const edited = edits[i] !== undefined
                     return (
                       <td
                         key={w.id}
                         className={`relative px-2 py-1.5 text-right align-top ${score.status ? CELL[score.status] : ''} ${w.id === selectedWeek ? 'outline outline-2 -outline-offset-2 outline-brand/40' : ''}`}
                       >
                         <span className="sr-only">
-                          {shortWeek(w.id)}: {score.status ? STATUS_LABEL[score.status] : 'not scored'}.{flagged ? ' Holds a flagged value.' : ''}
+                          {shortWeek(w.id)}: {score.status ? STATUS_LABEL[score.status] : 'not scored'}.{flagged ? ' Holds a flagged value.' : ''}{edited ? ` The ${planWord(config)} was edited.` : ''}
                         </span>
                         <div className="font-semibold">{formatValue(config, p?.actual ?? null)}</div>
                         <div className="text-xs text-ink-3">{formatValue(config, p?.target ?? null)}</div>
+                        {edited && <div className="text-[0.65rem] font-semibold leading-none text-ink-2">edited</div>}
                         <span className="absolute left-0.5 top-0.5 flex items-center gap-0.5" aria-hidden="true">
                           {Glyph && <Glyph width={10} height={10} className={GLYPH_COLOR[score.status!]} />}
                           {flagged && <span className="text-[0.6rem] font-bold leading-none text-flag">▲</span>}

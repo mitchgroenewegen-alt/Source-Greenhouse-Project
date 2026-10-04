@@ -7,8 +7,9 @@ A web app for the Chief Growing Officer and the Director of Growing. It shows ho
 - **Scorecard** (home): one card per cultivation, worst first. Cumulative harvest vs budget, the week's harvest, fruit weight and waste (waste also has a small meter: the arc fills to the actual, a tick marks the budget, and the scale ends at 120 % of the budget), a status per category (Production, Plant, Climate, Irrigation, Resources) rated from the share of its KPIs that are red or green, with the worst KPI named, and the number of open data flags. Facility and variety filters, and a week picker (default W34, 18-24 Aug 2025).
 - **Cultivation detail**: facility, greenhouse, variety, planting date, crop week and growing area; one tab per category; every KPI as actual vs budget (Production, Heating energy, LED lighting) or target (the growing KPIs) over the 13 weeks with the green and amber zones shaded (for higher-is-better or lower-is-better KPIs only the side that counts against the KPI is shaded) and flagged points marked; a weekly table underneath.
 - **Facilities**: a summary table at the top (one row per facility and an all-facilities row: this week's harvest and the harvest since planting, each vs budget, with a status), then harvest vs budget per cultivation grouped by facility, as kg/m² and as tonnes, with area-weighted facility totals.
+- **Financials**: revenue, value lost to waste, energy and water cost and a partial margin per facility and per cultivation, each against budget, with the forecast revenue; see Financials below.
 - **Data** (`/data`): a hub for **Data checks**, **Enter data**, **Import**, **Export** and the **Edit log**; the tab shows the number of open data checks. **Data checks**: the flagged inputs, grouped so a run of the same problem is one item, with three actions on each item (**Confirm values**, **Apply correction**, **Exclude**), a decision log, and CSV export and import.
-- **More**: the screens that are not used every day: **Setup**, **Fruit types and specs**, and **About** (data period, how each KPI is scored, generated from the config, assumptions, and what was left out).
+- **More**: the screens that are not used every day: **Forecast**, **Setup**, **Fruit types and specs**, **Prices and costs**, and **About** (data period, how each KPI is scored, generated from the config, assumptions, and what was left out).
 
 It is a static site. By default there is no backend and no login (decisions stay in the browser); with a Supabase project connected (see below) people sign in with an email link and share decisions and, in later steps, their own data. It works on a phone (bottom navigation, no sideways page scroll at 375 px) and installs as a PWA.
 
@@ -40,6 +41,7 @@ src/workspace/             everything kept beyond the workbook (decisions, edits
 supabase/schema.sql        the tables and access rules for the shared database
 src/entry/                 typed entries: kg to kg/m², the weekly registration day (plain functions, tested)
 src/exchange/              import (parse, preview) and export (one function per sheet); SheetJS is only loaded in xlsxFile.ts
+src/financials/            revenue, waste value, energy and water cost, margin and gap to budget, prices and rates (plain functions, tested)
 src/setup/                 ids, validation, budget copy and fruit types for the Setup and Fruit types screens (plain functions, tested)
 src/state/                 data loading, the selected week and filters
 src/screens/               one file per screen
@@ -156,7 +158,7 @@ The **Edit log** (Data, or the link on a cultivation that has edits; `/edits`) l
 
 **Data > Import** (`/data/import`) takes an .xlsx or .csv with the columns Date, Cultivation, KPI, Actual and Target (headers are matched without regard to case or spaces; other columns are ignored; dates may be Excel day counts or `2025-08-18`). The original workbook works too: its "KPIs" sheet is read. SheetJS is loaded only then. A preview comes first: new days, changed values (different from what the app shows now), unchanged ones (skipped), the problems (unknown cultivation or KPI, a date or number it cannot read, a day listed twice) with their row numbers, and how many values the data checks would flag. An empty cell leaves the day's value as it is. **Import** saves the rows with source `imported`, 4,000 at a time so a file of 16,000 rows keeps the screen responsive; the Edit log shows each import as one entry that can be undone. Importing an export of the app gives no changes.
 
-**Data > Export** (`/data/export`) builds `crop-performance-YYYY-MM-DD.xlsx` with the sheets Read me, Greenhouses, KPIs (the workbook's columns with the values in use, plus Original actual, Original target and Source: workbook, entered, imported, edited or corrected), Weekly scores, Forecast (one row per cultivation and forecast week: low, expected, high, method), Data checks, Edit log and Settings. Financials comes with a later step. Each sheet is one function in `src/exchange/exportBook.ts`; to add a sheet, write one and add it to `EXPORT_SHEETS`. The Scorecard and Facilities screens have **Export this view**, which exports their table for the selected week.
+**Data > Export** (`/data/export`) builds `crop-performance-YYYY-MM-DD.xlsx` with the sheets Read me, Greenhouses, KPIs (the workbook's columns with the values in use, plus Original actual, Original target and Source: workbook, entered, imported, edited or corrected), Weekly scores, Forecast (one row per cultivation and forecast week: low, expected, high, method), Financials (one row per cultivation and week: revenue, value lost to waste, heating, LED and water cost, partial margin, each with its budget, and the volume and cost effects), Data checks, Edit log and Settings (fruit types, and the prices and rates per facility). Each sheet is one function in `src/exchange/exportBook.ts`; to add a sheet, write one and add it to `EXPORT_SHEETS`. The Scorecard, Facilities and Financials screens have **Export this view**, which exports their table for the selected week.
 
 Entering and importing need a signed-in user when a shared database is set up (the name is typed in otherwise), like every other change.
 
@@ -170,9 +172,31 @@ The settings are in one file, **`src/forecast/config.ts`**: `calibrationWeeks` (
 - **Where it shows.** A dashed line with a shaded range after the actuals on the Harvest and Cumulative harvest charts; a forecast tile on the Production tab with a link to **How good is this?**; the six-week expected harvest in kg (kg/m² × growing area) per cultivation and facility on Facilities; and the Forecast sheet of the export. The forecast reads the same weekly values as the scores (workspace edits, entered days and imported days included, data-check decisions applied, "Show raw data" respected).
 - **How good is this?** reruns the forecast as of W28, using only what was recorded up to then, and compares it with the real W29 to W34: the average absolute percentage error of the weeks, and the six weeks in total. The fruit set the estimate needs goes back 5 to 8 weeks and the data starts at W22, so as of W28 no cultivation has 4 comparable weeks: the backtest therefore measures the uncorrected estimate (and ON-P1-TOV has no estimate that early).
 
+## Financials
+
+The workbook has no prices or costs, so Financials works from a short list of rates people enter on **More > Prices and costs** (`/prices`): heat per kWh, electricity per kWh and water per m³ for each facility, and a price per kg for each fruit type, with an optional price per facility that beats the fruit type's own (the fruit type's price is also on **Fruit types and specs**). They are kept in the workspace's `rates` rows (one per facility, with who changed it and when) and sync like everything else. All money is in the facility's currency (USD by default; the all-facilities row appears only when the facilities share one).
+
+**Example prices.** Until a price is entered anywhere (on a fruit type, or as a facility price), Financials shows a banner and uses example prices per fruit type (`src/financials/defaults.ts`, for example TOV 2.50 USD/kg). After the first price is entered the banner goes, and a fruit type still without a price has no revenue ("no price") instead of an invented one. A heat, electricity or water rate that is not entered falls back to an example rate, said in a note under the banner; that note is not the banner.
+
+**Formulas** (area is the growing area in m², and each week's figure is made from that week's values; a budget is worked out the same way from the budget values):
+
+- Revenue = harvest (kg/m²) × area × price per kg. Harvest is already net of waste, so waste is not subtracted again.
+- Value lost to waste = harvest × w ÷ (1 − w) × area × price, with w the Waste % as a fraction: if 3 % of what was picked is waste, the net harvest is 97 % of it and the waste is 3/97 of the net harvest.
+- Heat cost = Heating energy (kWh/m²) × area × heat price per kWh.
+- LED cost = LED lighting (hours) × installed LED power (W/m²) ÷ 1000 × area × electricity price per kWh. The KPI is hours, not kWh. The installed power is on the greenhouse (Setup); the workbook's greenhouses have none, so a placeholder of 150 W/m² (`PLACEHOLDER_LED_W_PER_M2`) is used and marked on the screen until one is entered.
+- Water cost = Irrigation water (L/m²) ÷ 1000 × area × water price per m³. The workbook has no irrigation water target, so its budget cost stays empty ("no target") until one is entered.
+- Partial margin = revenue − heat − LED − water. Labour, plants and packaging are not in the data.
+- Against budget: the same sums on the budget values. The gap in the partial margin is split into a **volume effect** (revenue actual − revenue budget: the price is the same on both sides, so it is all kg) and a **cost effect** (budgeted energy cost − actual energy cost). They add up to the gap exactly. A cost with no budget (irrigation water, and LED in a week with no LED budget) is left out of both sides of the gap, and the card says how much that is.
+- A comparison only uses weeks where the actual and the budget are both known (the same paired rule as the scores). A missing input gives a missing figure, never zero.
+- Forecast revenue = the forecast's expected harvest and its low and high (kg/m²) × area × price, for the six forecast weeks, as a range. When the forecast has a season end (it needs a Harvest budget after the last data week; the workbook has none) the revenue from the first forecast week to the season end is shown too.
+
+**The screen** (`/financials`, the third tab) follows the week picker. A "Money at a glance" table (a row per facility and one for all, revenue, energy and water cost, and margin, each against budget with a status) sits above a card per cultivation (the lines above, the gap split, the price used, the forecast revenue). A switch chooses that week or the weeks since the start of the data (W22): the workbook starts after planting, so costs and revenue cover the same weeks. **Export this view** gives one sheet, and the full export has a Financials sheet (per cultivation and week) and the rates on the Settings sheet.
+
+**Database change.** This step adds `price_overrides`, `updated_by` and `updated_at` to `public.rates`. `supabase/schema.sql` does this with `add column if not exists`, so re-run it once in the Supabase SQL Editor (it is safe to run again); until then saving rates from the app fails with a message.
+
 ## Left out
 
-Alerts, what-if scenarios, logins, grower-level climate detail, financials, and a live data connection.
+Alerts, what-if scenarios, logins, grower-level climate detail, a full profit and loss (labour, plants and packaging are not in the data, so the margin is partial), and a live data connection.
 
 ## Notes
 

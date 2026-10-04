@@ -147,6 +147,15 @@ export default function AboutScreen() {
         </ul>
       </Section>
 
+      <Section title="Financials">
+        <ul className="list-disc pl-5">
+          <li>Revenue is the harvest (kg/m²) × growing area × price per kg. Harvest is already net of waste. The value lost to waste is harvest × w ÷ (1 − w) at the same price, with w the Waste %.</li>
+          <li>Energy and water cost: heating kWh/m² × area × heat price; LED hours × installed W/m² ÷ 1000 × area × electricity price; water L/m² ÷ 1000 × area × water price per m³. Where a greenhouse has no installed LED power entered, 150 W/m² is assumed and marked.</li>
+          <li>The margin is partial: revenue minus energy and water. Against budget, the gap is split into a volume effect (more or fewer kg) and a cost effect (more or less energy). Irrigation water has no target in the workbook, so its budget cost is empty until one is entered, and it is left out of the gap.</li>
+          <li>The workbook has no prices or costs. Until a price is entered, example prices are used and a banner says so. Rates and prices are entered on More, Prices and costs.</li>
+        </ul>
+      </Section>
+
       <Section title="Assumptions">
         <ul className="list-disc pl-5">
           <li>The plan value, called a budget or a target as described under “How a KPI is scored”, is the Target column of the workbook.</li>
@@ -167,7 +176,7 @@ export default function AboutScreen() {
           <li>Passwords and different roles. When a shared database is set up, invited people sign in with an email link and all see the same decisions; without one, decisions live in one browser and export and import move them.</li>
           <li>Changing the workbook file. Edits made in the app, such as an edited budget or target, a corrected value, budgets copied to a new cultivation, or days typed in or imported, are kept apart and laid over it, and each can be undone in the Edit log.</li>
           <li>Grower-level climate detail (hour by hour, per zone).</li>
-          <li>Financials (revenue, cost, margin).</li>
+          <li>A full profit and loss. Financials covers revenue, value lost to waste, and energy and water cost, so the margin is partial: labour, plants and packaging are not in the data. Prices and rates are entered by people; until a price is entered the screen uses example prices.</li>
           <li>A live data connection: the app reads one prepared file, refreshed at build time.</li>
         </ul>
       </Section>

@@ -19,6 +19,10 @@ import { effectiveFruitTypes, fruitTypeIdOf } from '../setup/fruitTypes'
 import { DECISION_LABEL, type Decision } from '../storage/types'
 import type { WorkspaceData } from '../workspace/types'
 import { SOURCE_LABEL } from '../components/editing/sourceLabel'
+import { buildCatalog } from '../setup/catalog'
+import { cultivationFinancials, type FinancialsInput } from '../financials'
+import { examplePricesInUse } from '../financials'
+import { periodCells, periodHeader } from './viewSheets'
 import { numberCell, yesNo, type Cell, type SheetSpec } from './sheets'
 
 /** The workbook names its company on every row; the app has no company of its own, so the export repeats it. */
@@ -93,9 +97,10 @@ const readMeSheet: SheetBuilder = (input) => {
     ['KPIs', 'One row per cultivation, date and KPI, with the values in use (edits and entries applied). Original actual and Original target are what the workbook had; Source says where the row now comes from: workbook, entered, imported, edited or corrected. This sheet can be imported again.'],
     ['Weekly scores', 'One row per cultivation, week and KPI: the weekly actual, the budget or target, the variance and the status, as the app scores them (flagged values waiting for a decision are left out).'],
     ['Forecast', 'One row per cultivation and forecast week: the expected harvest with its low and high, in kg/m² a week (and in kg on the growing area), and the method: Corrected or Uncorrected estimate. The forecast looks six weeks ahead of the last week with a recorded value.'],
+    ['Financials', 'One row per cultivation and week: revenue, value lost to waste, heating, LED and water cost, energy and water cost, the partial margin (revenue minus energy and water; labour, plants and packaging are not in the data), each with its budget, and the gap to budget split into a volume effect and a cost effect. Made from the prices and rates on the Settings sheet; Example prices says Yes while no price has been entered.'],
     ['Data checks', 'Every value the data checks flag, with the decision made about it, if any.'],
     ['Edit log', 'Every edit and every entry or import, newest first: who, when, what and why.'],
-    ['Settings', 'Fruit types and their specs.'],
+    ['Settings', 'Fruit types and their specs (with the price per kg), and the prices and costs per facility: heat and electricity per kWh, water per m³, and the facility prices per fruit type.'],
     [],
     ['Notes'],
     ['•  An empty cell means nothing was recorded.'],
@@ -201,6 +206,27 @@ const forecastSheet: SheetBuilder = ({ merged, point }) => {
   return { name: 'Forecast', rows, widths: [14, 14, 15, 13, 12, 15, 12, 14, 22, 16, 15] }
 }
 
+/**
+ * One row per cultivation and week (all weeks of the data): the money of that week, as on the Financials screen. The week's figures need
+ * both an actual and a budget for the same days to be compared, like everywhere else.
+ */
+const financialsSheet: SheetBuilder = ({ merged, workbook, workspace, point }) => {
+  const catalog = buildCatalog(workbook.cultivations, { facilities: workspace.facilities, greenhouses: workspace.greenhouses })
+  const fruitTypes = effectiveFruitTypes(workspace.fruitTypes).types
+  const weekIds = merged.weeks.map((w) => w.id)
+  const examples = examplePricesInUse(fruitTypes, workspace.rates)
+  const priceFrom = { facility: 'Facility price', 'fruit-type': 'Fruit type price', example: 'Example price', none: 'No price' } as const
+  const rows: Cell[][] = [['Cultivation', 'Facility', 'Week', 'Currency', 'Growing area (m²)', 'Price per kg', 'Price from', 'Example prices', 'LED power (W/m²)', 'LED power is a placeholder', ...periodHeader('Week')]]
+  for (const c of merged.cultivations) {
+    for (const week of weekIds) {
+      const input: FinancialsInput = { cultivations: [c], weeks: weekIds, week, point, fruitTypes, rates: workspace.rates, catalog, forecasts: new Map() }
+      const f = cultivationFinancials(input, c, examples)
+      rows.push([c.id, c.facility, week, f.currency, c.areaM2, numberCell(f.price.value), priceFrom[f.price.source], yesNo(examples), f.led.wattsPerM2, yesNo(f.led.placeholder), ...periodCells(f.week)])
+    }
+  }
+  return { name: 'Financials', rows, widths: [14, 14, 10, 9, 16, 12, 16, 12, 14, 18, ...Array(17).fill(18)] }
+}
+
 const dataChecksSheet: SheetBuilder = ({ flags, decisions }) => {
   const decisionOf = new Map(decisions.map((d) => [d.cellId, d]))
   const rows: Cell[][] = [
@@ -252,17 +278,30 @@ const editLogSheet: SheetBuilder = ({ workspace }) => {
   return { name: 'Edit log', rows, widths: [20, 26, 28, 14, 32, 24, 12, 12, 8, 40] }
 }
 
-const settingsSheet: SheetBuilder = ({ workspace }) => {
+const settingsSheet: SheetBuilder = ({ workbook, workspace }) => {
   const { types } = effectiveFruitTypes(workspace.fruitTypes)
   const rows: Cell[][] = [
     ['Fruit types and specs'],
     ['Id', 'Name', 'Weight from (g)', 'Weight to (g)', 'Diameter from (mm)', 'Diameter to (mm)', 'Price per kg', 'Placeholder numbers'],
     ...types.map((t): Cell[] => [t.id, t.name, t.weightMinG, t.weightMaxG, t.diameterMinMm, t.diameterMaxMm, t.pricePerKg, yesNo(t.placeholder)]),
   ]
-  return { name: 'Settings', rows, widths: [20, 20, 15, 14, 18, 16, 13, 19] }
+  // Prices and costs per facility: the facilities of the workbook's cultivations and the ones added in the app.
+  const catalog = buildCatalog(workbook.cultivations, { facilities: workspace.facilities, greenhouses: workspace.greenhouses })
+  const fruitName = new Map(types.map((t) => [t.id, t.name]))
+  rows.push(
+    [],
+    ['Prices and costs per facility (empty: not entered, so the example is used for energy and water, and the fruit type price for fruit)'],
+    ['Facility id', 'Facility', 'Currency', 'Heat per kWh', 'Electricity per kWh', 'Water per m³', 'Prices per kg that differ from the fruit type', 'Changed by', 'Changed at'],
+    ...catalog.facilities.map((f): Cell[] => {
+      const r = workspace.rates.find((x) => x.facilityId === f.id)
+      const overrides = Object.entries(r?.priceOverrides ?? {}).map(([id, price]) => `${fruitName.get(id) ?? id}: ${price}`)
+      return [f.id, f.name, f.currency, r?.heatPerKwh ?? null, r?.electricityPerKwh ?? null, r?.waterPerM3 ?? null, overrides.length > 0 ? overrides.join('; ') : null, r?.updatedBy ?? null, r?.updatedAt ? formatDateTime(r.updatedAt) : null]
+    }),
+  )
+  return { name: 'Settings', rows, widths: [20, 20, 15, 14, 19, 16, 40, 24, 20] }
 }
 
-/** The sheets of the export, in order. Financials joins here in a later step. */
-export const EXPORT_SHEETS: SheetBuilder[] = [readMeSheet, greenhousesSheet, kpisSheet, weeklyScoresSheet, forecastSheet, dataChecksSheet, editLogSheet, settingsSheet]
+/** The sheets of the export, in order. */
+export const EXPORT_SHEETS: SheetBuilder[] = [readMeSheet, greenhousesSheet, kpisSheet, weeklyScoresSheet, forecastSheet, financialsSheet, dataChecksSheet, editLogSheet, settingsSheet]
 
 export const buildExport = (input: ExportInput): SheetSpec[] => EXPORT_SHEETS.map((build) => build(input))

@@ -1,6 +1,8 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { fixed } from '../../lib/format'
 import { signedPercent } from '../../lib/format'
+import type { FacilityForecast } from '../../forecast'
+import { FacilityForecastTable } from './FacilityForecastTable'
 import { StatusBadge } from '../ui/StatusBadge'
 import { facilityTotal, toTonnes, type HarvestRow, type Period } from './facilityTotals'
 import { facilityCardId } from './facilitySummary'
@@ -35,6 +37,7 @@ export function FacilityCard({
   period,
   unit,
   emptyLabelOf,
+  forecast,
 }: {
   facility: string
   rows: HarvestRow[]
@@ -42,6 +45,8 @@ export function FacilityCard({
   unit: Unit
   /** What a row with no status says instead of "Not scored", e.g. "No budget yet" for a new cultivation; undefined keeps "Not scored". */
   emptyLabelOf?: (cultivationId: string) => string | undefined
+  /** The forecast weeks' expected harvest in kg, per cultivation and in total, with the first and last forecast week. */
+  forecast?: { totals: FacilityForecast; fromWeek: string; toWeek: string }
 }) {
   const total = facilityTotal(rows, period)
   const decimals = unit === 'tonnes' ? 1 : 2
@@ -171,6 +176,7 @@ export function FacilityCard({
           </tbody>
         </table>
       </div>
+      {forecast && <FacilityForecastTable facility={facility} forecast={forecast.totals} fromWeek={forecast.fromWeek} toWeek={forecast.toWeek} />}
     </section>
   )
 }

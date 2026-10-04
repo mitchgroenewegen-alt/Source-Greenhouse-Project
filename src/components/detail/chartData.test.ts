@@ -150,3 +150,25 @@ describe('edited budgets and targets on the chart', () => {
     expect(model.domain[1]).toBeGreaterThanOrEqual(9)
   })
 })
+
+describe('the forecast on a chart', () => {
+  it('joins the actuals, adds a row for each forecast week after the data and widens the axis to the range', () => {
+    const points = [point('2025-W33', 1, 1), point('2025-W34', 1.2, 1)]
+    const plain = buildChartModel(kpiConfig('Harvest'), weeks, points)
+    const model = buildChartModel(kpiConfig('Harvest'), weeks, points, [], {
+      asOf: '2025-W34',
+      start: 1.2,
+      points: [
+        { week: '2025-W35', low: 0.8, expected: 1.1, high: 3 },
+        { week: '2025-W36', low: 0.7, expected: 1, high: 2.8 },
+      ],
+    })
+    expect(model.hasForecast).toBe(true)
+    expect(plain.hasForecast).toBe(false)
+    expect(model.rows.map((r) => r.week)).toEqual(['2025-W33', '2025-W34', '2025-W35', '2025-W36'])
+    expect(model.rows[1]).toMatchObject({ forecast: 1.2, forecastBand: [1.2, 1.2], isForecast: false })
+    expect(model.rows[2]).toMatchObject({ actual: null, forecast: 1.1, forecastBand: [0.8, 3], isForecast: true, label: 'W35' })
+    expect(model.domain[1]).toBeGreaterThanOrEqual(3)
+    expect(model.rows[0]!.forecast).toBeNull()
+  })
+})

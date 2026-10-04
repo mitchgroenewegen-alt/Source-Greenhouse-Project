@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { CATEGORY_LABEL, CATEGORY_ORDER, CATEGORY_ROLLUP, kpisInCategory, type PlanLabel } from '../config/kpis'
-import { formatDate } from '../data/dates'
+import { formatDate, shortWeek } from '../data/dates'
+import { FORECAST } from '../forecast'
 import { FLAG_THRESHOLDS as T } from '../flags'
 import { directionText, toleranceText } from '../lib/kpiFormat'
 import { useCropData } from '../state/CropDataContext'
@@ -137,6 +138,15 @@ export default function AboutScreen() {
         </p>
       </Section>
 
+      <Section title="The forecast">
+        <ul className="list-disc pl-5">
+          <li>Fruit set in a week is harvested about one fruit development time later. The harvest expected in a week is the fruit set of that earlier week × the fruit weight ÷ 1000, in kg/m² a week like Harvest, times a correction factor: the actual harvest over that estimate across the last {FORECAST.calibrationWeeks} weeks. The range comes from the lowest and highest of those weeks.</li>
+          <li>With fewer than {FORECAST.calibrationWeeks} comparable weeks the estimate is not corrected: it is shown as it is, labelled Uncorrected, with a range of ×{FORECAST.uncorrectedRange.low} to ×{FORECAST.uncorrectedRange.high}.</li>
+          <li>The forecast looks {FORECAST.horizonWeeks} weeks ahead. Forecast at end on a Scorecard card needs a season budget (a Harvest budget after the last data week); the workbook has none, so only the six weeks are forecast.</li>
+          <li>On the Forecast screen, “How good is this?” reruns the forecast as if it were {shortWeek(FORECAST.backtestAsOfWeek)} and compares it with the real weeks after it. Settings are in <code>src/forecast/config.ts</code>.</li>
+        </ul>
+      </Section>
+
       <Section title="Assumptions">
         <ul className="list-disc pl-5">
           <li>The plan value, called a budget or a target as described under “How a KPI is scored”, is the Target column of the workbook.</li>
@@ -152,7 +162,7 @@ export default function AboutScreen() {
 
       <Section title="Left out on purpose">
         <ul className="list-disc pl-5">
-          <li>Forecasting and what-if scenarios.</li>
+          <li>What-if scenarios. The forecast is one expected line with its range; there is no way to change the inputs and see another outcome.</li>
           <li>Alerts and notifications.</li>
           <li>Passwords and different roles. When a shared database is set up, invited people sign in with an email link and all see the same decisions; without one, decisions live in one browser and export and import move them.</li>
           <li>Changing the workbook file. Edits made in the app, such as an edited budget or target, a corrected value, budgets copied to a new cultivation, or days typed in or imported, are kept apart and laid over it, and each can be undone in the Edit log.</li>

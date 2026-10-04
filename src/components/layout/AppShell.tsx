@@ -8,7 +8,7 @@ import { RawDataToggle } from './RawDataToggle'
 import { WeekPicker } from './WeekPicker'
 
 /** The screens reached from More, so its tab stays lit while one of them is open. */
-const MORE_PATHS = ['/more', '/setup', '/fruit-types', '/about']
+const MORE_PATHS = ['/more', '/forecast', '/setup', '/fruit-types', '/about']
 /** Data checks, entering, importing and exporting, and the Edit log are all reached from the Data tab. */
 const DATA_PATHS = ['/data', '/checks', '/edits']
 

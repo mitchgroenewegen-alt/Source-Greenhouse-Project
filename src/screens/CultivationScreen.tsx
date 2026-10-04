@@ -10,8 +10,12 @@ import { CATEGORY_LABEL, kpisInCategory, type KpiConfig } from '../config/kpis'
 import { formatRange, shortWeek } from '../data/dates'
 import type { Category } from '../data/types'
 import type { FruitType } from '../workspace/types'
+import { ForecastPanel } from '../components/forecast/ForecastPanel'
+import { cumulativeForecastLine, weeklyForecastLine, type ChartForecast } from '../forecast'
+import { methodText } from '../forecast/text'
 import { effectiveFruitTypes, fruitTypeIdOf, specCheck } from '../setup/fruitTypes'
 import { useCropData } from '../state/CropDataContext'
+import { useForecasts } from '../state/useForecasts'
 import { useView } from '../state/ViewContext'
 import { useWorkspace } from '../workspace/WorkspaceContext'
 
@@ -44,6 +48,18 @@ export default function CultivationScreen() {
     [cultivation, kpis, weeks, enteredWeek],
   )
   const editCount = cultivation ? workspace.data.valueEdits.filter((e) => e.cultivation === cultivation.id).length + workspace.data.enteredRows.filter((e) => e.cultivation === cultivation.id).length : 0
+
+  // The forecast lines of the two harvest charts. Harvest starts from the last week's actual and Cumulative harvest from the total to date.
+  const { byCultivation } = useForecasts()
+  const forecast = cultivation ? byCultivation.get(cultivation.id) : undefined
+  const forecastLines = useMemo(() => {
+    const lines = new Map<string, ChartForecast>()
+    if (!cultivation || !forecast) return lines
+    lines.set('Harvest', weeklyForecastLine(forecast, point(cultivation.id, 'Harvest', forecast.asOf)?.actual ?? null))
+    const cumulative = cumulativeForecastLine(forecast)
+    if (cumulative) lines.set('Cumulative harvest', cumulative)
+    return lines
+  }, [cultivation, forecast, point])
 
   const fruitType = useMemo(
     () => (cultivation ? effectiveFruitTypes(workspace.data.fruitTypes).types.find((t) => t.id === fruitTypeIdOf(cultivation)) : undefined),
@@ -92,11 +108,14 @@ export default function CultivationScreen() {
               selectedWeek={week}
               edited={editedByKpi.get(config.name)!}
               onEdit={() => setEditing(config)}
+              forecast={forecastLines.get(config.name) ?? null}
+              forecastNote={forecast ? `Forecast: ${methodText(forecast.correction)}` : undefined}
               result={score.kpis.find((k) => k.config.name === config.name)!}
               spec={config.name === 'Fruit weight' && fruitType ? { type: fruitType, state: fruitWeightState(point(cultivation.id, config.name, week)?.actual, fruitType) } : undefined}
             />
           ))}
         </div>
+        {category === 'Production' && cultivation && <ForecastPanel forecast={forecast} areaM2={cultivation.areaM2} />}
         <WeeklyTable kpis={kpis} weeks={weeks} selectedWeek={week} pointsOf={(name) => pointsByKpi.get(name)!} editedOf={(name) => editedByKpi.get(name)!} enteredOf={(name) => enteredByKpi.get(name)!} />
       </div>
       {editing && (

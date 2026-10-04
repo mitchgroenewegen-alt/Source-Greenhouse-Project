@@ -15,6 +15,8 @@ import { facilitySummarySheet, scorecardSheet } from './viewSheets'
 import { readWorkbook, writeWorkbook } from './xlsxFile'
 
 const base = loadTestData()
+/** Writing and reading a workbook of 16,000 rows takes a few seconds, more on a busy machine. */
+const SLOW = 60_000
 const PA = 'PA-P1-TOV'
 const known = { cultivations: new Set(base.cultivations.map((c) => c.id)), kpis: new Set(base.kpis.map((k) => k.name)) }
 const HEADER = ['Date', 'Cultivation', 'KPI', 'Actual', 'Target']
@@ -288,7 +290,7 @@ describe('the export', () => {
     const kpis = book.find((s) => s.name === 'KPIs')!.cells
     expect(kpis).toHaveLength(input.merged.daily.length + 1)
     expect(kpis[1]![0]).toBe(isoToExcelSerial(input.merged.daily[0]!.date))
-  })
+  }, SLOW)
 })
 
 describe('exporting and importing again', () => {
@@ -306,7 +308,7 @@ describe('exporting and importing again', () => {
     expect(preview.changedRows).toHaveLength(0)
     expect(preview.unchanged).toBe(input.merged.daily.length)
     expect(preview.flagged).toBe(0)
-  })
+  }, SLOW)
 
   it('gives zero changes for the original workbook against the data it was read into', async () => {
     const bytes = new Uint8Array(readFileSync(new URL('../../data/Perfect-Produce-Growing-Data.xlsx', import.meta.url)))
@@ -317,7 +319,7 @@ describe('exporting and importing again', () => {
     const preview = previewImport(parsed, base.daily, base.cultivations)
     expect(preview.newRows.length + preview.changedRows.length).toBe(0)
     expect(preview.unchanged).toBe(base.daily.length)
-  })
+  }, SLOW)
 
   it('reads a CSV with the same columns', async () => {
     const csv = 'date,cultivation,kpi,actual,target\r\n2025-08-25,PA-P1-TOV,Harvest,0.7,0.6\r\n'

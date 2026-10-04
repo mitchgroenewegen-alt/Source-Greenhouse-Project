@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
+import { ExportViewButton } from '../components/exchange/ExportViewButton'
 import { CultivationCard } from '../components/scorecard/CultivationCard'
 import { FilterSelect } from '../components/ui/FilterSelect'
 import { Segmented } from '../components/ui/Segmented'
 import { formatRange, shortWeek } from '../data/dates'
+import { scorecardSheet, viewFilePart } from '../exchange/viewSheets'
 import { compareByAttention } from '../scoring/summary'
 import { useCropData } from '../state/CropDataContext'
 import { ALL, useView } from '../state/ViewContext'
@@ -27,11 +29,17 @@ export default function ScorecardScreen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Scorecard</h1>
-        <p>
-          {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}. Actual against budget for each cultivation, worst first.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold">Scorecard</h1>
+          <p>
+            {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}. Actual against budget for each cultivation, worst first.
+          </p>
+        </div>
+        <ExportViewButton
+          filePart={viewFilePart('scorecard', weekInfo)}
+          build={() => [scorecardSheet(cards.map(({ cultivation, score }) => ({ cultivation, score, state: dataStateOf(cultivation.id), openFlags: openReviewGroups(cultivation.id).length })), weekInfo)]}
+        />
       </div>
 
       {/* Phones: two drop-downs side by side. From md up: the chips. */}

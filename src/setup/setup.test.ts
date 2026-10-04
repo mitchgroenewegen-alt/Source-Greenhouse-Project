@@ -10,7 +10,7 @@ import { buildCatalog, greenhouseOf } from './catalog'
 import { cultivationIdFor, facilityCode, freeId, greenhouseCode, varietyPart } from './codes'
 import { budgetCopyEdits, copySources } from './copyBudgets'
 import { dataStateOf, dataStates, latestWeekWithActuals } from './dataState'
-import { cultivationsUsing, DEFAULT_FRUIT_TYPES, effectiveFruitTypes, fruitTypeId, fruitTypeIdOf, measuredFruitWeight, removalBlock, specCheck, validateFruitType, weightRangeText } from './fruitTypes'
+import { cultivationsUsing, DEFAULT_FRUIT_TYPES, effectiveFruitTypes, fruitTypeId, fruitTypeIdOf, itemsToSave, measuredFruitWeight, removalBlock, specCheck, validateFruitType, weightRangeText } from './fruitTypes'
 import { defaultPlannedEnd, validateCultivation, validateFacility, validateGreenhouse, type CultivationForm } from './validate'
 
 const base = loadTestData()
@@ -265,6 +265,14 @@ describe('fruit types', () => {
     expect(measuredFruitWeight(['A', 'B'], ['w1', 'w2'], (c, w) => values[`${c}|${w}`])).toBe(20)
     expect(measuredFruitWeight([], ['w1'], () => 1)).toBeNull()
     expect(measuredFruitWeight(['A'], ['w2'], (c, w) => values[`${c}|${w}`])).toBeNull()
+  })
+
+  it('saves the defaults along with the first change, and only the change after that', () => {
+    const changed = { ...DEFAULT_FRUIT_TYPES.find((t) => t.id === 'plum')!, pricePerKg: 2.5, placeholder: false }
+    const first = itemsToSave([], changed)
+    expect(first).toHaveLength(9)
+    expect(first.filter((t) => t.id === 'plum')).toEqual([changed])
+    expect(itemsToSave(first, changed)).toEqual([changed])
   })
 
   it('makes unique ids and checks the form text', () => {

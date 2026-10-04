@@ -18,6 +18,8 @@ export interface CropData {
   cultivations: Cultivation[]
   /** The cultivations as the workbook has them, before anything from the workspace is laid over them. */
   workbookCultivations: Cultivation[]
+  /** The workbook's own period and counts, which setup changes do not move. */
+  workbookMeta: DataFile['meta']
   /** The ones the Scorecard and Facilities show: without the archived ones unless "Show archived" is on. */
   visibleCultivations: Cultivation[]
   showArchived: boolean
@@ -161,6 +163,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
       weeks: data.weeks,
       cultivations: data.cultivations,
       workbookCultivations: base.cultivations,
+      workbookMeta: base.meta,
       visibleCultivations: showArchived ? data.cultivations : data.cultivations.filter((c) => !c.archived),
       showArchived,
       setShowArchived,

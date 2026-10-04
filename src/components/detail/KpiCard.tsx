@@ -5,7 +5,11 @@ import type { WeekInfo } from '../../data/types'
 import { directionText, formatValue, formatVariance, toleranceText } from '../../lib/kpiFormat'
 import type { KpiResult } from '../../scoring/summary'
 import type { WeeklyPoint } from '../../scoring/effective'
+import type { SpecState } from '../../setup/fruitTypes'
+import { diameterRangeText, weightRangeText } from '../../setup/fruitTypes'
+import type { FruitType } from '../../workspace/types'
 import { StatusBadge } from '../ui/StatusBadge'
+import { SpecBadge } from './SpecBadge'
 import { buildChartModel } from './chartData'
 import { ChartLegend, KpiChart } from './KpiChart'
 
@@ -16,12 +20,15 @@ export function KpiCard({
   points,
   selectedWeek,
   result,
+  spec,
 }: {
   config: KpiConfig
   weeks: WeekInfo[]
   points: (WeeklyPoint | undefined)[]
   selectedWeek: string
   result: KpiResult
+  /** Fruit weight only: the cultivation's fruit type and where the selected week's average sits in its range (null: no average that week). */
+  spec?: { type: FruitType; state: SpecState | null }
 }) {
   const model = useMemo(() => buildChartModel(config, weeks, points), [config, weeks, points])
   const tolerance = toleranceText(config)
@@ -53,6 +60,15 @@ export function KpiCard({
         ) : null}
         {score.variance !== null && <span className="ml-1 font-semibold text-ink">({formatVariance(config, score.variance)})</span>}
       </p>
+
+      {spec && (
+        <p className="num text-sm text-ink-2">
+          {spec.type.name} spec: <span className="font-semibold text-ink">{weightRangeText(spec.type)}</span>
+          {diameterRangeText(spec.type) && `, ${diameterRangeText(spec.type)}`}
+          {spec.type.placeholder && ' (placeholder)'}
+          {spec.state ? <SpecBadge state={spec.state} /> : <span className="ml-1">No average this week.</span>}
+        </p>
+      )}
 
       {model.hasActual || model.hasTarget ? (
         // The plot sits on a tile, one step paler than the card, so the shaded bands stand out from the green card.

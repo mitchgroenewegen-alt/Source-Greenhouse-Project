@@ -8,20 +8,22 @@ import { useCropData } from '../state/CropDataContext'
 import { ALL, useView } from '../state/ViewContext'
 
 export default function ScorecardScreen() {
-  const { cultivations, scoreOf, openReviewGroups } = useCropData()
+  const { cultivations, visibleCultivations, scoreOf, openReviewGroups, dataStateOf } = useCropData()
   const { week, weekInfo, facility, setFacility, variety, setVariety } = useView()
 
-  const facilities = useMemo(() => [ALL, ...new Set(cultivations.map((c) => c.facility))], [cultivations])
-  const varieties = useMemo(() => [ALL, ...new Set(cultivations.map((c) => c.variety))], [cultivations])
+  const facilities = useMemo(() => [ALL, ...new Set(visibleCultivations.map((c) => c.facility))], [visibleCultivations])
+  const varieties = useMemo(() => [ALL, ...new Set(visibleCultivations.map((c) => c.variety))], [visibleCultivations])
 
   const cards = useMemo(
     () =>
-      cultivations
+      visibleCultivations
         .filter((c) => (facility === ALL || c.facility === facility) && (variety === ALL || c.variety === variety))
         .map((c) => ({ cultivation: c, score: scoreOf(c.id, week) }))
         .sort((a, b) => compareByAttention(a.score, b.score)),
-    [cultivations, facility, variety, scoreOf, week],
+    [visibleCultivations, facility, variety, scoreOf, week],
   )
+
+  const hiddenCount = cultivations.length - visibleCultivations.length
 
   return (
     <div className="flex flex-col gap-4">
@@ -57,7 +59,7 @@ export default function ScorecardScreen() {
       ) : (
         <>
           <p className="-mt-1 text-sm">
-            {cards.length} of {cultivations.length} cultivations.
+            {cards.length} of {visibleCultivations.length} cultivations.{hiddenCount > 0 && ` ${hiddenCount} archived ${hiddenCount === 1 ? 'cultivation is' : 'cultivations are'} hidden; turn on Show archived on Setup to see ${hiddenCount === 1 ? 'it' : 'them'}.`}
             <span className="hidden md:inline">
               {' '}
               Sorted by Production first (red, then amber, then on track), then by the number of red and amber categories among the other four, then by the shortfall on cumulative harvest.
@@ -71,6 +73,7 @@ export default function ScorecardScreen() {
                   key={cultivation.id}
                   cultivation={cultivation}
                   score={score}
+                  state={dataStateOf(cultivation.id)}
                   weekEnd={weekInfo.end}
                   weekLabel={shortWeek(week)}
                   openFlags={groups.length}

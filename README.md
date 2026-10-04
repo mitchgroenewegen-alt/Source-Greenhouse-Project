@@ -134,9 +134,19 @@ The build reads the workbook from `data/` and generates `data.json`, so redeploy
 - **Thresholds are starting values.** They were calibrated against this workbook so that the badges are not all red, but they are not agreed standards. Tune them in `kpis.ts` with the growing team.
 - Ontario's two cultivations share a greenhouse but are scored separately. Units are metric; tonnes are kg/m² × growing area ÷ 1000.
 
+## Editing budgets and targets
+
+Each KPI card on a cultivation has **Edit budget** or **Edit target** (the word is the KPI's `planLabel`). The sheet that opens has three modes: **One week** (pick a week, type its new weekly value), **From a week onward** (the value applies from that week to the cultivation's planned end date, or to the last day with data when there is none) and **Scale a range** (plus or minus a percentage on weeks X to Y). The weekly value is turned into daily values by the KPI's own roll-up rule: a **sum** is spread over the days of the week that have a row, in proportion to the daily targets they have now (evenly when there are none); an **average** or **last value** is set on every day of the week. Days with no row are never created. The preview shows each week's value now and after.
+
+Before saving, the new values go through the same data checks as recorded values (`src/editing/precheck.ts`): unit slips, impossible values, a jump against the cultivation's own median, and budget or target far from the actual. When one fires, the sheet shows its plain explanation and **Use suggestion** (where there is one), **Save anyway** or **Cancel**. A short reason is optional and saved as "Edited" when empty.
+
+An edit is saved as value edits (field `target`, source `edited`, with who, when, the reason and the value before), one per run of days with the same value, in one batch; the workbook is not changed. Scores use the edited values. Where a budget or target was edited the chart draws the original as a thin dotted line (legend "Original budget" or "Original target") and the weekly table marks the week "edited". **Show raw data** ignores edited budgets and targets (only budgets copied onto a new cultivation stay, since they are that cultivation's whole budget).
+
+The **Edit log** (More, or the link on a cultivation that has edits; `/edits`) lists every value edit, newest first, filterable by cultivation, with who, when, KPI, weeks, old and new weekly value, reason and **Undo**. A budget copy is one line. Undo removes the edit, so the value before comes back; undoing a correction goes through the same path as reopening it in Data checks, so the decision and its edit stay together. Editing and undoing need a signed-in user when a shared database is set up, like every other change.
+
 ## Left out
 
-Forecasting, alerts, logins, editing the plan, grower-level climate detail, financials, and a live data connection.
+Forecasting, alerts, logins, grower-level climate detail, financials, and a live data connection.
 
 ## Notes
 

@@ -3,20 +3,21 @@ import { Link, useLocation } from 'react-router-dom'
 import { AccountControl } from '../account/AccountControl'
 import { WorkspaceNotices } from '../account/WorkspaceNotices'
 import { useCropData } from '../../state/CropDataContext'
-import { BarsIcon, DatabaseIcon, GridIcon, MoreIcon } from '../ui/icons'
+import { BarsIcon, CoinIcon, DatabaseIcon, GridIcon, MoreIcon } from '../ui/icons'
 import { RawDataToggle } from './RawDataToggle'
 import { WeekPicker } from './WeekPicker'
 
 /** The screens reached from More, so its tab stays lit while one of them is open. */
-const MORE_PATHS = ['/more', '/forecast', '/setup', '/fruit-types', '/about']
+const MORE_PATHS = ['/more', '/forecast', '/setup', '/fruit-types', '/prices', '/about']
 /** Data checks, entering, importing and exporting, and the Edit log are all reached from the Data tab. */
 const DATA_PATHS = ['/data', '/checks', '/edits']
 
 const NAV = [
   { to: '/', label: 'Scorecard', icon: GridIcon, match: (p: string) => p === '/' || p.startsWith('/cultivation') },
   { to: '/facilities', label: 'Facilities', icon: BarsIcon, match: (p: string) => p.startsWith('/facilities') },
+  { to: '/financials', label: 'Financials', icon: CoinIcon, match: (p: string) => p.startsWith('/financials') },
   { to: '/data', label: 'Data', icon: DatabaseIcon, match: (p: string) => DATA_PATHS.some((d) => p.startsWith(d)) },
-  // More holds the screens that are not used every day: Setup, Fruit types and About. Financials joins the bar or it later.
+  // More holds the screens that are not used every day: Forecast, Setup, Fruit types, Prices and costs, and About.
   { to: '/more', label: 'More', icon: MoreIcon, match: (p: string) => MORE_PATHS.some((m) => p.startsWith(m)) },
 ]
 
@@ -75,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         {items.map((item) => (
           <Link

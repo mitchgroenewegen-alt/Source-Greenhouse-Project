@@ -8,6 +8,7 @@ import type { HarvestRow } from '../components/facilities/facilityTotals'
 import { STATUS_LABEL, type Status } from '../scoring/score'
 import type { CultivationScore } from '../scoring/summary'
 import { DATA_STATE_LABEL, type DataState } from '../setup/dataState'
+import type { CultivationFinancials, FacilityFinancials, Financials, Period } from '../financials'
 import { numberCell, type Cell, type SheetSpec } from './sheets'
 
 const statusText = (status: Status | null) => (status ? STATUS_LABEL[status] : 'Not scored')
@@ -104,5 +105,99 @@ export function facilitySummarySheet(rows: FacilitySummaryRow[], week: WeekInfo)
 }
 
 /** For the file name: "2025-W34". */
-export const viewFilePart = (kind: 'scorecard' | 'facilities', week: WeekInfo) => `${kind}-${week.id}`
+export const viewFilePart = (kind: 'scorecard' | 'facilities' | 'financials', week: WeekInfo) => `${kind}-${week.id}`
 
+
+/** The money columns of one period: each line actual and budget, then the gap split. Empty where a figure is not available. */
+export const periodHeader = (prefix: string): Cell[] => [
+  `${prefix}: revenue (actual)`,
+  `${prefix}: revenue (budget)`,
+  `${prefix}: value lost to waste (actual)`,
+  `${prefix}: value lost to waste (budget)`,
+  `${prefix}: heating cost (actual)`,
+  `${prefix}: heating cost (budget)`,
+  `${prefix}: LED cost (actual)`,
+  `${prefix}: LED cost (budget)`,
+  `${prefix}: water cost (actual)`,
+  `${prefix}: water cost (no target)`,
+  `${prefix}: energy and water cost (actual)`,
+  `${prefix}: energy and water cost (budget)`,
+  `${prefix}: partial margin (actual)`,
+  `${prefix}: partial margin (budget)`,
+  `${prefix}: gap in margin: volume effect`,
+  `${prefix}: gap in margin: cost effect`,
+  `${prefix}: gap in margin: total`,
+]
+
+export const periodCells = (p: Period): Cell[] => [
+  numberCell(p.revenue.actual),
+  numberCell(p.revenue.budget),
+  numberCell(p.wasteValue.actual),
+  numberCell(p.wasteValue.budget),
+  numberCell(p.heat.actual),
+  numberCell(p.heat.budget),
+  numberCell(p.led.actual),
+  numberCell(p.led.budget),
+  numberCell(p.water.actual),
+  numberCell(p.water.budget),
+  numberCell(p.costs.actual),
+  numberCell(p.costs.budget),
+  numberCell(p.margin.actual),
+  numberCell(p.margin.budget),
+  numberCell(p.effects?.volume),
+  numberCell(p.effects?.cost),
+  numberCell(p.effects?.gap),
+]
+
+/**
+ * The Financials screen: a row per cultivation, then one per facility and one for all of them, for the selected week and for the weeks
+ * since the start of the data (`firstWeek`), plus the expected revenue of the forecast weeks. Money is in each row's currency.
+ */
+export function financialsViewSheet(financials: Financials, week: WeekInfo, firstWeek: string): SheetSpec {
+  const header: Cell[] = [
+    'Facility',
+    'Cultivation',
+    'Growing area (m²)',
+    'Currency',
+    'Price per kg',
+    'Price from',
+    'Example prices',
+    ...periodHeader(shortWeek(week.id)),
+    ...periodHeader(`Since ${shortWeek(firstWeek)}`),
+    'Forecast revenue: low',
+    'Forecast revenue: expected',
+    'Forecast revenue: high',
+  ]
+  const forecast = (r: { low: number; expected: number; high: number } | null | undefined): Cell[] => [numberCell(r?.low), numberCell(r?.expected), numberCell(r?.high)]
+  const priceFrom = { facility: 'Facility price', 'fruit-type': 'Fruit type price', example: 'Example price', none: 'No price' } as const
+  const cultivationRow = (f: CultivationFinancials): Cell[] => [
+    f.cultivation.facility,
+    f.cultivation.id,
+    f.cultivation.areaM2,
+    f.currency,
+    numberCell(f.price.value),
+    priceFrom[f.price.source],
+    f.price.source === 'example' ? 'Yes' : 'No',
+    ...periodCells(f.week),
+    ...periodCells(f.toDate),
+    ...forecast(f.forecast?.revenue),
+  ]
+  const totalRow = (r: FacilityFinancials, label: string): Cell[] => [
+    label,
+    r.cardId ? 'All cultivations' : 'All cultivations of all facilities',
+    r.areaM2,
+    r.currency,
+    null,
+    null,
+    null,
+    ...periodCells(r.week),
+    ...periodCells(r.toDate),
+    ...forecast(r.forecast?.revenue),
+  ]
+  const rows: Cell[][] = [header]
+  for (const facility of financials.facilities) {
+    rows.push(...facility.cultivations.map(cultivationRow), totalRow(facility, facility.label))
+  }
+  if (financials.all) rows.push(totalRow(financials.all, financials.all.label))
+  return { name: `Financials ${shortWeek(week.id)}`, rows, widths: [14, 16, 16, 9, 12, 16, 12, ...Array(34).fill(18), 16, 18, 16] }
+}

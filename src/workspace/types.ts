@@ -65,12 +65,20 @@ export interface FruitType {
   placeholder: boolean
 }
 
-/** What a facility pays for energy and water. null means "not entered yet". */
+/**
+ * What a facility pays for energy and water, and the prices it gets that differ from the fruit type's price.
+ * null means "not entered yet". Money is in the facility's currency.
+ */
 export interface Rates {
   facilityId: string
   heatPerKwh: number | null
   electricityPerKwh: number | null
   waterPerM3: number | null
+  /** Price per kg for this facility by fruit type id, where it differs from the fruit type's own price. null: no overrides. */
+  priceOverrides: Record<string, number> | null
+  /** Who last changed this row and when (ISO timestamp); null on a row saved before these were kept. */
+  updatedBy: string | null
+  updatedAt: string | null
 }
 
 /** Everything the app keeps beyond the workbook. */

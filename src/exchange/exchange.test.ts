@@ -225,8 +225,8 @@ describe('the export', () => {
   const sheets = buildExport(input)
   const sheet = (name: string) => sheets.find((s) => s.name === name)!
 
-  it('has the sheets in order, without Financials', () => {
-    expect(sheets.map((s) => s.name)).toEqual(['Read me', 'Greenhouses', 'KPIs', 'Weekly scores', 'Forecast', 'Data checks', 'Edit log', 'Settings'])
+  it('has the sheets in order, Financials after Forecast', () => {
+    expect(sheets.map((s) => s.name)).toEqual(['Read me', 'Greenhouses', 'KPIs', 'Weekly scores', 'Forecast', 'Financials', 'Data checks', 'Edit log', 'Settings'])
   })
 
   it('has one Forecast row per cultivation and forecast week, with low, expected, high and the method', () => {

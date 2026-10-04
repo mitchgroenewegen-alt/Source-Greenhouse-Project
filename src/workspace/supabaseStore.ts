@@ -34,7 +34,7 @@ const TABLES: Record<EntityName, TableSpec> = {
     keyColumns: ['id'],
     fields: ['id', 'name', 'weightMinG', 'weightMaxG', 'diameterMinMm', 'diameterMaxMm', 'pricePerKg', 'placeholder'],
   },
-  rates: { table: 'rates', keyColumns: ['facility_id'], fields: ['facilityId', 'heatPerKwh', 'electricityPerKwh', 'waterPerM3'] },
+  rates: { table: 'rates', keyColumns: ['facility_id'], fields: ['facilityId', 'heatPerKwh', 'electricityPerKwh', 'waterPerM3', 'priceOverrides', 'updatedBy', 'updatedAt'] },
   decisions: {
     table: 'decisions',
     keyColumns: ['cell_id'],

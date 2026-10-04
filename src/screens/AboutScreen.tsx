@@ -155,7 +155,7 @@ export default function AboutScreen() {
           <li>Forecasting and what-if scenarios.</li>
           <li>Alerts and notifications.</li>
           <li>Passwords and different roles. When a shared database is set up, invited people sign in with an email link and all see the same decisions; without one, decisions live in one browser and export and import move them.</li>
-          <li>Changing the workbook file. Edits made in the app, such as an edited budget or target, a corrected value or budgets copied to a new cultivation, are kept apart and laid over it, and each can be undone in the Edit log.</li>
+          <li>Changing the workbook file. Edits made in the app, such as an edited budget or target, a corrected value, budgets copied to a new cultivation, or days typed in or imported, are kept apart and laid over it, and each can be undone in the Edit log.</li>
           <li>Grower-level climate detail (hour by hour, per zone).</li>
           <li>Financials (revenue, cost, margin).</li>
           <li>A live data connection: the app reads one prepared file, refreshed at build time.</li>

@@ -61,7 +61,7 @@ export function FlagGroupCard({
             <FlagIcon width={12} height={12} />
             {SEVERITY_WORD[group.severity]}
           </span>
-          <span className="whitespace-nowrap rounded-full bg-flag/10 px-2 py-0.5 text-xs font-semibold text-flag-ink">{ruleTitleFor(group.rule, group.kpi)}</span>
+          <span className="whitespace-nowrap rounded-full bg-flag-bg px-2 py-0.5 text-xs font-semibold text-flag-ink">{ruleTitleFor(group.rule, group.kpi)}</span>
         </div>
       </header>
 

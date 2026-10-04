@@ -6,6 +6,7 @@ import type { WeekInfo } from '../../data/types'
 import { formatValue, formatVariance } from '../../lib/kpiFormat'
 import type { FlagMark } from '../../scoring/effective'
 import { scoreWith, STATUS_LABEL } from '../../scoring/score'
+import { BANDS, type Band } from './chartBands'
 import type { ChartModel, ChartRow } from './chartData'
 
 const ACTUAL = 'var(--color-actual)'
@@ -128,15 +129,25 @@ export function KpiChart({
           />
           <Tooltip content={(props) => <ChartTooltip {...props} config={config} weeks={weeks} />} cursor={{ stroke: 'var(--color-ink-3)', strokeDasharray: '2 3' }} />
           <ReferenceLine x={selectedLabel} stroke="var(--color-brand)" strokeOpacity={0.16} strokeWidth={14} />
-          <Area dataKey="amber" type="monotone" stroke="none" fill="var(--color-warn)" fillOpacity={0.28} isAnimationActive={false} activeDot={false} legendType="none" />
-          <Area dataKey="amberAbove" type="monotone" stroke="none" fill="var(--color-warn)" fillOpacity={0.28} isAnimationActive={false} activeDot={false} legendType="none" />
-          <Area dataKey="green" type="monotone" stroke="none" fill="var(--color-ok)" fillOpacity={0.3} isAnimationActive={false} activeDot={false} legendType="none" />
+          <Area dataKey="amber" type="monotone" stroke="none" fill={BANDS.watch.fill} fillOpacity={BANDS.watch.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
+          <Area dataKey="amberAbove" type="monotone" stroke="none" fill={BANDS.watch.fill} fillOpacity={BANDS.watch.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
+          <Area dataKey="green" type="monotone" stroke="none" fill={BANDS.onTrack.fill} fillOpacity={BANDS.onTrack.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
           <Line dataKey="target" type="monotone" stroke={TARGET} strokeWidth={2} strokeDasharray="5 4" dot={markedDot(TARGET, (r) => r.targetMark)} activeDot={{ r: 4 }} isAnimationActive={false} />
           <Line dataKey="actual" type="monotone" stroke={ACTUAL} strokeWidth={2} dot={markedDot(ACTUAL, (r) => r.actualMark)} activeDot={{ r: 5 }} isAnimationActive={false} />
           <Line dataKey="flagY" stroke="none" dot={FlagMarker} activeDot={false} isAnimationActive={false} legendType="none" />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
+  )
+}
+
+/** A legend swatch for a band: the band's fill over a tile-coloured underlay, so it comes out the same colour as in the chart. */
+function BandSwatch({ band }: { band: Band }) {
+  return (
+    <svg width="16" height="12" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="15" height="11" rx="2" fill="var(--color-tile)" />
+      <rect x="0.5" y="0.5" width="15" height="11" rx="2" fill={band.fill} fillOpacity={band.opacity} stroke={band.edge} strokeOpacity={0.6} />
+    </svg>
   )
 }
 
@@ -160,11 +171,11 @@ export function ChartLegend({ hasTarget, hasFlags, planLabel }: { hasTarget: boo
             {planLabel}
           </li>
           <li className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-4 rounded-sm border border-ok-line/60 bg-ok/30" aria-hidden="true" />
+            <BandSwatch band={BANDS.onTrack} />
             On track
           </li>
           <li className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-4 rounded-sm border border-warn-line/60 bg-warn/25" aria-hidden="true" />
+            <BandSwatch band={BANDS.watch} />
             Watch
           </li>
         </>

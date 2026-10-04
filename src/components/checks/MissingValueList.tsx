@@ -33,7 +33,7 @@ export function MissingValueList({
   const open = groups.filter((g) => statusOf(g) !== 'decided')
   return (
     <section className="flex flex-col gap-3" aria-label="Missing values">
-      <p className="text-sm text-ink-2">A missing value is already left out of the scores, never counted as zero.</p>
+      <p className="text-sm">A missing value is already left out of the scores, never counted as zero.</p>
       <div className="flex items-end gap-2 rounded-2xl border border-line bg-card p-3 md:gap-3">
         <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium md:max-w-xs">
           Your name

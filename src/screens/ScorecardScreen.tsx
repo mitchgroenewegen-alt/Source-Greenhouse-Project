@@ -27,7 +27,7 @@ export default function ScorecardScreen() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">Scorecard</h1>
-        <p className="text-ink-2">
+        <p>
           {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}. Actual against budget for each cultivation, worst first.
         </p>
       </div>
@@ -56,7 +56,7 @@ export default function ScorecardScreen() {
         <p className="rounded-2xl border border-line bg-card p-6 text-center text-ink-2">No cultivation matches these filters.</p>
       ) : (
         <>
-          <p className="-mt-1 text-sm text-ink-3">
+          <p className="-mt-1 text-sm">
             {cards.length} of {cultivations.length} cultivations.
             <span className="hidden md:inline">
               {' '}

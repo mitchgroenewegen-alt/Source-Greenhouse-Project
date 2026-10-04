@@ -39,7 +39,7 @@ export default function CultivationScreen() {
   return (
     <div className="flex flex-col gap-4">
       <DetailHeader cultivation={cultivation} weekEnd={weekInfo.end} weekLabel={shortWeek(week)} />
-      <p className="text-sm text-ink-2">
+      <p className="text-sm">
         The status badges and the highlighted column are for {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}. Change the week at the top.
       </p>
 

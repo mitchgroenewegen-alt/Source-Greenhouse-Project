@@ -121,7 +121,7 @@ export default function DataChecksScreen() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">Data checks</h1>
-        <p className="text-ink-2">
+        <p>
           Inputs that look wrong, grouped so a run of the same problem is one item. Until someone decides, a flagged value is left out of the scores.
         </p>
       </div>
@@ -171,7 +171,7 @@ export default function DataChecksScreen() {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`min-h-11 rounded-xl px-1 text-sm font-semibold ${tab === id ? 'bg-brand text-white' : 'text-ink-2 hover:bg-line-soft'}`}
+            className={`min-h-11 rounded-xl px-1 text-sm font-semibold ${tab === id ? 'bg-brand text-white' : 'text-ink-2 hover:bg-tile'}`}
           >
             {label} <span className={`text-xs ${tab === id ? 'text-white/85' : 'text-ink-3'}`}>{count}</span>
           </button>
@@ -232,7 +232,7 @@ export default function DataChecksScreen() {
 
       {tab === 'review' && (
         <>
-          <p className="text-sm text-ink-3">
+          <p className="text-sm">
             {visibleReview.length} {visibleReview.length === 1 ? 'item' : 'items'} shown · {openCount} waiting for a decision · {decidedCount} confirmed, corrected or excluded.
           </p>
           {visibleReview.length === 0 ? (

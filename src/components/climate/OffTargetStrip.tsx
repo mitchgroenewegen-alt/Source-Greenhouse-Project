@@ -58,7 +58,7 @@ export function OffTargetStrip({ table, dates, picked, raw }: { table: DayTable;
       title="Days off target"
       note={`One cell per day and climate KPI, against its ${planWordForAll(CLIMATE_KPIS)}. Scrolls sideways when the days do not fit.`}
     >
-      <div className="overflow-x-auto rounded-xl border border-line-soft bg-tile" tabIndex={0} role="region" aria-label="Days off target, scrolls sideways">
+      <div className="relative overflow-x-auto rounded-xl border border-line-soft bg-tile" tabIndex={0} role="region" aria-label="Days off target, scrolls sideways">
         <table className="w-max min-w-full border-collapse text-xs">
           <thead>
             <tr>

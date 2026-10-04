@@ -156,6 +156,16 @@ export default function AboutScreen() {
         </ul>
       </Section>
 
+      <Section title="Climate">
+        <ul className="list-disc pl-5">
+          <li>The Climate tab of a cultivation shows the daily values behind the weekly scores: temperatures and the day/night difference, temperature against solar radiation with the RTR target, PAR next to LED hours, humidity, humidity deficit and CO₂, and a strip of days off target. It follows the week picker (that week by default, or the whole period) and the Show raw data switch.</li>
+          <li>A day is scored with the same tolerances as a week. A day whose value or target the data checks flagged, and nobody has decided on, shows as flagged and is not scored, so a typing slip such as a Fahrenheit target does not show as a red day. Once decided, the day is scored again, or has no value if it was excluded.</li>
+          <li>RTR is the 24-hour temperature divided by the day’s radiation sum. The line on the temperature chart is the RTR target times the radiation. A cultivation without an RTR target has no line; no number is made up.</li>
+          <li>Cultivations that share a greenhouse, such as Ontario’s Cherry and TOV, get an overlay of the two. It shows how often their climates differ and asks whether that is a sensor or a data question.</li>
+          <li>Hour by hour comes from an imported climate computer export (timestamp, cultivation, parameter, value, setpoint). Until one is imported, the Climate tab says this data is not connected yet.</li>
+        </ul>
+      </Section>
+
       <Section title="Assumptions">
         <ul className="list-disc pl-5">
           <li>The plan value, called a budget or a target as described under “How a KPI is scored”, is the Target column of the workbook.</li>
@@ -175,7 +185,7 @@ export default function AboutScreen() {
           <li>Alerts and notifications.</li>
           <li>Passwords and different roles. When a shared database is set up, invited people sign in with an email link and all see the same decisions; without one, decisions live in one browser and export and import move them.</li>
           <li>Changing the workbook file. Edits made in the app, such as an edited budget or target, a corrected value, budgets copied to a new cultivation, or days typed in or imported, are kept apart and laid over it, and each can be undone in the Edit log.</li>
-          <li>Grower-level climate detail (hour by hour, per zone).</li>
+          <li>A live connection to the climate computer. Hour-by-hour climate comes only from imported files (one layout, up to 20,000 rows per file), has no per-zone detail, and is not part of the Excel export or the Edit log.</li>
           <li>A full profit and loss. Financials covers revenue, value lost to waste, and energy and water cost, so the margin is partial: labour, plants and packaging are not in the data. Prices and rates are entered by people; until a price is entered the screen uses example prices.</li>
           <li>A live data connection: the app reads one prepared file, refreshed at build time.</li>
         </ul>

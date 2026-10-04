@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { ClimateView } from '../components/climate/ClimateView'
+import { Segmented } from '../components/ui/Segmented'
 import { CategoryTabs } from '../components/detail/CategoryTabs'
 import { DetailHeader } from '../components/detail/DetailHeader'
 import { BudgetEditor } from '../components/editing/BudgetEditor'
@@ -29,6 +31,8 @@ export default function CultivationScreen() {
   const { week, weekInfo } = useView()
   const [category, setCategory] = useState<Category>('Production')
   const [editing, setEditing] = useState<KpiConfig | null>(null)
+  // Climate has two views: the daily charts a grower steers on (default) and the weekly scores like the other categories.
+  const [climateView, setClimateView] = useState<'daily' | 'weekly'>('daily')
   const cultivation = cultivationById(id)
 
   const state = cultivation ? dataStateOf(cultivation.id) : 'ready'
@@ -98,6 +102,23 @@ export default function CultivationScreen() {
       <CategoryTabs value={category} onChange={setCategory} categories={score.categories} />
 
       <div id="category-panel" role="tabpanel" aria-label={CATEGORY_LABEL[category]} className="flex flex-col gap-4">
+        {category === 'Climate' && (
+          <div className="rounded-2xl border border-line bg-card p-3">
+            <Segmented<'daily' | 'weekly'>
+              label="Show"
+              value={climateView}
+              onChange={setClimateView}
+              options={[
+                { value: 'daily', label: 'Daily charts' },
+                { value: 'weekly', label: 'Weekly scores' },
+              ]}
+            />
+          </div>
+        )}
+        {category === 'Climate' && climateView === 'daily' ? (
+          <ClimateView cultivation={cultivation} />
+        ) : (
+          <>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {kpis.map((config) => (
             <KpiCard
@@ -117,6 +138,8 @@ export default function CultivationScreen() {
         </div>
         {category === 'Production' && cultivation && <ForecastPanel forecast={forecast} areaM2={cultivation.areaM2} />}
         <WeeklyTable kpis={kpis} weeks={weeks} selectedWeek={week} pointsOf={(name) => pointsByKpi.get(name)!} editedOf={(name) => editedByKpi.get(name)!} enteredOf={(name) => enteredByKpi.get(name)!} />
+          </>
+        )}
       </div>
       {editing && (
         <BudgetEditor

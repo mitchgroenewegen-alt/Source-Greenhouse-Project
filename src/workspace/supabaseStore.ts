@@ -29,6 +29,11 @@ const TABLES: Record<EntityName, TableSpec> = {
     keyColumns: ['cultivation', 'kpi', 'date'],
     fields: ['cultivation', 'date', 'kpi', 'actual', 'target', 'createdBy', 'createdAt', 'source'],
   },
+  climateReadings: {
+    table: 'climate_readings',
+    keyColumns: ['cultivation', 'parameter', 'timestamp'],
+    fields: ['cultivation', 'parameter', 'timestamp', 'value', 'setpoint', 'createdBy', 'createdAt'],
+  },
   fruitTypes: {
     table: 'fruit_types',
     keyColumns: ['id'],
@@ -70,7 +75,7 @@ function fromRow(spec: TableSpec, row: Row): unknown {
 
 /** Split a composite key (see ENTITY_KEY) back into the columns that make it up. */
 function keyParts(entity: EntityName, key: string): string[] {
-  return entity === 'enteredRows' ? key.split('|') : [key]
+  return entity === 'enteredRows' || entity === 'climateReadings' ? key.split('|') : [key]
 }
 
 /** Give up on the network after this long and fall back to the saved copy. */
@@ -78,6 +83,7 @@ const LOAD_TIMEOUT_MS = 8000
 const CACHE_KEY = 'shared-cache'
 const REFETCH_DELAY_MS = 200
 const DELETE_CHUNK = 50
+const UPSERT_CHUNK = 1000
 
 const chunked = <T,>(items: T[]): T[][] => Array.from({ length: Math.ceil(items.length / DELETE_CHUNK) }, (_, i) => items.slice(i * DELETE_CHUNK, (i + 1) * DELETE_CHUNK))
 
@@ -203,10 +209,14 @@ export class SupabaseWorkspaceStore extends MemoryWorkspaceStore {
     const spec = TABLES[entity]
     const previous = this.state.data[entity]
     await super.save(entity, items) // shows the change at once
-    const { error } = await this.client.from(spec.table).upsert((items as unknown[]).map((item) => toRow(spec, item)), { onConflict: spec.keyColumns.join(',') })
-    if (error) {
-      this.setItems(entity, previous)
-      throw error
+    // Climate readings come in thousands; every entity goes up in requests of a sensible size.
+    const rows = (items as unknown[]).map((item) => toRow(spec, item))
+    for (let i = 0; i < rows.length; i += UPSERT_CHUNK) {
+      const { error } = await this.client.from(spec.table).upsert(rows.slice(i, i + UPSERT_CHUNK), { onConflict: spec.keyColumns.join(',') })
+      if (error) {
+        this.setItems(entity, previous)
+        throw error
+      }
     }
   }
 

@@ -53,6 +53,23 @@ export interface EnteredRow {
   source: ValueSource
 }
 
+/**
+ * One reading of a climate computer export: a parameter (such as "Temperature") at a moment, with the value the house
+ * realised and the setpoint it was steered to. The workbook only has daily values, so this is the finer data of step 7.
+ */
+export interface ClimateReading {
+  cultivation: string
+  /** Parameter name as written in the file; free text ("Temperature", "Humidity", "CO2"). Never contains "|". */
+  parameter: string
+  /** Local time as in the file, to the minute: "2025-08-20T14:30". No time zone is applied or guessed. */
+  timestamp: string
+  value: number
+  /** null when the file had no setpoint for this reading. */
+  setpoint: number | null
+  createdBy: string
+  createdAt: string
+}
+
 export interface FruitType {
   id: string
   name: string
@@ -88,6 +105,7 @@ export interface WorkspaceData {
   cultivations: WorkspaceCultivation[]
   valueEdits: ValueEdit[]
   enteredRows: EnteredRow[]
+  climateReadings: ClimateReading[]
   fruitTypes: FruitType[]
   rates: Rates[]
   decisions: Decision[]
@@ -102,6 +120,7 @@ export const ENTITY_KEY: { [K in EntityName]: (item: WorkspaceData[K][number]) =
   cultivations: (x) => x.id,
   valueEdits: (x) => x.id,
   enteredRows: (x) => `${x.cultivation}|${x.kpi}|${x.date}`,
+  climateReadings: (x) => `${x.cultivation}|${x.parameter}|${x.timestamp}`,
   fruitTypes: (x) => x.id,
   rates: (x) => x.facilityId,
   decisions: (x) => x.cellId,
@@ -110,7 +129,7 @@ export const ENTITY_KEY: { [K in EntityName]: (item: WorkspaceData[K][number]) =
 export const ENTITIES = Object.keys(ENTITY_KEY) as EntityName[]
 
 export function emptyWorkspace(): WorkspaceData {
-  return { facilities: [], greenhouses: [], cultivations: [], valueEdits: [], enteredRows: [], fruitTypes: [], rates: [], decisions: [] }
+  return { facilities: [], greenhouses: [], cultivations: [], valueEdits: [], enteredRows: [], climateReadings: [], fruitTypes: [], rates: [], decisions: [] }
 }
 
 /**

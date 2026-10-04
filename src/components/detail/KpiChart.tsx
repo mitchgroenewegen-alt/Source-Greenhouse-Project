@@ -9,15 +9,15 @@ import { scoreWith, STATUS_LABEL } from '../../scoring/score'
 import { BANDS, type Band } from './chartBands'
 import type { ChartModel, ChartRow } from './chartData'
 
-const ACTUAL = 'var(--color-actual)'
-const TARGET = 'var(--color-target)'
+export const ACTUAL = 'var(--color-actual)'
+export const TARGET = 'var(--color-target)'
 const ORIGINAL = 'var(--color-ink-3)'
-const FLAG = 'var(--color-flag)'
+export const FLAG = 'var(--color-flag)'
 const FORECAST_COLOR = 'var(--color-actual)'
 
 /** A point on a line; a violet ring goes round it when the week holds a flagged value of that column. */
-function markedDot(color: string, markOf: (row: ChartRow) => FlagMark) {
-  return function Dot(props: { cx?: number; cy?: number; payload?: ChartRow; index?: number }): ReactElement {
+export function markedDot<R>(color: string, markOf: (row: R) => FlagMark) {
+  return function Dot(props: { cx?: number; cy?: number; payload?: R; index?: number }): ReactElement {
     const { cx, cy, payload } = props
     if (cx === undefined || cy === undefined || !payload) return <g key={props.index} />
     const mark = markOf(payload)
@@ -41,7 +41,7 @@ function markedDot(color: string, markOf: (row: ChartRow) => FlagMark) {
 }
 
 /** The violet flag at the top of the plot for a week that holds a flagged value, even when the value itself is left out. */
-function FlagMarker(props: { cx?: number; cy?: number; payload?: ChartRow; index?: number }): ReactElement {
+export function FlagMarker(props: { cx?: number; cy?: number; payload?: { flagY: number | null; openFlags: number }; index?: number }): ReactElement {
   const { cx, cy, payload } = props
   if (cx === undefined || cy === undefined || !payload || payload.flagY === null) return <g key={props.index} />
   const open = payload.openFlags > 0

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Cultivation, DataFile, WeekInfo } from '../data/types'
 import { detectFlags, groupFlags, type Flag, type FlagGroup } from '../flags'
-import { applyDecisions, buildWeekly, weeklyKey, type WeeklyLookup, type WeeklyPoint } from '../scoring/effective'
+import { applyDecisions, buildWeekly, weeklyKey, type EffectiveRow, type WeeklyLookup, type WeeklyPoint } from '../scoring/effective'
 import { scoreCultivationWeek, type CultivationScore } from '../scoring/summary'
 import { readPreference, writePreference, type Decision } from '../storage'
 import { dataStateOf, dataStates, latestWeekWithActuals, type DataState } from '../setup/dataState'
@@ -61,6 +61,11 @@ export interface CropData {
   undoEntries: (entry: EntryLogEntry) => void
   /** Take an entry of the edit log away. A correction goes through its decision, so the two stay consistent. */
   undoEdits: (entry: LogEntry) => void
+  /**
+   * Every day as the scores use it: flagged values left out until decided, decisions applied (or the recorded values with
+   * "Show raw data" on). Each row says whether its actual and target are clean, flagged or decided. The Climate tab reads these.
+   */
+  effectiveDaily: EffectiveRow[]
   point: (cultivation: string, kpi: string, week: string) => WeeklyPoint | undefined
   scoreOf: (cultivation: string, week: string) => CultivationScore
   saveDecisions: (decisions: Decision[]) => void
@@ -170,10 +175,11 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
   const edited = useMemo(() => (rawMode ? new Map<string, EditedWeek>() : editedWeeks(base, workspace.data, data)), [rawMode, base, workspace.data, data])
 
   // What actually goes into the scores: flagged values left out until decided, or the raw values.
-  const weekly: WeeklyLookup = useMemo(
-    () => buildWeekly(recorded ? applyDecisions(recorded.daily, recorded.flags, decisions, true) : applyDecisions(checked.daily, flags, decisions, false)),
+  const effectiveDaily: EffectiveRow[] = useMemo(
+    () => (recorded ? applyDecisions(recorded.daily, recorded.flags, decisions, true) : applyDecisions(checked.daily, flags, decisions, false)),
     [recorded, checked, flags, decisions],
   )
+  const weekly: WeeklyLookup = useMemo(() => buildWeekly(effectiveDaily), [effectiveDaily])
 
   const enteredWeeks = useMemo(() => {
     const weeks = new Map<string, 'entered' | 'imported'>()
@@ -232,6 +238,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
         if (cells.length > 0) reopen(cells)
         else void remove('valueEdits', entry.edits.map((e) => e.id))
       },
+      effectiveDaily,
       point: (cultivation, kpi, week) => weekly.get(weeklyKey(cultivation, kpi, week)),
       scoreOf: (cultivation, week) => {
         const key = `${cultivation}|${week}`
@@ -265,7 +272,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
         if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
       },
     }
-  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly, edited, enteredWeeks])
+  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, effectiveDaily, weekly, edited, enteredWeeks])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -79,6 +79,8 @@ const CACHE_KEY = 'shared-cache'
 const REFETCH_DELAY_MS = 200
 const DELETE_CHUNK = 50
 
+const chunked = <T,>(items: T[]): T[][] => Array.from({ length: Math.ceil(items.length / DELETE_CHUNK) }, (_, i) => items.slice(i * DELETE_CHUNK, (i + 1) * DELETE_CHUNK))
+
 /**
  * The workspace in the shared Supabase database. Everything here is kept small and behind WorkspaceStore:
  * sign-in state decides the status, writes go to the database and into the snapshot at once, other people's changes
@@ -213,20 +215,25 @@ export class SupabaseWorkspaceStore extends MemoryWorkspaceStore {
     const spec = TABLES[entity]
     const previous = this.state.data[entity]
     await super.remove(entity, keys)
-    const single = spec.keyColumns.length === 1
-    // One request per chunk of keys when the key is one column; one per item for the composite key.
-    const chunks = single ? Array.from({ length: Math.ceil(keys.length / DELETE_CHUNK) }, (_, i) => keys.slice(i * DELETE_CHUNK, (i + 1) * DELETE_CHUNK)) : keys.map((k) => [k])
-    for (const chunk of chunks) {
-      let query = this.client.from(spec.table).delete()
-      if (single) query = query.in(spec.keyColumns[0]!, chunk)
-      else {
-        const parts = keyParts(entity, chunk[0]!)
-        spec.keyColumns.forEach((col, i) => (query = query.eq(col, parts[i]!)))
-      }
-      const { error } = await query
-      if (error) {
-        this.setItems(entity, previous)
-        throw error
+    // A key of one column goes out in chunks. The key of an entered row is three columns: the rows of one cultivation and
+    // KPI go together, their dates matched with `in`, so undoing an import of thousands of days is a few requests.
+    const last = spec.keyColumns[spec.keyColumns.length - 1]!
+    const groups = new Map<string, string[]>()
+    for (const key of keys) {
+      const parts = keyParts(entity, key)
+      const prefix = parts.slice(0, -1).join('|')
+      groups.set(prefix, [...(groups.get(prefix) ?? []), parts[parts.length - 1]!])
+    }
+    for (const [prefix, values] of groups) {
+      const fixed = prefix === '' ? [] : prefix.split('|')
+      for (const chunk of chunked(values)) {
+        let query = this.client.from(spec.table).delete()
+        spec.keyColumns.slice(0, -1).forEach((col, i) => (query = query.eq(col, fixed[i]!)))
+        const { error } = await query.in(last, chunk)
+        if (error) {
+          this.setItems(entity, previous)
+          throw error
+        }
       }
     }
   }

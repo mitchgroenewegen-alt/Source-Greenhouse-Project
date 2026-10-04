@@ -7,6 +7,11 @@ export function excelSerialToIso(serial: number): string {
   return new Date(Math.floor(serial - 25569) * DAY_MS).toISOString().slice(0, 10)
 }
 
+/** The other way round: the Excel day count of an ISO date, so an exported date is a real date in a spreadsheet. */
+export function isoToExcelSerial(iso: string): number {
+  return Math.round(toUtc(iso) / DAY_MS) + 25569
+}
+
 function toUtc(iso: string): number {
   const [y, m, d] = iso.split('-').map(Number)
   return Date.UTC(y!, m! - 1, d!)
@@ -32,6 +37,22 @@ export function isoWeekOf(iso: string): string {
   const week = 1 + Math.round((t.getTime() - firstThursday.getTime()) / (7 * DAY_MS))
   return `${isoYear}-W${String(week).padStart(2, '0')}`
 }
+
+/** The Monday of an ISO week id such as "2025-W34" (week 1 is the week with 4 January in it). */
+export function weekStartOf(weekId: string): string {
+  const [year, week] = weekId.split('-W').map(Number)
+  const jan4 = `${year}-01-04`
+  return addDays(jan4, -weekdayOf(jan4) + (week! - 1) * 7)
+}
+
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+/** 0 for Monday to 6 for Sunday. */
+export function weekdayOf(iso: string): number {
+  return (new Date(toUtc(iso)).getUTCDay() + 6) % 7
+}
+
+export const weekdayName = (weekday: number) => WEEKDAYS[weekday] ?? ''
 
 /** Crop week counted from planting: the planting week is week 1. */
 export function cropWeekOn(plantingIso: string, dateIso: string): number {

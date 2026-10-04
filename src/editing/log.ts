@@ -4,7 +4,7 @@
 import { aggregate } from '../data/aggregate'
 import { addDays, isoWeekOf, shortWeek } from '../data/dates'
 import type { Aggregation } from '../data/types'
-import type { ValueEdit } from '../workspace/types'
+import { ENTITY_KEY, type EnteredRow, type ValueEdit } from '../workspace/types'
 import { isCopyEdit } from './original'
 import { cellIdOfCorrection } from '../workspace/corrections'
 
@@ -99,4 +99,61 @@ export function weeklyChanges(entry: LogEntry, rule: Aggregation, hasRow: (date:
         after: aggregate(list.map((d) => d.after), rule)!,
       }
     })
+}
+
+/** Days typed in or imported in one go: one cultivation, one person, one moment. */
+export interface EntryLogEntry {
+  key: string
+  rows: EnteredRow[]
+  cultivation: string
+  /** The KPIs the rows are for, in the order they first appear. */
+  kpis: string[]
+  createdBy: string
+  createdAt: string
+  source: EnteredRow['source']
+  dateFrom: string
+  dateTo: string
+}
+
+/** Entered and imported rows that share cultivation, source, person and time are one entry of the log. */
+export function groupEntries(rows: EnteredRow[]): EntryLogEntry[] {
+  const groups = new Map<string, EnteredRow[]>()
+  for (const r of rows) {
+    const key = ['entry', r.cultivation, r.source, r.createdBy, r.createdAt].join('|')
+    const list = groups.get(key)
+    if (list) list.push(r)
+    else groups.set(key, [r])
+  }
+  return [...groups.entries()]
+    .map(([key, list]): EntryLogEntry => {
+      const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date) || a.kpi.localeCompare(b.kpi))
+      const first = sorted[0]!
+      return {
+        key,
+        rows: sorted,
+        cultivation: first.cultivation,
+        kpis: [...new Set(sorted.map((r) => r.kpi))],
+        createdBy: first.createdBy,
+        createdAt: first.createdAt,
+        source: first.source,
+        dateFrom: first.date,
+        dateTo: sorted[sorted.length - 1]!.date,
+      }
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.key.localeCompare(b.key))
+}
+
+/** The keys that take an entry's rows away again (see ENTITY_KEY). */
+export const entryRowKeys = (entry: EntryLogEntry): string[] => entry.rows.map(ENTITY_KEY.enteredRows)
+
+/** One line of the edit log: a changed value or a group of entered days. */
+export type LogItem = { type: 'edit'; entry: LogEntry } | { type: 'entry'; entry: EntryLogEntry }
+
+/** Edits and entries together, newest first. */
+export function logItems(edits: ValueEdit[], rows: EnteredRow[]): LogItem[] {
+  const items: LogItem[] = [
+    ...groupEdits(edits).map((entry): LogItem => ({ type: 'edit', entry })),
+    ...groupEntries(rows).map((entry): LogItem => ({ type: 'entry', entry })),
+  ]
+  return items.sort((a, b) => b.entry.createdAt.localeCompare(a.entry.createdAt) || a.entry.key.localeCompare(b.entry.key))
 }

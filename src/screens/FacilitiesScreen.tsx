@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
+import { ExportViewButton } from '../components/exchange/ExportViewButton'
 import { FacilityCard, type Unit } from '../components/facilities/FacilityCard'
 import { buildFacilitySummary } from '../components/facilities/facilitySummary'
 import { FacilitySummaryTable } from '../components/facilities/FacilitySummaryTable'
 import { harvestRow, KPI_FOR_PERIOD, type Period } from '../components/facilities/facilityTotals'
 import { Segmented } from '../components/ui/Segmented'
+import { facilitySummarySheet, harvestSheet, viewFilePart } from '../exchange/viewSheets'
 import { DATA_STATE_LABEL } from '../setup/dataState'
 import { formatRange, shortWeek } from '../data/dates'
 import { useCropData } from '../state/CropDataContext'
@@ -35,15 +37,24 @@ export default function FacilitiesScreen() {
     const state = dataStateOf(id)
     return state === 'ready' ? undefined : DATA_STATE_LABEL[state]
   }
+  // The tables of this screen for the selected week: the summary, and the harvest of each cultivation for the week and to date.
+  const buildExport = () => {
+    const ordered = facilities.flatMap((f) => visibleCultivations.filter((c) => c.facility === f))
+    const rowsFor = (period: Period) => ordered.map((c) => harvestRow(c, point(c.id, KPI_FOR_PERIOD[period], week), period))
+    return [facilitySummarySheet(summary, weekInfo), harvestSheet(rowsFor('week'), rowsFor('cumulative'), weekInfo)]
+  }
   const hiddenCount = cultivations.length - visibleCultivations.length
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Facility comparison</h1>
-        <p>
-          Harvest against budget for each cultivation, grouped by facility. {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold">Facility comparison</h1>
+          <p>
+            Harvest against budget for each cultivation, grouped by facility. {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}.
+          </p>
+        </div>
+        <ExportViewButton filePart={viewFilePart('facilities', weekInfo)} build={buildExport} />
       </div>
 
       <FacilitySummaryTable rows={summary} weekLabel={shortWeek(week)} />

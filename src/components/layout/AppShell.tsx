@@ -3,18 +3,20 @@ import { Link, useLocation } from 'react-router-dom'
 import { AccountControl } from '../account/AccountControl'
 import { WorkspaceNotices } from '../account/WorkspaceNotices'
 import { useCropData } from '../../state/CropDataContext'
-import { BarsIcon, GridIcon, MoreIcon, ShieldIcon } from '../ui/icons'
+import { BarsIcon, DatabaseIcon, GridIcon, MoreIcon } from '../ui/icons'
 import { RawDataToggle } from './RawDataToggle'
 import { WeekPicker } from './WeekPicker'
 
 /** The screens reached from More, so its tab stays lit while one of them is open. */
-const MORE_PATHS = ['/more', '/setup', '/fruit-types', '/edits', '/about']
+const MORE_PATHS = ['/more', '/setup', '/fruit-types', '/about']
+/** Data checks, entering, importing and exporting, and the Edit log are all reached from the Data tab. */
+const DATA_PATHS = ['/data', '/checks', '/edits']
 
 const NAV = [
   { to: '/', label: 'Scorecard', icon: GridIcon, match: (p: string) => p === '/' || p.startsWith('/cultivation') },
   { to: '/facilities', label: 'Facilities', icon: BarsIcon, match: (p: string) => p.startsWith('/facilities') },
-  { to: '/checks', label: 'Data checks', icon: ShieldIcon, match: (p: string) => p.startsWith('/checks') },
-  // More holds the screens that are not used every day: Setup, Fruit types, the Edit log and About. Financials and Data join it or the bar later.
+  { to: '/data', label: 'Data', icon: DatabaseIcon, match: (p: string) => DATA_PATHS.some((d) => p.startsWith(d)) },
+  // More holds the screens that are not used every day: Setup, Fruit types and About. Financials joins the bar or it later.
   { to: '/more', label: 'More', icon: MoreIcon, match: (p: string) => MORE_PATHS.some((m) => p.startsWith(m)) },
 ]
 
@@ -22,7 +24,7 @@ function useNavItems() {
   const { pathname } = useLocation()
   const { openReviewGroups } = useCropData()
   const open = openReviewGroups().length
-  return NAV.map((item) => ({ ...item, active: item.match(pathname), badge: item.to === '/checks' && open > 0 ? open : null }))
+  return NAV.map((item) => ({ ...item, active: item.match(pathname), badge: item.to === '/data' && open > 0 ? open : null }))
 }
 
 export function AppShell({ children }: { children: ReactNode }) {

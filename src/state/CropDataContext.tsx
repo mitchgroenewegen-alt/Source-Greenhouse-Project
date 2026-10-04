@@ -6,11 +6,12 @@ import { scoreCultivationWeek, type CultivationScore } from '../scoring/summary'
 import { readPreference, writePreference, type Decision } from '../storage'
 import { dataStateOf, dataStates, latestWeekWithActuals, type DataState } from '../setup/dataState'
 import { editedWeeks, recordedValues, type EditedWeek } from '../editing/original'
-import { correctedCells, type LogEntry } from '../editing/log'
+import { correctedCells, entryRowKeys, type EntryLogEntry, type LogEntry } from '../editing/log'
 import { correctionEdit, correctionEditId } from '../workspace/corrections'
+import { isoWeekOf } from '../data/dates'
 import { merge } from '../workspace/merge'
 import { useWorkspace } from '../workspace/WorkspaceContext'
-import type { WorkspaceStatus } from '../workspace/types'
+import type { ValueSource, WorkspaceStatus } from '../workspace/types'
 import { groupStatus, needsReview, type GroupStatus } from './groupStatus'
 
 export interface CropData {
@@ -18,6 +19,8 @@ export interface CropData {
   weeks: WeekInfo[]
   /** Every cultivation, archived ones included (history stays). */
   cultivations: Cultivation[]
+  /** The workbook as it was read, with nothing laid over it. */
+  workbook: DataFile
   /** The cultivations as the workbook has them, before anything from the workspace is laid over them. */
   workbookCultivations: Cultivation[]
   /** The workbook's own period and counts, which setup changes do not move. */
@@ -52,6 +55,10 @@ export interface CropData {
   canWrite: boolean
   /** The weeks in which an edit changed this KPI's budget or target, with the value it had before (none while "Show raw data" is on). */
   editedWeek: (cultivation: string, kpi: string, week: string) => EditedWeek | undefined
+  /** Where the value of this week came from when someone typed or imported a day of it: "entered" wins over "imported". */
+  enteredWeek: (cultivation: string, kpi: string, week: string) => Extract<ValueSource, 'entered' | 'imported'> | undefined
+  /** Take typed or imported days away; the workbook's own values (or nothing) are back. */
+  undoEntries: (entry: EntryLogEntry) => void
   /** Take an entry of the edit log away. A correction goes through its decision, so the two stay consistent. */
   undoEdits: (entry: LogEntry) => void
   point: (cultivation: string, kpi: string, week: string) => WeeklyPoint | undefined
@@ -168,6 +175,16 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
     [recorded, checked, flags, decisions],
   )
 
+  const enteredWeeks = useMemo(() => {
+    const weeks = new Map<string, 'entered' | 'imported'>()
+    for (const row of workspace.data.enteredRows) {
+      if (row.source !== 'entered' && row.source !== 'imported') continue
+      const key = weeklyKey(row.cultivation, row.kpi, isoWeekOf(row.date))
+      if (weeks.get(key) !== 'entered') weeks.set(key, row.source)
+    }
+    return weeks
+  }, [workspace.data.enteredRows])
+
   const value = useMemo<CropData>(() => {
     const cultivationMap = new Map(data.cultivations.map((c) => [c.id, c]))
     const scoreCache = new Map<string, CultivationScore>()
@@ -180,6 +197,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
       data,
       weeks: data.weeks,
       cultivations: data.cultivations,
+      workbook: base,
       workbookCultivations: base.cultivations,
       workbookMeta: base.meta,
       visibleCultivations: showArchived ? data.cultivations : data.cultivations.filter((c) => !c.archived),
@@ -206,6 +224,8 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
       workspaceStatus: status,
       canWrite,
       editedWeek: (cultivation, kpi, week) => edited.get(weeklyKey(cultivation, kpi, week)),
+      enteredWeek: (cultivation, kpi, week) => enteredWeeks.get(weeklyKey(cultivation, kpi, week)),
+      undoEntries: (entry) => void remove('enteredRows', entryRowKeys(entry)),
       undoEdits: (entry) => {
         const cells = correctedCells(entry)
         // The same way Data checks reopens a decision, which takes the correction's edit with it.
@@ -245,7 +265,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
         if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
       },
     }
-  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly, edited])
+  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly, edited, enteredWeeks])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

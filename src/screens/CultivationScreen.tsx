@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CategoryTabs } from '../components/detail/CategoryTabs'
 import { DetailHeader } from '../components/detail/DetailHeader'
+import { BudgetEditor } from '../components/editing/BudgetEditor'
 import { KpiCard } from '../components/detail/KpiCard'
 import { WeeklyTable } from '../components/detail/WeeklyTable'
 import { NoDataTile } from '../components/scorecard/NoDataTile'
-import { CATEGORY_LABEL, kpisInCategory } from '../config/kpis'
+import { CATEGORY_LABEL, kpisInCategory, type KpiConfig } from '../config/kpis'
 import { formatRange, shortWeek } from '../data/dates'
 import type { Category } from '../data/types'
 import type { FruitType } from '../workspace/types'
@@ -19,10 +20,11 @@ const fruitWeightState = (average: number | null | undefined, type: FruitType) =
 
 export default function CultivationScreen() {
   const { id = '' } = useParams()
-  const { cultivationById, weeks, point, scoreOf, dataStateOf } = useCropData()
+  const { cultivationById, weeks, point, scoreOf, dataStateOf, editedWeek, data: merged, decidedBy } = useCropData()
   const workspace = useWorkspace()
   const { week, weekInfo } = useView()
   const [category, setCategory] = useState<Category>('Production')
+  const [editing, setEditing] = useState<KpiConfig | null>(null)
   const cultivation = cultivationById(id)
 
   const state = cultivation ? dataStateOf(cultivation.id) : 'ready'
@@ -32,6 +34,12 @@ export default function CultivationScreen() {
     () => (cultivation ? new Map(kpis.map((k) => [k.name, weeks.map((w) => point(cultivation.id, k.name, w.id))])) : new Map()),
     [cultivation, kpis, weeks, point],
   )
+
+  const editedByKpi = useMemo(
+    () => (cultivation ? new Map(kpis.map((k) => [k.name, weeks.map((w) => editedWeek(cultivation.id, k.name, w.id))])) : new Map()),
+    [cultivation, kpis, weeks, editedWeek],
+  )
+  const editCount = cultivation ? workspace.data.valueEdits.filter((e) => e.cultivation === cultivation.id).length : 0
 
   const fruitType = useMemo(
     () => (cultivation ? effectiveFruitTypes(workspace.data.fruitTypes).types.find((t) => t.id === fruitTypeIdOf(cultivation)) : undefined),
@@ -58,6 +66,15 @@ export default function CultivationScreen() {
         The status badges and the highlighted column are for {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}. Change the week at the top.
       </p>
 
+      {editCount > 0 && (
+        <p className="text-sm">
+          This cultivation has edited values.{' '}
+          <Link to={`/edits?cultivation=${encodeURIComponent(cultivation.id)}`} className="font-semibold text-brand hover:underline">
+            See the edit log
+          </Link>
+        </p>
+      )}
+
       <CategoryTabs value={category} onChange={setCategory} categories={score.categories} />
 
       <div id="category-panel" role="tabpanel" aria-label={CATEGORY_LABEL[category]} className="flex flex-col gap-4">
@@ -69,13 +86,28 @@ export default function CultivationScreen() {
               weeks={weeks}
               points={pointsByKpi.get(config.name)!}
               selectedWeek={week}
+              edited={editedByKpi.get(config.name)!}
+              onEdit={() => setEditing(config)}
               result={score.kpis.find((k) => k.config.name === config.name)!}
               spec={config.name === 'Fruit weight' && fruitType ? { type: fruitType, state: fruitWeightState(point(cultivation.id, config.name, week)?.actual, fruitType) } : undefined}
             />
           ))}
         </div>
-        <WeeklyTable kpis={kpis} weeks={weeks} selectedWeek={week} pointsOf={(name) => pointsByKpi.get(name)!} />
+        <WeeklyTable kpis={kpis} weeks={weeks} selectedWeek={week} pointsOf={(name) => pointsByKpi.get(name)!} editedOf={(name) => editedByKpi.get(name)!} />
       </div>
+      {editing && (
+        <BudgetEditor
+          key={editing.name}
+          config={editing}
+          cultivation={cultivation}
+          daily={merged.daily}
+          weeks={weeks}
+          selectedWeek={week}
+          createdBy={workspace.user ?? decidedBy}
+          onSave={(edits) => workspace.save('valueEdits', edits)}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   )
 }

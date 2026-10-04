@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { signInWithEmail, signOut } from './auth'
 import { createWorkspaceStore } from './createStore'
-import { supabaseConfigured } from './supabaseClient'
+import { getSupabase, supabaseSettingsProblem } from './supabaseClient'
 import { isWritable, type EntityName, type WorkspaceData, type WorkspaceSnapshot, type WorkspaceStatus } from './types'
 
 export interface Workspace {
@@ -12,6 +12,8 @@ export interface Workspace {
   user: string | null
   /** True when a shared database is set up for this copy of the app. */
   sharedDatabase: boolean
+  /** Why the shared database settings could not be used; the app then works in this browser only. */
+  settingsProblem: string | null
   canWrite: boolean
   persistent: boolean
   /** Set when a change could not be saved; the change has been undone on screen. */
@@ -55,7 +57,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       ready: snapshot.ready,
       status: snapshot.status,
       user: snapshot.user,
-      sharedDatabase: supabaseConfigured,
+      sharedDatabase: getSupabase() !== null,
+      settingsProblem: supabaseSettingsProblem(),
       canWrite: isWritable(snapshot.status),
       persistent: store.persistent,
       saveError,

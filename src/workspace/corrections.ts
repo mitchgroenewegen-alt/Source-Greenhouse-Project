@@ -21,3 +21,6 @@ export function correctionEdit(decision: Decision): ValueEdit {
     source: 'corrected',
   }
 }
+
+/** The cell a correction's value edit belongs to; the reverse of correctionEditId. */
+export const cellIdOfCorrection = (editId: string) => editId.slice('corrected|'.length)

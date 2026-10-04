@@ -7,6 +7,7 @@ import type { KpiResult } from '../../scoring/summary'
 import type { WeeklyPoint } from '../../scoring/effective'
 import type { SpecState } from '../../setup/fruitTypes'
 import { diameterRangeText, weightRangeText } from '../../setup/fruitTypes'
+import type { EditedWeek } from '../../editing/original'
 import type { FruitType } from '../../workspace/types'
 import { StatusBadge } from '../ui/StatusBadge'
 import { SpecBadge } from './SpecBadge'
@@ -21,6 +22,8 @@ export function KpiCard({
   selectedWeek,
   result,
   spec,
+  edited,
+  onEdit,
 }: {
   config: KpiConfig
   weeks: WeekInfo[]
@@ -29,8 +32,11 @@ export function KpiCard({
   result: KpiResult
   /** Fruit weight only: the cultivation's fruit type and where the selected week's average sits in its range (null: no average that week). */
   spec?: { type: FruitType; state: SpecState | null }
+  /** One entry per week (in the order of `weeks`) whose budget or target was edited. */
+  edited: (EditedWeek | undefined)[]
+  onEdit: () => void
 }) {
-  const model = useMemo(() => buildChartModel(config, weeks, points), [config, weeks, points])
+  const model = useMemo(() => buildChartModel(config, weeks, points, edited), [config, weeks, points, edited])
   const tolerance = toleranceText(config)
   const { point, score } = result
   const hasFlags = model.rows.some((r) => r.openFlags + r.decidedFlags > 0)
@@ -79,7 +85,10 @@ export function KpiCard({
         <p className="rounded-xl border border-line-soft bg-tile p-4 text-center text-sm text-ink-2">Nothing was recorded for this KPI in this cultivation.</p>
       )}
 
-      <ChartLegend hasTarget={model.hasTarget} hasFlags={hasFlags} planLabel={planWord(config, { capitalised: true })} />
+      <ChartLegend hasTarget={model.hasTarget} hasFlags={hasFlags} hasEdits={model.hasEdits} planLabel={planWord(config, { capitalised: true })} />
+      <button type="button" onClick={onEdit} className="inline-flex min-h-11 items-center justify-center self-start rounded-lg border border-line-strong bg-field px-4 text-sm font-semibold text-ink">
+        Edit {plan}
+      </button>
       <p className="text-xs text-ink-3">
         {model.hasTarget
           ? `On track: ${tolerance.green}. Watch: ${tolerance.amber}.`

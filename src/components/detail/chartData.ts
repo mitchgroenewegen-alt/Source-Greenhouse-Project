@@ -4,6 +4,7 @@ import type { KpiConfig } from '../../config/kpis'
 import { shortWeek } from '../../data/dates'
 import type { WeekInfo } from '../../data/types'
 import type { FlagMark, WeeklyPoint } from '../../scoring/effective'
+import type { EditedWeek } from '../../editing/original'
 
 export type Band = [low: number, high: number]
 
@@ -12,6 +13,10 @@ export interface ChartRow {
   label: string
   actual: number | null
   target: number | null
+  /** The budget or target as it was before an edit, in every week once any week was edited (the same as `target` where none was); null otherwise. */
+  originalTarget: number | null
+  /** True when an edit changed this week's budget or target. */
+  edited: boolean
   /** Green zone. Around the budget for close-to-target KPIs; between the green limit and the budget for one-sided KPIs. */
   green: Band | null
   /**
@@ -36,6 +41,8 @@ export interface ChartModel {
   ticks: number[]
   hasActual: boolean
   hasTarget: boolean
+  /** True when any week's budget or target was edited, so the chart draws the original one too. */
+  hasEdits: boolean
 }
 
 /**
@@ -74,7 +81,8 @@ export function niceScale(lo: number, hi: number, wanted = 4): number[] {
   return ticks.length >= 2 ? ticks : [first, first + step]
 }
 
-export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (WeeklyPoint | undefined)[]): ChartModel {
+/** `edited` has an entry, in the order of `weeks`, for each week whose budget or target was edited. */
+export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (WeeklyPoint | undefined)[], edited: (EditedWeek | undefined)[] = []): ChartModel {
   const raw = weeks.map((w, i) => {
     const p = points[i]
     const bands = p?.target != null ? toleranceBands(config, p.target) : null
@@ -87,6 +95,8 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
     if (p?.target != null) finite.push(p.target)
     if (bands) for (const v of [...bands.green, ...bands.amber, ...(bands.amberAbove ?? [])]) finite.push(v)
   }
+  for (const e of edited) if (e?.original != null) finite.push(e.original)
+  const hasEdits = edited.some((e) => e !== undefined)
   const lo = finite.length ? Math.min(...finite) : 0
   const hi = finite.length ? Math.max(...finite) : 1
   const pad = (hi - lo) * 0.08 || Math.abs(hi) * 0.1 || 1
@@ -94,13 +104,16 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
   const domainLo = ticks[0]!
   const domainHi = ticks[ticks.length - 1]!
 
-  const rows = raw.map(({ w, p, bands }): ChartRow => {
+  const rows = raw.map(({ w, p, bands }, i): ChartRow => {
+    const was = edited[i]
     const flagged = (p?.openFlags ?? 0) + (p?.decidedFlags ?? 0) > 0
     return {
       week: w.id,
       label: shortWeek(w.id),
       actual: p?.actual ?? null,
       target: p?.target ?? null,
+      originalTarget: hasEdits ? (was ? was.original : (p?.target ?? null)) : null,
+      edited: was !== undefined,
       green: bands ? bands.green : null,
       amber: bands ? bands.amber : null,
       amberAbove: bands?.amberAbove ?? null,
@@ -117,5 +130,6 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
     ticks,
     hasActual: rows.some((r) => r.actual !== null),
     hasTarget: rows.some((r) => r.target !== null),
+    hasEdits,
   }
 }

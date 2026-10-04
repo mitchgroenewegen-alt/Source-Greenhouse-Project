@@ -133,7 +133,7 @@ export default function AboutScreen() {
           <li><strong>Missing values:</strong> an empty cell. It is already left out of the scores and never counted as zero; you can still Confirm values (nothing was recorded) or Apply correction (enter the missing value).</li>
         </ul>
         <p>
-          Ordinary zeros are not flagged (weekend harvest, no heating on a warm day, a young crop in its first {T.youngCropWeeks} weeks). KPIs that follow the weather, such as solar radiation, skip the jump check. One cell gets at most one flag, from the most specific rule. A flagged value is left out of the scores until a person chooses <strong>Confirm values</strong> (kept exactly as recorded and counted), <strong>Apply correction</strong> (the suggested or a typed value is used instead) or <strong>Exclude</strong> (left out of the scores). The decision, who made it and when are kept in the decision log (in the shared database when one is set up, otherwise in this browser), and can be exported and imported as CSV. “Show raw data” scores everything as recorded.
+          Ordinary zeros are not flagged (weekend harvest, no heating on a warm day, a young crop in its first {T.youngCropWeeks} weeks). KPIs that follow the weather, such as solar radiation, skip the jump check. One cell gets at most one flag, from the most specific rule. A flagged value is left out of the scores until a person chooses <strong>Confirm values</strong> (kept exactly as recorded and counted), <strong>Apply correction</strong> (the suggested or a typed value is used instead) or <strong>Exclude</strong> (left out of the scores). The decision, who made it and when are kept in the decision log (in the shared database when one is set up, otherwise in this browser), and can be exported and imported as CSV. “Show raw data” scores everything as recorded: edited budgets and targets are not applied either.
         </p>
       </Section>
 
@@ -155,7 +155,7 @@ export default function AboutScreen() {
           <li>Forecasting and what-if scenarios.</li>
           <li>Alerts and notifications.</li>
           <li>Passwords and different roles. When a shared database is set up, invited people sign in with an email link and all see the same decisions; without one, decisions live in one browser and export and import move them.</li>
-          <li>Changing the workbook file. Edits made in the app, such as a corrected value or budgets copied to a new cultivation, are kept apart and laid over it.</li>
+          <li>Changing the workbook file. Edits made in the app, such as an edited budget or target, a corrected value or budgets copied to a new cultivation, are kept apart and laid over it, and each can be undone in the Edit log.</li>
           <li>Grower-level climate detail (hour by hour, per zone).</li>
           <li>Financials (revenue, cost, margin).</li>
           <li>A live data connection: the app reads one prepared file, refreshed at build time.</li>

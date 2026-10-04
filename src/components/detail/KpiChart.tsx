@@ -11,6 +11,7 @@ import type { ChartModel, ChartRow } from './chartData'
 
 const ACTUAL = 'var(--color-actual)'
 const TARGET = 'var(--color-target)'
+const ORIGINAL = 'var(--color-ink-3)'
 const FLAG = 'var(--color-flag)'
 
 /** A point on a line; a violet ring goes round it when the week holds a flagged value of that column. */
@@ -75,6 +76,12 @@ function ChartTooltip({
         <span className="text-right font-semibold">{formatValue(config, row.actual)}</span>
         <span className="text-ink-2">{planWord(config, { capitalised: true })}</span>
         <span className="text-right font-semibold">{formatValue(config, row.target)}</span>
+        {row.edited && (
+          <>
+            <span className="text-ink-2">Original {planWord(config)}</span>
+            <span className="text-right font-semibold">{formatValue(config, row.originalTarget)}</span>
+          </>
+        )}
         {score.variance !== null && (
           <>
             <span className="text-ink-2">Difference</span>
@@ -132,6 +139,7 @@ export function KpiChart({
           <Area dataKey="amber" type="monotone" stroke="none" fill={BANDS.watch.fill} fillOpacity={BANDS.watch.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
           <Area dataKey="amberAbove" type="monotone" stroke="none" fill={BANDS.watch.fill} fillOpacity={BANDS.watch.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
           <Area dataKey="green" type="monotone" stroke="none" fill={BANDS.onTrack.fill} fillOpacity={BANDS.onTrack.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
+          {model.hasEdits && <Line dataKey="originalTarget" type="monotone" stroke={ORIGINAL} strokeWidth={1.5} strokeDasharray="2 3" dot={false} activeDot={false} isAnimationActive={false} />}
           <Line dataKey="target" type="monotone" stroke={TARGET} strokeWidth={2} strokeDasharray="5 4" dot={markedDot(TARGET, (r) => r.targetMark)} activeDot={{ r: 4 }} isAnimationActive={false} />
           <Line dataKey="actual" type="monotone" stroke={ACTUAL} strokeWidth={2} dot={markedDot(ACTUAL, (r) => r.actualMark)} activeDot={{ r: 5 }} isAnimationActive={false} />
           <Line dataKey="flagY" stroke="none" dot={FlagMarker} activeDot={false} isAnimationActive={false} legendType="none" />
@@ -152,8 +160,8 @@ function BandSwatch({ band }: { band: Band }) {
 }
 
 /** What the lines and shading mean. Plain HTML so it reads the same everywhere. */
-/** `planLabel` is the KPI's plan word, capitalised: "Budget" or "Target". */
-export function ChartLegend({ hasTarget, hasFlags, planLabel }: { hasTarget: boolean; hasFlags: boolean; planLabel: string }) {
+/** `planLabel` is the KPI's plan word, capitalised: "Budget" or "Target". With `hasEdits` the legend adds "Original budget" or "Original target". */
+export function ChartLegend({ hasTarget, hasFlags, hasEdits = false, planLabel }: { hasTarget: boolean; hasFlags: boolean; hasEdits?: boolean; planLabel: string }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Chart key">
       <li className="flex items-center gap-1.5">
@@ -170,6 +178,14 @@ export function ChartLegend({ hasTarget, hasFlags, planLabel }: { hasTarget: boo
             </svg>
             {planLabel}
           </li>
+          {hasEdits && (
+            <li className="flex items-center gap-1.5">
+              <svg width="22" height="8" aria-hidden="true">
+                <line x1="0" y1="4" x2="22" y2="4" stroke={ORIGINAL} strokeWidth="2" strokeDasharray="2 3" />
+              </svg>
+              Original {planLabel.toLowerCase()}
+            </li>
+          )}
           <li className="flex items-center gap-1.5">
             <BandSwatch band={BANDS.onTrack} />
             On track

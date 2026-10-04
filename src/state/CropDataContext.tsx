@@ -5,6 +5,8 @@ import { applyDecisions, buildWeekly, weeklyKey, type WeeklyLookup, type WeeklyP
 import { scoreCultivationWeek, type CultivationScore } from '../scoring/summary'
 import { readPreference, writePreference, type Decision } from '../storage'
 import { dataStateOf, dataStates, latestWeekWithActuals, type DataState } from '../setup/dataState'
+import { editedWeeks, recordedValues, type EditedWeek } from '../editing/original'
+import { correctedCells, type LogEntry } from '../editing/log'
 import { correctionEdit, correctionEditId } from '../workspace/corrections'
 import { merge } from '../workspace/merge'
 import { useWorkspace } from '../workspace/WorkspaceContext'
@@ -48,6 +50,10 @@ export interface CropData {
   workspaceStatus: WorkspaceStatus
   /** False when signed out or when the shared database cannot be reached: decisions cannot be saved. */
   canWrite: boolean
+  /** The weeks in which an edit changed this KPI's budget or target, with the value it had before (none while "Show raw data" is on). */
+  editedWeek: (cultivation: string, kpi: string, week: string) => EditedWeek | undefined
+  /** Take an entry of the edit log away. A correction goes through its decision, so the two stay consistent. */
+  undoEdits: (entry: LogEntry) => void
   point: (cultivation: string, kpi: string, week: string) => WeeklyPoint | undefined
   scoreOf: (cultivation: string, week: string) => CultivationScore
   saveDecisions: (decisions: Decision[]) => void
@@ -148,16 +154,28 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
   )
   const decidedBy = user ?? typedName
 
+  // "Show raw data" scores the workbook as recorded: no value edits, and the data checks look at those values.
+  const recorded = useMemo(() => {
+    if (!rawMode) return null
+    const raw = recordedValues(base, workspace.data)
+    return { daily: raw.daily, flags: detectFlags(raw.daily, raw.cultivations) }
+  }, [rawMode, base, workspace.data])
+  const edited = useMemo(() => (rawMode ? new Map<string, EditedWeek>() : editedWeeks(base, workspace.data, data)), [rawMode, base, workspace.data, data])
+
   // What actually goes into the scores: flagged values left out until decided, or the raw values.
   const weekly: WeeklyLookup = useMemo(
-    () => buildWeekly(applyDecisions(checked.daily, flags, decisions, rawMode)),
-    [checked, flags, decisions, rawMode],
+    () => buildWeekly(recorded ? applyDecisions(recorded.daily, recorded.flags, decisions, true) : applyDecisions(checked.daily, flags, decisions, false)),
+    [recorded, checked, flags, decisions],
   )
 
   const value = useMemo<CropData>(() => {
     const cultivationMap = new Map(data.cultivations.map((c) => [c.id, c]))
     const scoreCache = new Map<string, CultivationScore>()
     const seen = dataStates(data.daily)
+    const reopen = (ids: string[]) => {
+      void remove('decisions', ids)
+      void remove('valueEdits', ids.map(correctionEditId))
+    }
     return {
       data,
       weeks: data.weeks,
@@ -187,6 +205,13 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
       signedInAs: user,
       workspaceStatus: status,
       canWrite,
+      editedWeek: (cultivation, kpi, week) => edited.get(weeklyKey(cultivation, kpi, week)),
+      undoEdits: (entry) => {
+        const cells = correctedCells(entry)
+        // The same way Data checks reopens a decision, which takes the correction's edit with it.
+        if (cells.length > 0) reopen(cells)
+        else void remove('valueEdits', entry.edits.map((e) => e.id))
+      },
       point: (cultivation, kpi, week) => weekly.get(weeklyKey(cultivation, kpi, week)),
       scoreOf: (cultivation, week) => {
         const key = `${cultivation}|${week}`
@@ -205,10 +230,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
         const others = next.filter((d) => d.kind !== 'correct')
         if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
       },
-      removeDecisions: (ids) => {
-        void remove('decisions', ids)
-        void remove('valueEdits', ids.map(correctionEditId))
-      },
+      removeDecisions: reopen,
       replaceDecisions: (next) => {
         const keep = new Set(next.map((d) => d.cellId))
         const gone = decisions.filter((d) => !keep.has(d.cellId)).map((d) => d.cellId)
@@ -223,7 +245,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
         if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
       },
     }
-  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly])
+  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, weekly, edited])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

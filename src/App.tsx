@@ -9,6 +9,10 @@ import { WorkspaceProvider } from './workspace/WorkspaceContext'
 // The screens with charts load on demand, so the first screen (the Scorecard) opens quickly on a phone.
 const CultivationScreen = lazy(() => import('./screens/CultivationScreen'))
 const FacilitiesScreen = lazy(() => import('./screens/FacilitiesScreen'))
+const DataScreen = lazy(() => import('./screens/DataScreen'))
+const EnterDataScreen = lazy(() => import('./screens/EnterDataScreen'))
+const ImportScreen = lazy(() => import('./screens/ImportScreen'))
+const ExportScreen = lazy(() => import('./screens/ExportScreen'))
 const DataChecksScreen = lazy(() => import('./screens/DataChecksScreen'))
 const MoreScreen = lazy(() => import('./screens/MoreScreen'))
 const SetupScreen = lazy(() => import('./screens/SetupScreen'))
@@ -28,6 +32,10 @@ export default function App() {
               <Route path="/" element={<ScorecardScreen />} />
               <Route path="/cultivation/:id" element={<CultivationScreen />} />
               <Route path="/facilities" element={<FacilitiesScreen />} />
+              <Route path="/data" element={<DataScreen />} />
+              <Route path="/data/enter" element={<EnterDataScreen />} />
+              <Route path="/data/import" element={<ImportScreen />} />
+              <Route path="/data/export" element={<ExportScreen />} />
               <Route path="/checks" element={<DataChecksScreen />} />
               <Route path="/more" element={<MoreScreen />} />
               <Route path="/setup" element={<SetupScreen />} />

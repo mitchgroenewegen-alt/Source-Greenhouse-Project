@@ -20,7 +20,7 @@ const fruitWeightState = (average: number | null | undefined, type: FruitType) =
 
 export default function CultivationScreen() {
   const { id = '' } = useParams()
-  const { cultivationById, weeks, point, scoreOf, dataStateOf, editedWeek, data: merged, decidedBy } = useCropData()
+  const { cultivationById, weeks, point, scoreOf, dataStateOf, editedWeek, enteredWeek, data: merged, decidedBy } = useCropData()
   const workspace = useWorkspace()
   const { week, weekInfo } = useView()
   const [category, setCategory] = useState<Category>('Production')
@@ -39,7 +39,11 @@ export default function CultivationScreen() {
     () => (cultivation ? new Map(kpis.map((k) => [k.name, weeks.map((w) => editedWeek(cultivation.id, k.name, w.id))])) : new Map()),
     [cultivation, kpis, weeks, editedWeek],
   )
-  const editCount = cultivation ? workspace.data.valueEdits.filter((e) => e.cultivation === cultivation.id).length : 0
+  const enteredByKpi = useMemo(
+    () => (cultivation ? new Map(kpis.map((k) => [k.name, weeks.map((w) => enteredWeek(cultivation.id, k.name, w.id))])) : new Map()),
+    [cultivation, kpis, weeks, enteredWeek],
+  )
+  const editCount = cultivation ? workspace.data.valueEdits.filter((e) => e.cultivation === cultivation.id).length + workspace.data.enteredRows.filter((e) => e.cultivation === cultivation.id).length : 0
 
   const fruitType = useMemo(
     () => (cultivation ? effectiveFruitTypes(workspace.data.fruitTypes).types.find((t) => t.id === fruitTypeIdOf(cultivation)) : undefined),
@@ -68,7 +72,7 @@ export default function CultivationScreen() {
 
       {editCount > 0 && (
         <p className="text-sm">
-          This cultivation has edited values.{' '}
+          This cultivation has edited or entered values.{' '}
           <Link to={`/edits?cultivation=${encodeURIComponent(cultivation.id)}`} className="font-semibold text-brand hover:underline">
             See the edit log
           </Link>
@@ -93,7 +97,7 @@ export default function CultivationScreen() {
             />
           ))}
         </div>
-        <WeeklyTable kpis={kpis} weeks={weeks} selectedWeek={week} pointsOf={(name) => pointsByKpi.get(name)!} editedOf={(name) => editedByKpi.get(name)!} />
+        <WeeklyTable kpis={kpis} weeks={weeks} selectedWeek={week} pointsOf={(name) => pointsByKpi.get(name)!} editedOf={(name) => editedByKpi.get(name)!} enteredOf={(name) => enteredByKpi.get(name)!} />
       </div>
       {editing && (
         <BudgetEditor

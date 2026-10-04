@@ -4,7 +4,7 @@ import { DecisionForm } from '../components/checks/DecisionForm'
 import { DecisionLog } from '../components/checks/DecisionLog'
 import { FlagGroupCard } from '../components/checks/FlagGroupCard'
 import { MissingValueList } from '../components/checks/MissingValueList'
-import { ChevronIcon, FilterIcon } from '../components/ui/icons'
+import { ChevronIcon, ChevronLeftIcon, FilterIcon } from '../components/ui/icons'
 import { Segmented } from '../components/ui/Segmented'
 import { RULE_ORDER, RULE_TITLE, type FlagGroup, type RuleId } from '../flags'
 import { buildDecisions, DECISION_LABEL, decisionWords, type Decision, type DecisionKind } from '../storage'
@@ -128,6 +128,9 @@ export default function DataChecksScreen() {
   return (
     <div className="flex flex-col gap-4">
       <div>
+        <Link to="/data" className="mb-1 inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-ink hover:underline">
+          <ChevronLeftIcon width={16} height={16} /> Data
+        </Link>
         <h1 className="text-2xl font-semibold">Data checks</h1>
         <p>
           Inputs that look wrong, grouped so a run of the same problem is one item. Until someone decides, a flagged value is left out of the scores.

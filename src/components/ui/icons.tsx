@@ -80,3 +80,9 @@ export const MoreIcon = (p: IconProps) => (
     <path d="M5 12h.1M12 12h.1M19 12h.1" strokeWidth={3.4} />
   </svg>
 )
+export const DatabaseIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <ellipse cx="12" cy="6" rx="7" ry="2.8" />
+    <path d="M5 6v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-6" />
+  </svg>
+)

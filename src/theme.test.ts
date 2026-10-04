@@ -193,6 +193,9 @@ describe('text contrast (4.5:1)', () => {
     expect(weekly).toMatch(/amber: 'bg-warn-bg\/70'/)
     expect(weekly).toMatch(/red: 'bg-bad-bg\/70'/)
   })
+  it('the second crop of the Climate overlay keeps 3:1 on the card and the tile', () => {
+    for (const s of ['card', 'tile']) over('other', s, 3)
+  })
   it('the data-check rule chip: flag-ink on the lavender flag-bg, a chip that stands apart from the card', () => {
     over('flag-ink', 'flag-bg', 4.5)
     expect(contrast(token('flag-bg'), token('card'))).toBeGreaterThan(1.15)

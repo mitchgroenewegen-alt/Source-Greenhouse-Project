@@ -8,10 +8,11 @@ import type { Decision } from '../storage/types'
 import { loadTestData } from '../test/loadData'
 import type { ClimateReading } from '../workspace/types'
 import { addDays } from '../data/dates'
+import { dailyChartModel } from './chartModel'
 import { daySeries, hourOf, readingDays } from './day24'
 import { dayLabel, dayTable, daysBetween, kpiSeries, periodOf } from './days'
 import { CLIMATE_TABLE, MAX_CLIMATE_ROWS, parseClimateTable, previewClimateImport, readTimestamp, toClimateReadings } from './import'
-import { CLIMATE_KPIS, RADIATION, RTR, T_24H, T_DAY, T_DIFF, T_NIGHT } from './kpis'
+import { CLIMATE_KPIS, config, RADIATION, RTR, T_24H, T_DAY, T_DIFF, T_NIGHT } from './kpis'
 import { differs, overlaySeries, overlayShare, overlayShareAll, sharedGreenhouse } from './peers'
 import { differenceSeries, lightHoursSeries, lightTemperatureSeries, rtrTemperature } from './series'
 import { countKinds, dayVerdict } from './status'
@@ -358,5 +359,27 @@ describe('the 24-hour series', () => {
     expect(daySeries(readings, TOV, '2025-08-22')).toEqual([])
     expect(hourOf('2025-08-20T14:30')).toBe(14.5)
     expect(addDays('2025-08-20', 1)).toBe('2025-08-21')
+  })
+})
+
+describe('the daily chart model', () => {
+  it('has the tolerance bands around each day\'s target, a flag marker on flagged days, and leaves the 69 out of the axis', () => {
+    const table = dayTable(effective(), TOV)
+    const dates = [flaggedDays[0]!, addDays(flaggedDays[0]!, -1)]
+    const model = dailyChartModel(config(T_24H), kpiSeries(table, T_24H, dates, true))
+    expect(model.hasFlags).toBe(true)
+    expect(model.rows[0]!.flagY).toBe(model.domain[1])
+    expect(model.rows[0]!.target).toBeNull() // the 69 is left out until somebody decides
+    expect(model.rows[0]!.green).toBeNull()
+    expect(model.domain[1]).toBeLessThan(40)
+    const normal = model.rows[1]!
+    expect(normal.flagY).toBeNull()
+    const [low, high] = normal.green!
+    expect(high - low).toBeCloseTo(3, 5) // within 1.5 degrees either side
+    expect(normal.amber![1]).toBeCloseTo(low, 5)
+  })
+  it('is empty without data', () => {
+    const model = dailyChartModel(config(T_24H), kpiSeries(new Map(), T_24H, ['2025-08-18'], true))
+    expect(model).toMatchObject({ hasActual: false, hasTarget: false, hasFlags: false })
   })
 })

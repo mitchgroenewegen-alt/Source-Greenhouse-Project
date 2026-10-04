@@ -60,6 +60,8 @@
   --color-focus: #195299;
   --color-target: #3c4b42;
   --color-budget: #627067; /* the budget bars on the Facilities charts: neutral grey-green */
+  /* The second crop on a chart that overlays two (Climate > same greenhouse). Not a status colour; 3:1 on the card and the tile, and drawn with diamond marks so it does not rely on colour. */
+  --color-other: #9a4a05;
   --color-flag: #6945c4;
   --color-flag-ink: #4b2fa0;
   --color-flag-bg: #ddd5f2; /* the lavender chip that names a data-check rule */

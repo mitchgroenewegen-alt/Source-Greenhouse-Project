@@ -15,6 +15,11 @@ export interface Cultivation {
   areaM2: number
   /** Crop week on the last day of the period, as given in the Greenhouses sheet. */
   cropWeekAtEnd: number
+  /** Only on cultivations that come from the workspace (set up or edited in the app). */
+  fruitType?: string | null
+  plannedEndDate?: string | null
+  /** Kept in the data so history stays, but no longer a live cultivation. */
+  archived?: boolean
 }
 
 /** One line of the KPI dictionary. */

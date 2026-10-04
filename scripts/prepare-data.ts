@@ -5,9 +5,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import * as XLSX from 'xlsx'
-import { rollup } from '../src/data/aggregate.ts'
+import { buildWeeklyRows, buildWeeks } from '../src/data/aggregate.ts'
 import { KPI_CONFIG } from '../src/config/kpis.ts'
-import { cropWeekOn, excelSerialToIso, addDays, isoWeekOf } from '../src/data/dates.ts'
+import { cropWeekOn, excelSerialToIso, isoWeekOf } from '../src/data/dates.ts'
 import type {
   Aggregation,
   Category,
@@ -15,8 +15,6 @@ import type {
   DailyRow,
   DataFile,
   KpiDictionaryEntry,
-  WeekInfo,
-  WeeklyRow,
 } from '../src/data/types.ts'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -182,43 +180,6 @@ function readDailyRows(
   return out
 }
 
-function buildWeeks(daily: DailyRow[]): WeekInfo[] {
-  const ids = [...new Set(daily.map((r) => r.week))].sort()
-  return ids.map((id) => {
-    const dates = daily.filter((r) => r.week === id).map((r) => r.date).sort()
-    // ISO weeks run Monday to Sunday; work out the Monday from any date in the week.
-    const first = dates[0]!
-    const dayOfWeek = (new Date(`${first}T00:00:00Z`).getUTCDay() + 6) % 7
-    const start = addDays(first, -dayOfWeek)
-    return { id, start, end: addDays(start, 6) }
-  })
-}
-
-function buildWeekly(daily: DailyRow[], dictionary: KpiDictionaryEntry[]): WeeklyRow[] {
-  const rule = new Map(dictionary.map((k) => [k.name, k.aggregation]))
-  const groups = new Map<string, DailyRow[]>()
-  for (const row of daily) {
-    const key = `${row.cultivation}|${row.kpi}|${row.week}`
-    const group = groups.get(key)
-    if (group) group.push(row)
-    else groups.set(key, [row])
-  }
-  const weekly: WeeklyRow[] = []
-  for (const rows of groups.values()) {
-    const first = rows[0]!
-    const result = rollup(rows, rule.get(first.kpi)!)
-    weekly.push({
-      week: first.week,
-      cultivation: first.cultivation,
-      kpi: first.kpi,
-      actual: result.actual,
-      target: result.target,
-      days: result.days,
-    })
-  }
-  return weekly // already in cultivation, KPI, week order because `daily` is sorted
-}
-
 /** The scoring config (src/config/kpis.ts) must describe the same KPIs as the workbook's dictionary. */
 function checkConfigMatchesDictionary(dictionary: KpiDictionaryEntry[]) {
   const config = new Map(KPI_CONFIG.map((k) => [k.name, k]))
@@ -243,7 +204,7 @@ export function buildData(xlsxPath: string = XLSX_PATH): DataFile {
   const cultivations = readCultivations(workbook)
   const daily = readDailyRows(workbook, cultivations, dictionary)
   const weeks = buildWeeks(daily)
-  const weekly = buildWeekly(daily, dictionary)
+  const weekly = buildWeeklyRows(daily, dictionary)
   const dates = [...new Set(daily.map((r) => r.date))].sort()
   const periodEnd = dates[dates.length - 1]!
 

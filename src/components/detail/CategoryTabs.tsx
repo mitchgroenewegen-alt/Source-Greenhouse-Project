@@ -29,7 +29,7 @@ export function CategoryTabs({
             aria-controls="category-panel"
             onClick={() => onChange(category)}
             className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0 text-[0.66rem] font-semibold sm:px-1 sm:text-sm ${
-              selected ? 'bg-brand text-white' : 'text-ink-2 hover:bg-line-soft'
+              selected ? 'bg-brand text-white' : 'text-ink-2 hover:bg-tile'
             }`}
           >
             <span>{CATEGORY_LABEL[category]}</span>

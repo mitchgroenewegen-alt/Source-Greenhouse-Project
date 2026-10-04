@@ -72,7 +72,7 @@ export function DecisionLog({
           <h2 id="log-title" className="text-lg font-semibold">
             Decision log
           </h2>
-          <p className="text-sm text-ink-2">{entries.length === 0 ? 'No decisions yet.' : `${decisions.length} values decided, in ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}. Newest first.`}</p>
+          <p className="text-sm">{entries.length === 0 ? 'No decisions yet.' : `${decisions.length} values decided, in ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}. Newest first.`}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button

@@ -47,7 +47,7 @@ export default function AboutScreen() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">About this tool</h1>
-        <p className="text-ink-2">
+        <p>
           Crop Performance shows how each of the {meta.cultivationCount} tomato cultivations is doing against its budget or target, and which inputs a person should check before trusting a number.
         </p>
       </div>

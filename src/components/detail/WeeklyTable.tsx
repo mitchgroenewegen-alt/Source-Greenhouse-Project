@@ -6,7 +6,8 @@ import type { WeeklyPoint } from '../../scoring/effective'
 import { scoreWith, STATUS_LABEL, type Status } from '../../scoring/score'
 import { AlertIcon, CheckIcon, CrossIcon } from '../ui/icons'
 
-const CELL: Record<Status, string> = { green: 'bg-ok-bg/60', amber: 'bg-warn-bg/70', red: 'bg-bad-bg/70' }
+// The green tint is used in full: ok-bg is close to the tile, and any less of it melts into the tile.
+const CELL: Record<Status, string> = { green: 'bg-ok-bg', amber: 'bg-warn-bg/70', red: 'bg-bad-bg/70' }
 const GLYPH = { green: CheckIcon, amber: AlertIcon, red: CrossIcon }
 const GLYPH_COLOR: Record<Status, string> = { green: 'text-ok', amber: 'text-warn', red: 'text-bad' }
 

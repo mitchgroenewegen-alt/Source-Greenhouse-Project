@@ -69,8 +69,11 @@ export function FacilityCard({ facility, rows, period, unit }: { facility: strin
             <YAxis width={44} tick={{ fontSize: 11, fill: 'var(--color-ink-3)' }} tickLine={false} axisLine={false} />
             <Tooltip
               formatter={(value, name) => [`${fixed(Number(value), decimals)} ${unitLabel}`, name === 'budget' ? 'Budget' : 'Actual']}
-              cursor={{ fill: 'var(--color-line-soft)' }}
+              // The hover column is one step darker than the tile (the card green), so the labels and bars in it keep their contrast.
+              cursor={{ fill: 'var(--color-card)' }}
               contentStyle={{ background: 'var(--color-field)', border: '1px solid var(--color-line-strong)', borderRadius: 8 }}
+              // Recharts colours each row in its series colour, which is too pale for text; the rows already say Actual and Budget.
+              itemStyle={{ color: 'var(--color-ink)' }}
             />
             <Bar dataKey="budget" name="budget" fill={BUDGET_COLOR} radius={[4, 4, 0, 0]} isAnimationActive={false}>
               <LabelList dataKey="budget" position="top" fontSize={10} fill="var(--color-ink-3)" formatter={(v) => (v == null ? '' : fixed(Number(v), decimals))} />

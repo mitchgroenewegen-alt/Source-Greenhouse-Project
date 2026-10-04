@@ -15,8 +15,8 @@ export default defineConfig({
         short_name: 'Crop Performance',
         description: 'How each tomato cultivation performs against budget, and which inputs to verify.',
         // The header bar is a card and the page behind it is the page green: the browser chrome blends with the first, the splash screen with the second.
-        theme_color: '#e2ece5',
-        background_color: '#c9d7cd',
+        theme_color: '#b0d0b3',
+        background_color: '#7ab17d',
         display: 'standalone',
         orientation: 'any',
         start_url: '.',

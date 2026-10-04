@@ -98,7 +98,7 @@ export function FacilitySummaryTable({ rows, weekLabel }: { rows: FacilitySummar
                   // The whole row is the tap target for a mouse or finger; the button in the first cell is the keyboard's way in,
                   // and its click bubbles up to here.
                   onClick={jump ? () => jumpToCard(jump) : undefined}
-                  className={`border-b border-line-soft last:border-b-0 ${jump ? 'cursor-pointer hover:bg-brand-soft/50 active:bg-brand-soft' : 'bg-card'}`}
+                  className={`border-b border-line-soft last:border-b-0 ${jump ? 'cursor-pointer hover:bg-brand-soft active:bg-field' : 'bg-card'}`}
                 >
                   <th scope="row" className="px-1.5 py-2.5 text-left align-top font-semibold min-[360px]:px-2 sm:px-4">
                     {jump ? (

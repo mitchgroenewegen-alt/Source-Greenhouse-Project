@@ -33,7 +33,7 @@ export default function FacilitiesScreen() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">Facility comparison</h1>
-        <p className="text-ink-2">
+        <p>
           Harvest against budget for each cultivation, grouped by facility. {shortWeek(week)}, {formatRange(weekInfo.start, weekInfo.end)}.
         </p>
       </div>
@@ -60,7 +60,7 @@ export default function FacilitiesScreen() {
           ]}
         />
       </div>
-      <p className="text-sm text-ink-3">
+      <p className="text-sm">
         Tonnes are kg/m² × growing area ÷ 1000. The facility total in kg/m² is weighted by growing area, so a large greenhouse counts for more than a small one.
       </p>
 

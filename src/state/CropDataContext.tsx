@@ -80,7 +80,7 @@ function FullPageMessage({ title, detail, children }: { title: string; detail: s
   return (
     <div role="status" className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-3 px-4 text-center">
       <h1 className="text-xl font-semibold">{title}</h1>
-      <p className="text-ink-2">{detail}</p>
+      <p>{detail}</p>
       {children}
     </div>
   )

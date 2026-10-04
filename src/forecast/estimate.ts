@@ -23,6 +23,8 @@ export interface KnownSeries {
   target: (kpi: string, week: string) => number | null
   /** The average of the latest recorded actuals up to `week` (and never past `asOf`), or null when there are none in the last 12 weeks. */
   held: (kpi: string, week: string) => number | null
+  /** The most recent recorded actual up to `asOf` (not an average), or null when there is none in the last 12 weeks. */
+  latest: (kpi: string) => number | null
 }
 
 const HOLD_LOOKBACK_WEEKS = 12
@@ -39,7 +41,14 @@ export function knownSeries(pointOf: PointOf, cultivation: string, asOf: string)
     }
     return values.length === 0 ? null : values.reduce((a, b) => a + b, 0) / values.length
   }
-  return { cultivation, asOf, actual, target, held }
+  const latest = (kpi: string) => {
+    for (let i = 0, w = asOf; i < HOLD_LOOKBACK_WEEKS; i++, w = addWeeks(w, -1)) {
+      const v = actual(kpi, w)
+      if (v !== null) return v
+    }
+    return null
+  }
+  return { cultivation, asOf, actual, target, held, latest }
 }
 
 /** Whole weeks between a fruit being set and being harvested: the development time in days over seven, rounded, at least one. */

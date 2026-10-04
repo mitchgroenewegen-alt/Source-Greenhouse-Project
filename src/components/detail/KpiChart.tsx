@@ -13,6 +13,7 @@ const ACTUAL = 'var(--color-actual)'
 const TARGET = 'var(--color-target)'
 const ORIGINAL = 'var(--color-ink-3)'
 const FLAG = 'var(--color-flag)'
+const FORECAST_COLOR = 'var(--color-actual)'
 
 /** A point on a line; a violet ring goes round it when the week holds a flagged value of that column. */
 function markedDot(color: string, markOf: (row: ChartRow) => FlagMark) {
@@ -71,6 +72,16 @@ function ChartTooltip({
       <div className="font-semibold">
         {shortWeek(row.week)} <span className="font-normal text-ink-3">{info ? `${info.start} to ${info.end}` : ''}</span>
       </div>
+      {row.isForecast ? (
+        <div className="num mt-1 grid grid-cols-[auto_auto] gap-x-3">
+          <span className="text-ink-2">Forecast</span>
+          <span className="text-right font-semibold">{formatValue(config, row.forecast)}</span>
+          <span className="text-ink-2">Range</span>
+          <span className="text-right font-semibold">
+            {formatValue(config, row.forecastBand?.[0] ?? null)} to {formatValue(config, row.forecastBand?.[1] ?? null)}
+          </span>
+        </div>
+      ) : (
       <div className="num mt-1 grid grid-cols-[auto_auto] gap-x-3">
         <span className="text-ink-2">Actual</span>
         <span className="text-right font-semibold">{formatValue(config, row.actual)}</span>
@@ -89,7 +100,8 @@ function ChartTooltip({
           </>
         )}
       </div>
-      {score.status && <div className="mt-1 text-xs font-semibold">{STATUS_LABEL[score.status]}</div>}
+      )}
+      {!row.isForecast && score.status && <div className="mt-1 text-xs font-semibold">{STATUS_LABEL[score.status]}</div>}
       {row.openFlags > 0 && <div className="mt-1 text-xs font-semibold text-flag-ink">{row.openFlags} flagged value(s) left out, waiting for a decision</div>}
       {row.decidedFlags > 0 && <div className="mt-1 text-xs text-flag-ink">{row.decidedFlags} flagged value(s) checked by a person</div>}
     </div>
@@ -139,9 +151,11 @@ export function KpiChart({
           <Area dataKey="amber" type="monotone" stroke="none" fill={BANDS.watch.fill} fillOpacity={BANDS.watch.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
           <Area dataKey="amberAbove" type="monotone" stroke="none" fill={BANDS.watch.fill} fillOpacity={BANDS.watch.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
           <Area dataKey="green" type="monotone" stroke="none" fill={BANDS.onTrack.fill} fillOpacity={BANDS.onTrack.opacity} isAnimationActive={false} activeDot={false} legendType="none" />
+          {model.hasForecast && <Area dataKey="forecastBand" type="monotone" stroke="none" fill={FORECAST_COLOR} fillOpacity={0.18} isAnimationActive={false} activeDot={false} legendType="none" />}
           {model.hasEdits && <Line dataKey="originalTarget" type="monotone" stroke={ORIGINAL} strokeWidth={1.5} strokeDasharray="2 3" dot={false} activeDot={false} isAnimationActive={false} />}
           <Line dataKey="target" type="monotone" stroke={TARGET} strokeWidth={2} strokeDasharray="5 4" dot={markedDot(TARGET, (r) => r.targetMark)} activeDot={{ r: 4 }} isAnimationActive={false} />
           <Line dataKey="actual" type="monotone" stroke={ACTUAL} strokeWidth={2} dot={markedDot(ACTUAL, (r) => r.actualMark)} activeDot={{ r: 5 }} isAnimationActive={false} />
+          {model.hasForecast && <Line dataKey="forecast" type="monotone" stroke={FORECAST_COLOR} strokeWidth={2} strokeDasharray="2 4" strokeLinecap="round" dot={false} activeDot={{ r: 4 }} isAnimationActive={false} />}
           <Line dataKey="flagY" stroke="none" dot={FlagMarker} activeDot={false} isAnimationActive={false} legendType="none" />
         </ComposedChart>
       </ResponsiveContainer>
@@ -161,7 +175,7 @@ function BandSwatch({ band }: { band: Band }) {
 
 /** What the lines and shading mean. Plain HTML so it reads the same everywhere. */
 /** `planLabel` is the KPI's plan word, capitalised: "Budget" or "Target". With `hasEdits` the legend adds "Original budget" or "Original target". */
-export function ChartLegend({ hasTarget, hasFlags, hasEdits = false, planLabel }: { hasTarget: boolean; hasFlags: boolean; hasEdits?: boolean; planLabel: string }) {
+export function ChartLegend({ hasTarget, hasFlags, hasEdits = false, hasForecast = false, planLabel }: { hasTarget: boolean; hasFlags: boolean; hasEdits?: boolean; hasForecast?: boolean; planLabel: string }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Chart key">
       <li className="flex items-center gap-1.5">
@@ -195,6 +209,15 @@ export function ChartLegend({ hasTarget, hasFlags, hasEdits = false, planLabel }
             Watch
           </li>
         </>
+      )}
+      {hasForecast && (
+        <li className="flex items-center gap-1.5">
+          <svg width="22" height="10" aria-hidden="true">
+            <rect x="0" y="0" width="22" height="10" rx="2" fill={FORECAST_COLOR} fillOpacity="0.18" />
+            <line x1="0" y1="5" x2="22" y2="5" stroke={FORECAST_COLOR} strokeWidth="2.5" strokeDasharray="2 4" strokeLinecap="round" />
+          </svg>
+          Forecast and its range
+        </li>
       )}
       {hasFlags && (
         <li className="flex items-center gap-1.5">

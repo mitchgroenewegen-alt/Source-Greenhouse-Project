@@ -23,7 +23,7 @@ function seasonEndOf(series: KnownSeries, weekIds: string[], total: Range): { se
   const budgetWeeks = weekIds.filter((w) => w > series.asOf && series.target('Harvest', w) !== null).sort()
   if (budgetWeeks.length === 0) return { seasonEnd: null, note: `The season end needs a Harvest ${plan} for the weeks after ${shortWeek(series.asOf)}, and there is none.` }
 
-  const toDate = series.held('Cumulative harvest', series.asOf)
+  const toDate = series.latest('Cumulative harvest')
   if (toDate === null) return { seasonEnd: null, note: 'No cumulative harvest is recorded yet, so there is nothing to add the forecast to.' }
 
   let actual = 0
@@ -87,7 +87,7 @@ export function forecastCultivation(cultivation: string, asOf: string, weekIds: 
   }
   const total: Range = { low: sum(weeks.map((w) => w.low)), expected: sum(weeks.map((w) => w.expected)), high: sum(weeks.map((w) => w.high)) }
   const { seasonEnd, note } = seasonEndOf(series, weekIds, total)
-  return { cultivation, asOf, correction, weeks, missingWeeks, total, seasonEnd, seasonEndNote: note }
+  return { cultivation, asOf, toDate: series.latest('Cumulative harvest'), correction, weeks, missingWeeks, total, seasonEnd, seasonEndNote: note }
 }
 
 /** The forecast of each of the cultivations that has one, by cultivation id. */

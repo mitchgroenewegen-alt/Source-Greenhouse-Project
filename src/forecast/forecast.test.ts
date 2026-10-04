@@ -8,6 +8,7 @@ import { estimateWeek, knownSeries, shiftWeeks } from './estimate'
 import { forecastAll, forecastCultivation, forecastWeekIds } from './forecast'
 import { pointOfData } from './fromData'
 import { facilityForecast } from './totals'
+import { methodText } from './text'
 import type { PointOf } from './types'
 import { addWeeks, weeksBetween } from './weeks'
 
@@ -209,22 +210,29 @@ describe('the forecast of a cultivation', () => {
   })
 })
 
+describe('the cumulative harvest to date', () => {
+  it('is the latest recorded value, not an average of the latest weeks', () => {
+    const f = forecastCultivation(X, '2025-W34', WEEKS, synthetic({ ...steady, harvest: upTo('2025-W34', () => 0.8), cumulative: upTo('2025-W34', (w) => weeksBetween(w, '2025-W20') * 10) }))!
+    expect(f.toDate).toBe(140)
+  })
+})
+
 describe('the forecast on the charts and facilities', () => {
   const f = forecastCultivation(X, '2025-W34', WEEKS, synthetic({ ...steady, harvest: upTo('2025-W34', () => 0.8) }))!
 
   it('draws the weekly line from the weekly values and the cumulative line from the running sum', () => {
     const weekly = weeklyForecastLine(f, 0.8)
     expect(weekly.points).toHaveLength(6)
-    const cumulative = cumulativeForecastLine(f, 20)!
+    const cumulative = cumulativeForecastLine({ ...f, toDate: 20 })!
     expect(cumulative.start).toBe(20)
     expect(cumulative.points[0]!.expected).toBeCloseTo(20 + f.weeks[0]!.expected, 10)
     expect(cumulative.points[5]!.expected).toBeCloseTo(20 + f.total.expected, 10)
-    expect(cumulativeForecastLine(f, null)).toBeNull()
+    expect(cumulativeForecastLine({ ...f, toDate: null })).toBeNull()
   })
 
   it('stops the cumulative line before a week that could not be estimated', () => {
     const short = { ...f, weeks: f.weeks.slice(2), missingWeeks: f.weeks.slice(0, 2).map((w) => w.week) }
-    expect(cumulativeForecastLine(short, 20)!.points).toHaveLength(0)
+    expect(cumulativeForecastLine({ ...short, toDate: 20 })!.points).toHaveLength(0)
   })
 
   it('totals a facility in kg: kg/m² x growing area', () => {
@@ -309,5 +317,14 @@ describe('on the real workbook', () => {
     // Ontario's cherry crop says so, and the young Ontario tomato crop has no estimate as of W28 at all.
     expect(b.results.find((r) => r.cultivation === 'ON-P1-Cherry')!.method).toBe('uncorrected')
     expect(b.notPossible).toEqual(['ON-P1-TOV'])
+  })
+})
+
+describe('the words', () => {
+  it('names the factor and its range when corrected, and why not when uncorrected', () => {
+    const corrected = correctionFor(knownSeries(synthetic({ ...steady, harvest: upTo('2025-W34', () => 0.8) }), X, '2025-W34'))
+    expect(methodText(corrected)).toBe('Corrected by ×0.80 (range ×0.80 to ×0.80), what the last 4 weeks showed.')
+    const uncorrected = correctionFor(knownSeries(synthetic({ ...steady, harvest: (w) => (w >= '2025-W33' && w <= '2025-W34' ? 0.8 : undefined) }), X, '2025-W34'))
+    expect(methodText(uncorrected)).toMatch(/^Uncorrected estimate, range ×0\.40 to ×1\.40: 2 of the last 4 weeks/)
   })
 })

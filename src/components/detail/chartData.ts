@@ -5,6 +5,7 @@ import { shortWeek } from '../../data/dates'
 import type { WeekInfo } from '../../data/types'
 import type { FlagMark, WeeklyPoint } from '../../scoring/effective'
 import type { EditedWeek } from '../../editing/original'
+import type { ChartForecast } from '../../forecast/chart'
 
 export type Band = [low: number, high: number]
 
@@ -32,6 +33,12 @@ export interface ChartRow {
   targetMark: FlagMark
   openFlags: number
   decidedFlags: number
+  /** The forecast line: the expected value, from the last actual week (where it equals the actual) and for each forecast week. */
+  forecast: number | null
+  /** The shaded range around the forecast line: [low, high]. */
+  forecastBand: Band | null
+  /** True for a week that has no actuals yet and is only forecast. */
+  isForecast: boolean
 }
 
 export interface ChartModel {
@@ -43,6 +50,7 @@ export interface ChartModel {
   hasTarget: boolean
   /** True when any week's budget or target was edited, so the chart draws the original one too. */
   hasEdits: boolean
+  hasForecast: boolean
 }
 
 /**
@@ -82,7 +90,13 @@ export function niceScale(lo: number, hi: number, wanted = 4): number[] {
 }
 
 /** `edited` has an entry, in the order of `weeks`, for each week whose budget or target was edited. */
-export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (WeeklyPoint | undefined)[], edited: (EditedWeek | undefined)[] = []): ChartModel {
+export function buildChartModel(
+  config: KpiConfig,
+  weeks: WeekInfo[],
+  points: (WeeklyPoint | undefined)[],
+  edited: (EditedWeek | undefined)[] = [],
+  forecast: ChartForecast | null = null,
+): ChartModel {
   const raw = weeks.map((w, i) => {
     const p = points[i]
     const bands = p?.target != null ? toleranceBands(config, p.target) : null
@@ -96,6 +110,10 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
     if (bands) for (const v of [...bands.green, ...bands.amber, ...(bands.amberAbove ?? [])]) finite.push(v)
   }
   for (const e of edited) if (e?.original != null) finite.push(e.original)
+  if (forecast) {
+    if (forecast.start !== null) finite.push(forecast.start)
+    for (const p of forecast.points) finite.push(p.low, p.high)
+  }
   const hasEdits = edited.some((e) => e !== undefined)
   const lo = finite.length ? Math.min(...finite) : 0
   const hi = finite.length ? Math.max(...finite) : 1
@@ -122,8 +140,12 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
       targetMark: p?.targetMark ?? null,
       openFlags: p?.openFlags ?? 0,
       decidedFlags: p?.decidedFlags ?? 0,
+      forecast: null,
+      forecastBand: null,
+      isForecast: false,
     }
   })
+  if (forecast) addForecast(rows, forecast)
   return {
     rows,
     domain: [domainLo, domainHi],
@@ -131,5 +153,36 @@ export function buildChartModel(config: KpiConfig, weeks: WeekInfo[], points: (W
     hasActual: rows.some((r) => r.actual !== null),
     hasTarget: rows.some((r) => r.target !== null),
     hasEdits,
+    hasForecast: forecast !== null && forecast.points.length > 0,
   }
+}
+
+/**
+ * Lay the forecast over the rows: the line starts at the last actual week (so it joins the actuals) and runs through the forecast
+ * weeks, which are added as rows after the data weeks when the data has no row for them. Rows stay in week order.
+ */
+function addForecast(rows: ChartRow[], forecast: ChartForecast) {
+  if (forecast.points.length === 0) return
+  const row = (week: string): ChartRow => {
+    const existing = rows.find((r) => r.week === week)
+    if (existing) return existing
+    const created: ChartRow = {
+      week, label: shortWeek(week), actual: null, target: null, originalTarget: null, edited: false, green: null, amber: null, amberAbove: null,
+      flagY: null, actualMark: null, targetMark: null, openFlags: 0, decidedFlags: 0, forecast: null, forecastBand: null, isForecast: true,
+    }
+    rows.push(created)
+    return created
+  }
+  if (forecast.start !== null) {
+    const anchor = row(forecast.asOf)
+    anchor.forecast = forecast.start
+    anchor.forecastBand = [forecast.start, forecast.start]
+  }
+  for (const p of forecast.points) {
+    const r = row(p.week)
+    r.forecast = p.expected
+    r.forecastBand = [p.low, p.high]
+    r.isForecast = r.actual === null
+  }
+  rows.sort((a, b) => a.week.localeCompare(b.week))
 }

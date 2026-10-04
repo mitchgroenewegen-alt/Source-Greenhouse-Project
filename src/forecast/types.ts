@@ -60,6 +60,8 @@ export interface CultivationForecast {
   cultivation: string
   /** The last week that counts as known. */
   asOf: string
+  /** The cumulative harvest recorded at the end of `asOf` (the latest one, when that week has none), kg/m²; the cumulative chart's forecast starts from it. */
+  toDate: number | null
   correction: Correction
   /** One entry per forecast week that could be estimated, in order. */
   weeks: ForecastWeek[]

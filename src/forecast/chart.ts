@@ -19,7 +19,8 @@ export function weeklyForecastLine(forecast: CultivationForecast, startValue: nu
  * Cumulative harvest: the harvest to date plus the running sum of the weeks. The line stops at the first week that could not be
  * estimated, since the sum after it would be too low. Null when there is no cumulative harvest to start from.
  */
-export function cumulativeForecastLine(forecast: CultivationForecast, toDate: number | null): ChartForecast | null {
+export function cumulativeForecastLine(forecast: CultivationForecast): ChartForecast | null {
+  const toDate = forecast.toDate
   if (toDate === null) return null
   const points: ChartForecast['points'] = []
   let low = toDate

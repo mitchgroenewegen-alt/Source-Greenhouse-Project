@@ -31,7 +31,7 @@ export function FruitTypeForm({
     if (Object.keys(found).length > 0) return
     setSaving(true)
     const id = type?.id ?? fruitTypeId(input.name, others.map((o) => o.id))
-    const saved = await onSave(fruitTypeFromForm(id, input, placeholder))
+    const saved = await onSave(fruitTypeFromForm(id, input, placeholder, type))
     setSaving(false)
     if (saved) onCancel()
   }

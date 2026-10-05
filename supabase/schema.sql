@@ -97,6 +97,12 @@ alter table public.rates add column if not exists price_overrides jsonb;
 alter table public.rates add column if not exists updated_by text;
 alter table public.rates add column if not exists updated_at timestamptz;
 
+-- Market prices: where an imported price came from (the date it is for, who imported it, when), as json.
+-- price_source: on the fruit type's own price. price_sources: on a facility's prices, by fruit type id.
+-- Idempotent: safe to run again, and needed once on a database created before this step.
+alter table public.fruit_types add column if not exists price_source jsonb;
+alter table public.rates add column if not exists price_sources jsonb;
+
 -- Step 7 (Climate): finer climate data from a climate computer export (timestamp, cultivation, parameter, value, setpoint).
 -- New table, so re-run this file once in the SQL Editor on a database created before this step (safe to run again).
 -- The timestamp is kept as text ("2025-08-20T14:30", local time as in the file) so no time zone shifts it.

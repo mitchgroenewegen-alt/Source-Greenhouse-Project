@@ -47,7 +47,7 @@ export function RatesCard({
     setErrors(found)
     if (Object.keys(found).length > 0) return
     setSaving(true)
-    const ok = await onSave(ratesRowFor(facilityId, input, who, new Date()))
+    const ok = await onSave(ratesRowFor(facilityId, input, who, new Date(), rates))
     setSaving(false)
     setSaved(ok)
   }

@@ -146,7 +146,7 @@ export function fruitTypeFormOf(type?: FruitType): FruitTypeInput {
 }
 
 /** The fruit type the form describes (call it only when validateFruitType found nothing wrong). */
-export function fruitTypeFromForm(id: string, input: FruitTypeInput, placeholder: boolean): FruitType {
+export function fruitTypeFromForm(id: string, input: FruitTypeInput, placeholder: boolean, previous?: FruitType): FruitType {
   const num = (text: string) => (text.trim() === '' ? null : Number(text))
   return {
     id,
@@ -156,6 +156,8 @@ export function fruitTypeFromForm(id: string, input: FruitTypeInput, placeholder
     diameterMinMm: num(input.diameterMinMm),
     diameterMaxMm: num(input.diameterMaxMm),
     pricePerKg: num(input.pricePerKg),
+    // The note about an imported price stays only while the price is the imported one.
+    ...(previous?.priceSource && previous.pricePerKg === num(input.pricePerKg) ? { priceSource: previous.priceSource } : {}),
     placeholder,
   }
 }

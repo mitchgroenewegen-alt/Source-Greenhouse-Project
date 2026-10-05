@@ -9,6 +9,8 @@ interface TableSpec {
   keyColumns: string[]
   /** Fields of the entity, in camelCase; the column is the snake_case of the name. */
   fields: string[]
+  /** Fields that are left off the item (not set to null) when the column is empty, as the types declare them optional. */
+  optional?: string[]
 }
 
 const TABLES: Record<EntityName, TableSpec> = {
@@ -37,9 +39,15 @@ const TABLES: Record<EntityName, TableSpec> = {
   fruitTypes: {
     table: 'fruit_types',
     keyColumns: ['id'],
-    fields: ['id', 'name', 'weightMinG', 'weightMaxG', 'diameterMinMm', 'diameterMaxMm', 'pricePerKg', 'placeholder'],
+    fields: ['id', 'name', 'weightMinG', 'weightMaxG', 'diameterMinMm', 'diameterMaxMm', 'pricePerKg', 'priceSource', 'placeholder'],
+    optional: ['priceSource'],
   },
-  rates: { table: 'rates', keyColumns: ['facility_id'], fields: ['facilityId', 'heatPerKwh', 'electricityPerKwh', 'waterPerM3', 'priceOverrides', 'updatedBy', 'updatedAt'] },
+  rates: {
+    table: 'rates',
+    keyColumns: ['facility_id'],
+    fields: ['facilityId', 'heatPerKwh', 'electricityPerKwh', 'waterPerM3', 'priceOverrides', 'priceSources', 'updatedBy', 'updatedAt'],
+    optional: ['priceSources'],
+  },
   decisions: {
     table: 'decisions',
     keyColumns: ['cell_id'],
@@ -67,6 +75,7 @@ function fromRow(spec: TableSpec, row: Row): unknown {
   const item: Row = {}
   for (const field of spec.fields) {
     const value = row[column(field)]
+    if ((value === null || value === undefined) && spec.optional?.includes(field)) continue
     // Timestamps come back in the database's own notation; keep one notation in the app.
     item[field] = field.endsWith('At') && typeof value === 'string' ? new Date(value).toISOString() : (value ?? null)
   }

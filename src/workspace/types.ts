@@ -70,6 +70,16 @@ export interface ClimateReading {
   createdAt: string
 }
 
+/** Where a price came from: a market price file, the date the price is for, and who brought it in and when. A price typed in by hand has none. */
+export interface PriceSourceNote {
+  kind: 'market'
+  /** The date (YYYY-MM-DD) the market price is for. */
+  date: string
+  importedBy: string
+  /** ISO timestamp of the import. */
+  importedAt: string
+}
+
 export interface FruitType {
   id: string
   name: string
@@ -78,6 +88,8 @@ export interface FruitType {
   diameterMinMm: number | null
   diameterMaxMm: number | null
   pricePerKg: number | null
+  /** Where `pricePerKg` came from when it was imported; null or absent for a price typed in. */
+  priceSource?: PriceSourceNote | null
   /** True while the numbers are a stand-in until someone enters the real ones. */
   placeholder: boolean
 }
@@ -93,6 +105,8 @@ export interface Rates {
   waterPerM3: number | null
   /** Price per kg for this facility by fruit type id, where it differs from the fruit type's own price. null: no overrides. */
   priceOverrides: Record<string, number> | null
+  /** Where an overridden price came from when it was imported, by fruit type id. Entries for prices typed in are absent. */
+  priceSources?: Record<string, PriceSourceNote> | null
   /** Who last changed this row and when (ISO timestamp); null on a row saved before these were kept. */
   updatedBy: string | null
   updatedAt: string | null

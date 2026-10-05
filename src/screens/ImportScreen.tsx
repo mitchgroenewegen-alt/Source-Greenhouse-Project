@@ -75,6 +75,10 @@ export default function ImportScreen() {
           <Link to="/data/import/climate" className="font-semibold text-ink underline">
             Import climate readings
           </Link>
+          . Current market prices per commodity go in at{' '}
+          <Link to="/data/import/prices" className="font-semibold text-ink underline">
+            Import market prices
+          </Link>
           .
         </p>
       </div>

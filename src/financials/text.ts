@@ -2,7 +2,7 @@
 
 import { fixed } from '../lib/format'
 import type { Errors } from '../setup/validate'
-import type { Rates } from '../workspace/types'
+import type { PriceSourceNote, Rates } from '../workspace/types'
 
 /** "554,976 USD", or "–" when there is no figure. */
 export const moneyText = (value: number | null, currency: string): string => (value === null ? '–' : `${fixed(value, 0)} ${currency}`)
@@ -55,15 +55,23 @@ export function validateRates(input: RatesInput): Errors {
   return errors
 }
 
+/** The market price notes that still hold: a price typed over (or removed) no longer comes from the file, so its note goes. */
+function keptSources(overrides: Record<string, number>, previous: Rates | undefined): Record<string, PriceSourceNote> | null {
+  const kept = Object.fromEntries(Object.entries(previous?.priceSources ?? {}).filter(([id]) => overrides[id] !== undefined && overrides[id] === previous?.priceOverrides?.[id]))
+  return Object.keys(kept).length > 0 ? kept : null
+}
+
 /** The row to save for a facility (call it only when validateRates found nothing wrong). Empty prices are not overrides. */
-export function ratesRowFor(facilityId: string, input: RatesInput, who: string, now: Date): Rates {
+export function ratesRowFor(facilityId: string, input: RatesInput, who: string, now: Date, previous?: Rates): Rates {
   const overrides = Object.fromEntries(Object.entries(input.prices).flatMap(([id, value]) => (parse(value) === null ? [] : [[id, Number(value)] as const])))
+  const sources = keptSources(overrides, previous)
   return {
     facilityId,
     heatPerKwh: parse(input.heatPerKwh),
     electricityPerKwh: parse(input.electricityPerKwh),
     waterPerM3: parse(input.waterPerM3),
     priceOverrides: Object.keys(overrides).length > 0 ? overrides : null,
+    ...(sources ? { priceSources: sources } : {}),
     updatedBy: who || null,
     updatedAt: now.toISOString(),
   }

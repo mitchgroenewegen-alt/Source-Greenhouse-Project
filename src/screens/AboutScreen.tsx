@@ -58,7 +58,7 @@ export default function AboutScreen() {
           {formatDate(meta.periodStart)} to {formatDate(meta.periodEnd)}: {meta.dayCount} days, {meta.weekCount} ISO weeks ({first.id} to {last.id}). The latest full week is {last.id.split('-')[1]} ({formatDate(last.start)} to {formatDate(last.end)}), which is the default.
         </p>
         <p>
-          Source: <code>{meta.source}</code> (sheets Read me, Greenhouses, KPIs): {meta.cultivationCount} cultivations in 7 greenhouses at 3 facilities, {meta.kpiCount} KPIs in 5 categories. The workbook is the base data and is never changed. What is added in the app (cultivations, fruit types, edits to values and plan values) is kept in the workspace and laid over it.
+          Source: <code>{meta.source}</code> (sheets Read me, Greenhouses, KPIs): {meta.cultivationCount} cultivations in 7 greenhouses at 3 facilities, {meta.kpiCount} KPIs in 5 categories. The workbook is the base data and is never changed. What is added in the app (cultivations, fruit types, market prices imported from a price file, edits to values and plan values) is kept in the workspace and laid over it.
         </p>
       </Section>
 
@@ -152,7 +152,7 @@ export default function AboutScreen() {
           <li>Revenue is the harvest (kg/m²) × growing area × price per kg. Harvest is already net of waste. The value lost to waste is harvest × w ÷ (1 − w) at the same price, with w the Waste %.</li>
           <li>Energy and water cost: heating kWh/m² × area × heat price; LED hours × installed W/m² ÷ 1000 × area × electricity price; water L/m² ÷ 1000 × area × water price per m³. Where a greenhouse has no installed LED power entered, 150 W/m² is assumed and marked.</li>
           <li>The margin is partial: revenue minus energy and water. Against budget, the gap is split into a volume effect (more or fewer kg) and a cost effect (more or less energy). Irrigation water has no target in the workbook, so its budget cost is empty until one is entered, and it is left out of the gap.</li>
-          <li>The workbook has no prices or costs. Until a price is entered, example prices are used and a banner says so. Rates and prices are entered on More, Prices and costs.</li>
+          <li>The workbook has no prices or costs. Until a price is entered, example prices are used and a banner says so. Rates and prices are entered on More, Prices and costs, or current market prices are imported from a price file (.xlsx or .csv, Data, Import market prices); an imported price says where it came from and the date it is for. Commodities are the app’s fruit types, and a new one can be added on Prices and costs or on Commodities (fruit types).</li>
         </ul>
       </Section>
 

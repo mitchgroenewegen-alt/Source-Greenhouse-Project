@@ -45,9 +45,15 @@ export default function FruitTypesScreen() {
         <Link to="/more" className="mb-1 inline-flex min-h-9 items-center gap-1 text-sm font-semibold underline">
           <ChevronLeftIcon width={16} height={16} /> More
         </Link>
-        <h1 className="text-2xl font-semibold">Fruit types and specs</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold">Commodities (fruit types)</h1>
+          <button type="button" onClick={() => { setRemoving(null); setEditing('new') }} disabled={!canWrite || editing === 'new'} className={PRIMARY_BUTTON}>
+            Add a commodity
+          </button>
+        </div>
         <p>
-          The weight range each fruit type should have. Next to it, the average fruit weight the workbook measured for the cultivations of that type, as a sanity check. The price per kg is used later in Financials.
+          The commodities the app tracks are its fruit types. This is the weight range each one should have. Next to it, the average fruit weight the workbook measured for the cultivations of that type, as a sanity check. The price per kg is used in Financials. Current market prices can be brought in from a file with{' '}
+          <Link to="/data/import/prices" className="font-semibold underline">Import market prices</Link>.
         </p>
       </div>
 
@@ -84,14 +90,6 @@ export default function FruitTypesScreen() {
               {blocked || last ? 'Close' : 'Keep it'}
             </button>
           </div>
-        </div>
-      )}
-
-      {!editing && (
-        <div>
-          <button type="button" onClick={() => setEditing('new')} disabled={!canWrite} className={PRIMARY_BUTTON}>
-            Add a fruit type
-          </button>
         </div>
       )}
 

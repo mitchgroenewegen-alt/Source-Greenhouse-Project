@@ -61,9 +61,15 @@ Without any setup the app keeps everything in the browser it runs in, exactly as
 6. Open the **SQL Editor** and run the contents of `supabase/schema.sql`. It is safe to run again.
 7. Under **Authentication > Users**, invite the people who should have access, by email.
 
-Then open the app, choose **Sign in** in the header, enter an invited email address and follow the link in the email. Notes:
+Then open the app and choose **Sign in** in the header:
 
-- Supabase's built-in email sender is limited to a few emails per hour. That is enough for a handful of people; for more, add your own SMTP provider under Authentication.
+- **First time (or forgot your password):** enter the invited email address, press **Email me a sign-in link** and open the link on the same device. Back on **Sign in**, set a password under **Set or change your password** and let the browser save it.
+- **After that:** sign in with email and password. The fields are marked for password managers, so the browser fills them in.
+- Password sign-in uses Supabase's Email provider, which allows passwords by default (Authentication > Sign In / Providers > Email). Passwords need at least 8 characters.
+
+Notes:
+
+- Supabase's built-in email sender is limited to a few emails per hour (passwords avoid most emails). That is enough for a handful of people; for more, add your own SMTP provider under Authentication.
 - Signed out, the app shows the workbook data only, read-only. Signed in, decisions are saved for everyone and changes made in another browser appear without reloading.
 - If the database cannot be reached, the app shows the last saved copy, read-only, with a banner saying so.
 - The first time someone signs in on a browser that holds decisions from before the shared database, the app offers once to upload them.

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { signInWithEmail, signOut } from './auth'
+import { setPassword, signInWithEmail, signInWithPassword, signOut } from './auth'
 import { createWorkspaceStore } from './createStore'
 import { getSupabase, supabaseSettingsProblem } from './supabaseClient'
 import { isWritable, type EntityName, type WorkspaceData, type WorkspaceSnapshot, type WorkspaceStatus } from './types'
@@ -23,6 +23,8 @@ export interface Workspace {
   save: <K extends EntityName>(entity: K, items: WorkspaceData[K]) => Promise<boolean>
   remove: (entity: EntityName, keys: string[]) => Promise<boolean>
   signIn: (email: string) => Promise<void>
+  signInWithPassword: (email: string, password: string) => Promise<void>
+  setPassword: (password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -69,6 +71,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       save: (entity, items) => guard(store.save(entity, items)),
       remove: (entity, keys) => guard(store.remove(entity, keys)),
       signIn: signInWithEmail,
+      signInWithPassword,
+      setPassword,
       signOut,
     }),
     [snapshot, store, saveError, guard],

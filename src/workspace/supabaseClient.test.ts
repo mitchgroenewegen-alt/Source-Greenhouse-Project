@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { cleanSetting, cleanSupabaseUrl, isSecretKey, settingsProblem } from './supabaseClient'
+import { passwordErrorText } from './auth'
 
 describe('Supabase settings typed into Vercel', () => {
   it('accepts the address with or without https:// and drops spaces, quotes and paths', () => {
@@ -36,5 +37,16 @@ describe('settings that must not be used', () => {
     expect(settingsProblem('sb_publishable_abc', 'sb_secret_abc')).toMatch(/secret key/)
     expect(settingsProblem('sb_publishable_abc', 'https://abcd.supabase.co')).toMatch(/holds a key/)
     expect(settingsProblem('https://abcd.supabase.co', 'sb_publishable_abc')).toBeNull()
+  })
+})
+
+describe('passwordErrorText', () => {
+  it('explains a wrong password and points to the emailed link', () => {
+    expect(passwordErrorText('Invalid login credentials')).toMatch(/do not match/)
+    expect(passwordErrorText('Invalid login credentials')).toMatch(/Email me a sign-in link/)
+  })
+
+  it('keeps unknown messages as they are', () => {
+    expect(passwordErrorText('Network request failed')).toBe('Network request failed')
   })
 })

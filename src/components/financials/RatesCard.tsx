@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { rateInputsOf, ratesRowFor, validateRates, type RatesInput } from '../../financials'
 import { EXAMPLE_RATES } from '../../financials/defaults'
+import { marketPriceText } from '../../financials/priceSource'
 import { formatDateTime } from '../../lib/format'
 import type { FruitType, Rates } from '../../workspace/types'
 import { PRIMARY_BUTTON, TextField } from '../ui/fields'
@@ -53,6 +54,7 @@ export function RatesCard({
   }
 
   const heading = `${facilityId}-rates`
+
   return (
     <form onSubmit={submit} noValidate aria-labelledby={heading} className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
       <div>
@@ -75,7 +77,7 @@ export function RatesCard({
               value={input.prices[t.id] ?? ''}
               onChange={setPrice(t.id)}
               error={errors[`price:${t.id}`]}
-              hint={t.pricePerKg === null ? 'Fruit type: no price' : `Fruit type: ${t.pricePerKg}`}
+              hint={hintFor(t, input.prices[t.id], rates)}
               inputMode="decimal"
               disabled={disabled}
             />
@@ -91,4 +93,11 @@ export function RatesCard({
       </div>
     </form>
   )
+}
+
+/** "Fruit type: 2.8", and where this facility's own price came from while it is still the imported one. */
+function hintFor(type: FruitType, typed: string | undefined, rates: Rates | undefined): string {
+  const general = type.pricePerKg === null ? 'Fruit type: no price' : `Fruit type: ${type.pricePerKg}`
+  const note = rates?.priceSources?.[type.id]
+  return note && typed !== undefined && Number(typed) === rates?.priceOverrides?.[type.id] ? `${general}. ${marketPriceText(note)}` : general
 }

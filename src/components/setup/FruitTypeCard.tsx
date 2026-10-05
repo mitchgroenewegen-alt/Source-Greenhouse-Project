@@ -1,6 +1,7 @@
 import { diameterRangeText, specCheck, weightRangeText } from '../../setup/fruitTypes'
 import type { FruitType } from '../../workspace/types'
 import { fixed } from '../../lib/format'
+import { marketPriceText } from '../../financials/priceSource'
 import { SpecBadge } from '../detail/SpecBadge'
 import { SECONDARY_BUTTON } from '../ui/fields'
 
@@ -31,7 +32,10 @@ export function FruitTypeCard({
       <dl className="grid grid-cols-2 gap-2 text-sm">
         <Tile label="Weight">{weightRangeText(type)}</Tile>
         <Tile label="Diameter">{diameter ?? 'Not entered'}</Tile>
-        <Tile label="Price per kg">{type.pricePerKg === null ? 'Not entered' : fixed(type.pricePerKg, 2)}</Tile>
+        <Tile label="Price per kg">
+          {type.pricePerKg === null ? 'Not entered' : fixed(type.pricePerKg, 2)}
+          {type.pricePerKg !== null && type.priceSource && <span className="block text-xs font-normal text-ink-2">{marketPriceText(type.priceSource)}</span>}
+        </Tile>
         <Tile label="Measured in the workbook">
           {measuredG === null ? (
             'No cultivation yet'

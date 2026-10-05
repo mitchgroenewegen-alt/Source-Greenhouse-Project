@@ -37,9 +37,10 @@ export function FruitTypeForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate aria-label={type ? `Edit ${type.name}` : 'Add a fruit type'} className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
-      <h2 className="text-lg font-semibold">{type ? `Edit ${type.name}` : 'Add a fruit type'}</h2>
-      <TextField label="Name" value={input.name} onChange={set('name')} error={errors.name} />
+    <form onSubmit={submit} noValidate aria-label={type ? `Edit ${type.name}` : 'Add a commodity'} className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <h2 className="text-lg font-semibold">{type ? `Edit ${type.name}` : 'Add a commodity'}</h2>
+      {!type && <p className="text-sm text-ink-2">A commodity is a fruit type, such as TOV or Cherry. Once added it can be chosen for a cultivation in Setup and is priced in Financials.</p>}
+      <TextField label={type ? 'Name' : 'Commodity name'} value={input.name} onChange={set('name')} error={errors.name} />
       <div className="grid grid-cols-2 gap-3">
         <TextField label="Lowest weight (g)" value={input.weightMinG} onChange={set('weightMinG')} error={errors.weightMinG} inputMode="decimal" />
         <TextField label="Highest weight (g)" value={input.weightMaxG} onChange={set('weightMaxG')} error={errors.weightMaxG} inputMode="decimal" />
@@ -50,7 +51,7 @@ export function FruitTypeForm({
       <CheckField label="These numbers are a placeholder" checked={placeholder} onChange={setPlaceholder} hint="Untick it once they are the real specs." />
       <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={disabled || saving} className={PRIMARY_BUTTON}>
-          {saving ? 'Saving…' : type ? 'Save changes' : 'Add fruit type'}
+          {saving ? 'Saving…' : type ? 'Save changes' : 'Add commodity'}
         </button>
         <button type="button" onClick={onCancel} className={SECONDARY_BUTTON}>
           Cancel

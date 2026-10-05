@@ -140,6 +140,7 @@ export function previewPrices(parsed: PriceParseResult, ctx: PriceContext, creat
     preview.changes.push({ row, typeId: type!.id, typeName: type!.name, facilityId: facility?.id ?? null, facilityName: facility?.name ?? null, before, after: row.pricePerKg, newCommodity: !known })
   }
   preview.unknown = [...unknown.values()]
+  preview.problems.sort((a, b) => a.line - b.line)
   return preview
 }
 

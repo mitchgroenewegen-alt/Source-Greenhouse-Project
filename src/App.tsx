@@ -16,6 +16,7 @@ const DataScreen = lazy(() => import('./screens/DataScreen'))
 const EnterDataScreen = lazy(() => import('./screens/EnterDataScreen'))
 const ImportScreen = lazy(() => import('./screens/ImportScreen'))
 const ClimateImportScreen = lazy(() => import('./screens/ClimateImportScreen'))
+const PriceImportScreen = lazy(() => import('./screens/PriceImportScreen'))
 const ExportScreen = lazy(() => import('./screens/ExportScreen'))
 const DataChecksScreen = lazy(() => import('./screens/DataChecksScreen'))
 const MoreScreen = lazy(() => import('./screens/MoreScreen'))
@@ -43,6 +44,7 @@ export default function App() {
               <Route path="/data/enter" element={<EnterDataScreen />} />
               <Route path="/data/import" element={<ImportScreen />} />
               <Route path="/data/import/climate" element={<ClimateImportScreen />} />
+              <Route path="/data/import/prices" element={<PriceImportScreen />} />
               <Route path="/data/export" element={<ExportScreen />} />
               <Route path="/checks" element={<DataChecksScreen />} />
               <Route path="/more" element={<MoreScreen />} />

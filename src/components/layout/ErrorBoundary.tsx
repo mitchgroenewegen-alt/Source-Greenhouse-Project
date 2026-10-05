@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { isStaleBuildError, reloadForNewBuild } from '../../lib/staleBuild'
 
 /** If anything throws while drawing the app, say what went wrong instead of leaving an empty page. */
 export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -10,6 +11,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error(error, info.componentStack)
+    // A page left open across a new deployment asks for screen files that are gone: reload once to get the new build.
+    if (isStaleBuildError(error)) reloadForNewBuild()
   }
 
   render() {

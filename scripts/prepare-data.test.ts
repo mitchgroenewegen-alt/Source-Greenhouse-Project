@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import * as XLSX from 'xlsx'
+import { XLSX_PATH } from './prepare-data'
 import { loadTestData } from '../src/test/loadData'
 import { aggregate, rollup } from '../src/data/aggregate'
 import { cropWeekOn, excelSerialToIso, isoWeekOf } from '../src/data/dates'
@@ -50,6 +53,27 @@ describe('prepare-data: shape of the data file', () => {
     expect(pa1.areaM2).toBe(98400)
     expect(pa1.facility).toBe('Pennsylvania')
     expect(cropWeekOn(pa1.plantingDate, data.meta.periodEnd)).toBe(pa1.cropWeekAtEnd)
+  })
+})
+
+describe('prepare-data: workbook row numbers', () => {
+  it('gives every daily row its own Excel row, 2 to 16171 (the header is row 1)', () => {
+    const rows = data.daily.map((r) => r.row)
+    expect(rows.every((r) => Number.isInteger(r))).toBe(true)
+    expect(new Set(rows).size).toBe(data.daily.length)
+    expect(Math.min(...(rows as number[]))).toBe(2)
+    expect(Math.max(...(rows as number[]))).toBe(data.daily.length + 1)
+  })
+
+  it('points at the cell the value was read from', () => {
+    const workbook = XLSX.read(readFileSync(XLSX_PATH), { type: 'buffer' })
+    const sheet = workbook.Sheets['KPIs']!
+    for (const r of [data.daily[0]!, data.daily[7000]!, data.daily.at(-1)!]) {
+      expect(sheet[`F${r.row}`]?.v).toBe(r.cultivation)
+      expect(sheet[`J${r.row}`]?.v).toBe(r.kpi)
+      expect(sheet[`L${r.row}`]?.v ?? null).toBe(r.actual)
+      expect(sheet[`M${r.row}`]?.v ?? null).toBe(r.target)
+    }
   })
 })
 

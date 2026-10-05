@@ -41,6 +41,11 @@ export interface DailyRow {
   kpi: string
   actual: number | null
   target: number | null
+  /**
+   * 1-based Excel row of this day in the workbook's KPIs sheet (the header is row 1). Only on rows read from the
+   * workbook; days typed in or imported in the app have none.
+   */
+  row?: number
 }
 
 /** One cultivation, one KPI, one week, rolled up with the KPI's own aggregation rule. */

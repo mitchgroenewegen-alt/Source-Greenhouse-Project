@@ -166,6 +166,7 @@ function readDailyRows(
       kpi,
       actual: asNumber(r[c.actual] ?? null, `${where} Actual`),
       target: asNumber(r[c.target] ?? null, `${where} Target`),
+      row: i + 2, // Excel row of the KPIs sheet (the header is row 1)
     })
   })
 

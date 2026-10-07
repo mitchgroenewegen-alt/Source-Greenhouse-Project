@@ -57,6 +57,8 @@ export interface CropData {
   editedWeek: (cultivation: string, kpi: string, week: string) => EditedWeek | undefined
   /** Where the value of this week came from when someone typed or imported a day of it: "entered" wins over "imported". */
   enteredWeek: (cultivation: string, kpi: string, week: string) => Extract<ValueSource, 'entered' | 'imported'> | undefined
+  /** Was this day typed in or imported (so it has no row in the workbook)? "entered" wins over "imported". */
+  enteredCell: (cultivation: string, kpi: string, date: string) => Extract<ValueSource, 'entered' | 'imported'> | undefined
   /** Take typed or imported days away; the workbook's own values (or nothing) are back. */
   undoEntries: (entry: EntryLogEntry) => void
   /** Take an entry of the edit log away. A correction goes through its decision, so the two stay consistent. */
@@ -191,6 +193,16 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
     return weeks
   }, [workspace.data.enteredRows])
 
+  const enteredCells = useMemo(() => {
+    const cells = new Map<string, 'entered' | 'imported'>()
+    for (const row of workspace.data.enteredRows) {
+      if (row.source !== 'entered' && row.source !== 'imported') continue
+      const key = `${row.cultivation}|${row.kpi}|${row.date}`
+      if (cells.get(key) !== 'entered') cells.set(key, row.source)
+    }
+    return cells
+  }, [workspace.data.enteredRows])
+
   const value = useMemo<CropData>(() => {
     const cultivationMap = new Map(data.cultivations.map((c) => [c.id, c]))
     const scoreCache = new Map<string, CultivationScore>()
@@ -231,6 +243,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
       canWrite,
       editedWeek: (cultivation, kpi, week) => edited.get(weeklyKey(cultivation, kpi, week)),
       enteredWeek: (cultivation, kpi, week) => enteredWeeks.get(weeklyKey(cultivation, kpi, week)),
+      enteredCell: (cultivation, kpi, date) => enteredCells.get(`${cultivation}|${kpi}|${date}`),
       undoEntries: (entry) => void remove('enteredRows', entryRowKeys(entry)),
       undoEdits: (entry) => {
         const cells = correctedCells(entry)
@@ -272,7 +285,7 @@ function ReadyProvider({ data: base, children }: { data: DataFile; children: Rea
         if (others.length > 0) void remove('valueEdits', others.map((d) => correctionEditId(d.cellId)))
       },
     }
-  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, effectiveDaily, weekly, edited, enteredWeeks])
+  }, [data, base, showArchived, setShowArchived, flags, groups, decisions, decisionById, workspace.persistent, rawMode, setRawMode, decidedBy, setDecidedBy, user, status, canWrite, save, remove, effectiveDaily, weekly, edited, enteredWeeks, enteredCells])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

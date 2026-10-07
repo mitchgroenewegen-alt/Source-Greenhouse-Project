@@ -1,8 +1,43 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { formatDate, formatRange } from '../../data/dates'
 import type { FlagGroup } from '../../flags'
 import { ACTION_LABEL, decisionOutcome, type Decision, type DecisionKind } from '../../storage'
 import type { GroupStatus } from '../../state/groupStatus'
+import { FlagSourceToggle, SourceCells } from './SourceCells'
+
+const LISTED = 3
+
+/** Where each empty cell is in the workbook: a button per value, the first one open. */
+function MissingCells({ group }: { group: FlagGroup }) {
+  const [open, setOpen] = useState<Set<string>>(() => new Set(group.flags.slice(0, 1).map((f) => f.id)))
+  const [all, setAll] = useState(false)
+  const toggle = (id: string) => setOpen((prev) => { const next = new Set(prev); if (!next.delete(id)) next.add(id); return next })
+  const listed = all ? group.flags : group.flags.slice(0, LISTED)
+  return (
+    <ul className="flex flex-col gap-1">
+      {listed.map((f) => (
+        <li key={f.id} className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span>{group.flags.length > 1 ? formatDate(f.date) : 'In the workbook'}</span>
+            <FlagSourceToggle flag={f} open={open.has(f.id)} onToggle={() => toggle(f.id)} />
+          </div>
+          {open.has(f.id) && (
+            <div id={`cells-${f.id}`}>
+              <SourceCells flag={f} />
+            </div>
+          )}
+        </li>
+      ))}
+      {group.flags.length > LISTED && (
+        <li>
+          <button type="button" onClick={() => setAll(!all)} className="min-h-9 text-sm font-semibold text-brand hover:underline">
+            {all ? 'Show fewer' : `Show all ${group.flags.length} values`}
+          </button>
+        </li>
+      )}
+    </ul>
+  )
+}
 
 /**
  * Values that were never recorded. They are already left out of the scores, so there is nothing to exclude: the two
@@ -96,6 +131,7 @@ export function MissingValueList({
                     )
                   )}
                 </div>
+                <MissingCells group={g} />
                 {!decided && form}
               </li>
             )

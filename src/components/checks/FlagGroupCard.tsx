@@ -7,6 +7,7 @@ import { formatDateTime, plain } from '../../lib/format'
 import { ACTION_LABEL, decisionOutcome, type Decision, type DecisionKind } from '../../storage'
 import type { GroupStatus } from '../../state/groupStatus'
 import { FlagIcon } from '../ui/icons'
+import { FlagSourceToggle, SourceCells } from './SourceCells'
 
 const SEVERITY_STYLE = {
   error: 'bg-bad-bg text-bad-ink border-bad-line',
@@ -33,6 +34,9 @@ export function FlagGroupCard({
   form: React.ReactNode
 }) {
   const [showAll, setShowAll] = useState(false)
+  // Where each value sits in the workbook: open for the first value of the group, the others on demand.
+  const [openCells, setOpenCells] = useState<Set<string>>(() => new Set(group.flags.slice(0, 1).map((f) => f.id)))
+  const toggleCell = (id: string) => setOpenCells((prev) => { const next = new Set(prev); if (!next.delete(id)) next.add(id); return next })
   const config = kpiConfig(group.kpi)
   const missing = group.rule === 'missing-value'
   // The workbook column is always "Target"; a budget KPI says so, a target KPI just names the column.
@@ -75,19 +79,29 @@ export function FlagGroupCard({
               <tr className="text-xs text-ink-2">
                 <th scope="col" className="py-1 pr-2 text-left font-semibold sm:pr-3">Date</th>
                 <th scope="col" className="py-1 pr-2 text-right font-semibold sm:pr-3">Recorded</th>
-                {group.suggestionNote && <th scope="col" className="py-1 text-right font-semibold">Suggested</th>}
+                {group.suggestionNote && <th scope="col" className="py-1 pr-2 text-right font-semibold sm:pr-3">Suggested</th>}
+                <th scope="col" className="py-1 text-right font-semibold">Workbook</th>
               </tr>
             </thead>
             <tbody>
               {samples.map((f) => (
-                <tr key={f.id} className="border-t border-line-soft">
-                  <td className="py-1 pr-2 sm:pr-3">{formatDate(f.date)}</td>
-                  <td className="py-1 pr-2 text-right sm:pr-3">{f.value === null ? '–' : `${plain(f.value)} ${config.unit}`}</td>
-                  {group.suggestionNote && <td className="py-1 text-right font-semibold">{f.suggestion === null ? '–' : `${plain(f.suggestion)} ${config.unit}`}</td>}
-                </tr>
+                                  <tr className="border-t border-line-soft">
+                    <td className="py-1 pr-2 sm:pr-3">{formatDate(f.date)}</td>
+                    <td className="py-1 pr-2 text-right sm:pr-3">{f.value === null ? '–' : `${plain(f.value)} ${config.unit}`}</td>
+                    {group.suggestionNote && <td className="py-1 pr-2 text-right font-semibold sm:pr-3">{f.suggestion === null ? '–' : `${plain(f.suggestion)} ${config.unit}`}</td>}
+                    <td className="py-1 text-right">
+                      <FlagSourceToggle flag={f} open={openCells.has(f.id)} onToggle={() => toggleCell(f.id)} />
+                    </td>
+                  </tr>
               ))}
             </tbody>
           </table>
+          {samples.filter((f) => openCells.has(f.id)).map((f) => (
+            <div key={f.id} id={`cells-${f.id}`} className="mt-2 flex flex-col gap-1">
+              {group.flags.length > 1 && <h4 className="text-xs font-semibold text-ink-2">Value of {formatDate(f.date)}</h4>}
+              <SourceCells flag={f} />
+            </div>
+          ))}
           {group.flags.length > 3 && (
             <button type="button" onClick={() => setShowAll(!showAll)} className="mt-1 min-h-9 text-sm font-semibold text-brand hover:underline">
               {showAll ? 'Show fewer' : `Show all ${group.flags.length} values`}

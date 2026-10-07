@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header id="app-header" className="z-30 border-b border-line bg-card md:sticky md:top-0">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
           <Link to="/" className="flex items-center gap-2 text-lg font-semibold text-brand">
-            <img src={`${import.meta.env.BASE_URL}icons/icon.svg`} alt="" width={28} height={28} className="rounded-md" />
+            <img src={`${import.meta.env.BASE_URL}icons/icon-64.png`} alt="" width={28} height={28} className="rounded-md" />
             Crop Performance
           </Link>
           {/* Phones: top right, level with the name. From md up it ends the row after the week picker. */}
@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 aria-current={item.active ? 'page' : undefined}
                 className={`flex min-h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold ${
-                  item.active ? 'bg-brand-soft text-brand' : 'text-ink-2 hover:bg-tile'
+                  item.active ? 'bg-brand text-white' : 'text-ink-2 hover:bg-brand-soft'
                 }`}
               >
                 <item.icon width={18} height={18} />

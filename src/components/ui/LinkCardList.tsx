@@ -15,7 +15,7 @@ export function LinkCardList({ items }: { items: LinkCard[] }) {
     <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
         <li key={item.to}>
-          <Link to={item.to} className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm hover:bg-tile">
+          <Link to={item.to} className="flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 shadow-sm hover:bg-brand-soft">
             <span className="min-w-0">
               <span className="flex items-center gap-2 text-lg font-semibold text-brand">
                 {item.title}

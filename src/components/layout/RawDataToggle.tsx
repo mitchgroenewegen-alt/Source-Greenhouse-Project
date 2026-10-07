@@ -10,7 +10,7 @@ export function RawDataToggle() {
       aria-checked={rawMode}
       aria-label="Show raw data"
       onClick={() => setRawMode(!rawMode)}
-      className="flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-line bg-tile px-2.5 text-sm font-medium text-ink-2"
+      className="flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-line-soft bg-tile px-2.5 text-sm font-medium text-ink-2"
     >
       <span
         aria-hidden="true"

@@ -45,7 +45,7 @@ export function FinancialsSummaryTable({ rows, period, periodLabel, currency }: 
                 <tr
                   key={row.label}
                   onClick={row.cardId ? () => jumpToCard(row.cardId!) : undefined}
-                  className={`border-b border-line-soft last:border-b-0 ${row.cardId ? 'cursor-pointer hover:bg-brand-soft active:bg-field' : 'bg-card'}`}
+                  className={`border-b border-line-soft last:border-b-0 ${row.cardId ? 'cursor-pointer hover:bg-brand-soft active:bg-tile' : 'bg-card'}`}
                 >
                   <th scope="row" className="px-1.5 py-2.5 text-left align-top font-semibold sm:px-4">
                     {row.cardId ? (

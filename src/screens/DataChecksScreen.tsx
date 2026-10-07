@@ -203,7 +203,7 @@ export default function DataChecksScreen() {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`min-h-11 rounded-xl px-1 text-sm font-semibold ${tab === id ? 'bg-brand text-white' : 'text-ink-2 hover:bg-tile'}`}
+            className={`min-h-11 rounded-xl px-1 text-sm font-semibold ${tab === id ? 'bg-brand text-white' : 'text-ink-2 hover:bg-brand-soft'}`}
           >
             {label} <span className={`text-xs ${tab === id ? 'text-white/85' : 'text-ink-3'}`}>{count}</span>
           </button>

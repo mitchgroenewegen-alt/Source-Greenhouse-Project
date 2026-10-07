@@ -9,14 +9,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
+      includeAssets: ['icons/favicon-48.png', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'Crop Performance',
         short_name: 'Crop Performance',
         description: 'How each tomato cultivation performs against budget, and which inputs to verify.',
-        // The header bar is a card and the page behind it is the page green: the browser chrome blends with the first, the splash screen with the second.
-        theme_color: '#b0d0b3',
-        background_color: '#7ab17d',
+        // The header bar is a white card and the page behind it is the mist canvas: the browser chrome blends with the first, the splash screen with the second.
+        theme_color: '#ffffff',
+        background_color: '#e6ece8',
         display: 'standalone',
         orientation: 'any',
         start_url: '.',
@@ -25,7 +25,6 @@ export default defineConfig({
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml' },
         ],
       },
       workbox: {

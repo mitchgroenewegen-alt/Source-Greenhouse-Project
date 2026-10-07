@@ -3,59 +3,59 @@
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  /* Surfaces: shades of one green, none of them white. The page is a mid green; every data cluster sits on a paler
-     green card; a cluster inside a card (a tile, a row, a chart plot, a table, an inactive filter pill) is one step
-     paler again; and the palest step (field) is for controls you type into or press. Luminance runs
-     page < card < tile < field, so each nested edge reads as a step the eye can follow. The first three are the
-     colours the product owner picked on a screenshot; do not tune them. */
-  --color-page: #7ab17d;
-  --color-card: #b0d0b3;
-  --color-tile: #c9decb;
-  --color-field: #dcecdd; /* the palest step, still clearly green: inputs, selects and the buttons that sit on a card */
+  /* Surfaces: a mist-green page, pure white cards on it, and a recessed well inside each card. Luminance runs
+     page < well (tile) < card, and every step has its own edge: the card has the line border on the page, the tile
+     (a KPI box, a diagnostic row, a chart plot, a table, an inactive filter pill) has the pale line-soft border on the
+     card. field is the surface of controls you type into or press: white, like the cards, with a line-strong edge.
+     These are the product owner's palette; do not tune them. */
+  --color-page: #e6ece8; /* Page Canvas: greenhouse mist */
+  --color-card: #ffffff; /* Card Surface: cards and inputs */
+  --color-tile: #f4f7f5; /* Sub-Metric Well: recessed container for KPI tiles and diagnostic rows */
+  --color-field: #ffffff;
 
-  /* Lines. line: the edge of a card on the page and of the header / bottom bar. line-soft: dividers and tile edges
-     inside a card, and chart grid lines on a tile. line-strong: the edge of an input or select, 3:1 on every surface.
-     track: the unfilled part of the Waste meter, visible on a tile and pale enough that every status fill keeps 3:1
-     against it (the end of the fill is the reading). */
-  --color-line: #66a06f;
-  --color-line-soft: #8fb995;
-  --color-line-strong: #375a43;
-  --color-track: #adcdb2;
+  /* Lines. line: the 1px edge of a card on the page and of the header / bottom bar. line-soft: tile edges, dividers
+     inside a card and chart grid lines. Both are decorative, below 3:1; the content carries the meaning. line-strong:
+     the edge of an input or select, a darker herbal grey-green that is 3:1 on the page, card and tile (a control edge
+     must be seen). track: the unfilled part of the Waste meter, a pale grey-green visible on the tile and pale
+     enough that every status fill keeps 3:1 against it (the end of the fill is the reading). */
+  --color-line: #bac7ba;
+  --color-line-soft: #cbd8ce;
+  --color-line-strong: #668070;
+  --color-track: #cfdcd3;
 
-  /* Text. ink is for text straight on the page (screen titles, intros, notes), and ink-2 and ink-3 step down from it
-     inside cards, tiles and fields. The page is a mid green, so only ink reaches 4.5:1 on it: never put text-ink-2 or
-     text-ink-3 straight on the page. ink-3 is the palest text and still 4.5:1 on a card, the darkest of those. */
-  --color-ink: #14231a;
-  --color-ink-2: #34433a;
-  --color-ink-3: #43534c;
+  /* Text. The palette has one secondary text colour, so ink-2 and ink-3 are the same: 4.5:1 on the page, the card,
+     the tile and the pale fills, placeholders included. ink is Primary Text / KPIs. */
+  --color-ink: #111f16;
+  --color-ink-2: #55695a;
+  --color-ink-3: #55695a;
 
-  /* Brand. brand-soft is the active / hover fill and the Crop week chip: a touch paler and minty so it stays
-     apart from a tile (and clearly greener than the card it sits on). */
-  --color-brand: #1f5d3a;
-  --color-brand-soft: #d3e9dc;
+  /* Brand: active filter buttons and nav accents (white text on it). brand-soft is the hover fill and the Crop week
+     chip: a pale pine-mint tint, visibly apart from the white card and from the tile. */
+  --color-brand: #143823;
+  --color-brand-soft: #d9eadf;
 
-  /* Status: tinted background, dark text on it, a line and a solid colour for marks. Always used with a text label.
-     The backgrounds are stronger than the old pastels and the lines are 3:1 on a card and a tile, so a badge stays
-     distinct from the green it sits on. */
-  --color-ok-bg: #bde4cb;
-  --color-ok-ink: #0e4426;
-  --color-ok-line: #377950;
-  --color-ok: #197c43;
-  --color-warn-bg: #fbe6b0;
-  --color-warn-ink: #5c3500;
-  --color-warn-line: #916410;
-  --color-warn: #9d5e00;
-  --color-bad-bg: #f8d5cf;
-  --color-bad-ink: #781a14;
-  --color-bad-line: #a95349;
-  --color-bad: #c0322a;
+  /* Status: a pale pill background, dark text on it, a pastel pill border and a solid colour for marks. Always used
+     with a text label. The solids are 3:1 on the card and the tile; they are only 4.19:1 on the page, so status
+     text never sits straight on the page. */
+  --color-ok-bg: #edf7ee;
+  --color-ok-ink: #15803d;
+  --color-ok-line: #bce2c3;
+  --color-ok: #15803d;
+  --color-warn-bg: #fffbeb;
+  --color-warn-ink: #b45309;
+  --color-warn-line: #fde68a;
+  --color-warn: #b45309;
+  --color-bad-bg: #fdf2f2;
+  --color-bad-ink: #b91c1c;
+  --color-bad-line: #f8b4b4;
+  --color-bad: #b91c1c;
   --color-none-bg: #dde2e0;
   --color-none-ink: #3b474a;
   --color-none-line: #636e73;
 
   /* Chart marks: 3:1 on a card and a tile */
   --color-actual: #266cc1;
-  /* The keyboard focus ring: a deeper blue than the actual line, so it clears 3:1 on the page green as well as on
+  /* The keyboard focus ring: a deeper blue than the actual line, so it clears 3:1 on the page as well as on
      the cards, tiles and fields. */
   --color-focus: #195299;
   --color-target: #3c4b42;
@@ -69,9 +69,9 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  /* Native controls (the open drop-down list) stay in the light scheme that matches the greens. */
+  /* Native controls (the open drop-down list) stay in the light scheme. */
   color-scheme: light;
-  /* The browser's own scroll bars have a near-white track. A clear track shows the green underneath (the page, or the
+  /* The browser's own scroll bars have a near-white track. A clear track shows the surface underneath (the page, or the
      tile of a table that scrolls sideways) and the thumb is line-strong, 3:1 on the page. Inherited by every scroll box. */
   scrollbar-color: var(--color-line-strong) transparent;
 }
@@ -98,7 +98,7 @@ body {
 }
 
 /* Tabs sit 2 to 4 px apart, closer than the ring's offset, so next to the selected (brand green) tab the ring would be
-   drawn on the dark fill or under it. A focused tab is lifted above its neighbours, and a field-green halo fills the
+   drawn on the dark fill or under it. A focused tab is lifted above its neighbours, and a white (field) halo fills the
    offset gap, so the ring is always drawn in full with a pale edge beside it. Only tabs: this rule is outside Tailwind's
    layers and would override a shadow or position utility on anything else. */
 [role='tab']:focus-visible {
@@ -107,7 +107,7 @@ body {
   box-shadow: 0 0 0 2px var(--color-field);
 }
 
-/* The open drop-down list is drawn by the browser; give its rows the field green, not white. */
+/* The open drop-down list is drawn by the browser; give its rows the field colour. */
 option {
   background-color: var(--color-field);
   color: var(--color-ink);
